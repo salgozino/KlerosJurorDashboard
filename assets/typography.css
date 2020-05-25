@@ -1,0 +1,23 @@
+
+body {
+    font-family: sans-serif;
+    color:'grey';
+}
+h1, h2, h3{
+  color: black;
+  padding-top:3%;
+}
+
+.two-cols {
+  float: left;
+  width: 46%;
+  padding-left:3%;
+  padding-right:1%;
+}
+
+.one-col{
+  content: "";
+  display: table;
+  clear: both;
+
+}
