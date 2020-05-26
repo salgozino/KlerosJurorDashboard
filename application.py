@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-import dash
-import dash_table
+import dash, dash_table
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 from plotly.express import colors as colormap
 from dash.dependencies import Input, Output
-from datetime import datetime
 from Kleros import *
 from flask import Flask
 import json
@@ -21,6 +19,18 @@ cols_to_format = ['totalstaked', 'meanStack', 'maxStack']
 for col in cols_to_format:
     dfCourts[col]=dfCourts[col].map("{:,.1f}".format)
 totalJurors = len(sk.getAllJurors())
+
+def get_marks(f, max_marks=15):
+    """
+    get the dates mark from the timestamps
+    """
+    dates = {}
+    n = round(len(f.index)/max_marks)
+    for z in f.index[::n]:
+        # dates[f.index.get_loc(z)] = {}
+        dates[f.index.get_loc(z)] = f"{z.year}-{z.month}-{z.day}"
+    return dates
+
 
 server = Flask(__name__)
 app = dash.Dash(__name__, 
@@ -39,7 +49,7 @@ app.layout = html.Div(className="container",
                                     
                                     Kleros es un sistema de disputas descentralizado, para más información visite [kleros.io](https://kleros.io)
                                     '''),
-                                  html.Div(id='updateTime', children=[sk.getLastUpdate()]),
+                                  html.Div(id='updateTime', children=['''Última actualización: ''',sk.getLastUpdate()]),
                                   html.Hr()
                               ]),
                            html.Div(className='two-cols',
@@ -83,15 +93,33 @@ app.layout = html.Div(className="container",
                             html.H3(className='one-col',
                                 children='Evolución de los depósitos en las cortes'),
                             dcc.Dropdown(
-                                       id='cortes-graph',
+                                       id='cortes-graph-dropdown',
                                        options=[{'label': courtNames[corte], 'value': corte} for corte in courtNames],
-                                       # value=[i for i in range(len(courtNames))],
                                        value = [0, 2, 8],
                                        multi=True,
                                        ),
-                            # dcc.Graph(id='stakedgraph-time', animate=True),
-                            # dcc.Graph(id='jurorsgraph-time', animate=True),
-                            dcc.Graph(id='courts-graphs'),
+                            dcc.Graph(id='cortes-graph'),
+                            html.Div([dcc.RangeSlider(
+                                                id='cortes-graph-range',
+                                                updatemode='mouseup',
+                                                min=0,
+                                                max=len(dfStaked.index) - 1,
+                                                count=1,
+                                                step=1,
+                                                value=[0, len(dfStaked.index) - 1],
+                                                marks=get_marks(dfStaked),
+                                            )
+                                        ]),
+                            html.Footer(id='footer', children=[
+                                            dcc.Markdown('''
+                                                         Si te resultó útil esta web, podés donar PNK o cualquier otra moneda ERC20 a esta wallet: 0x1d48668E22dE59C2177532d624AA981567401D2a
+                                                         
+                                                         Gracias por contribuir con el desarrollo de este dashboard.
+                                                         '''),
+                                             html.Button('Copiar Dirección al portapales', id='copy-to-clipboard', n_clicks=0),
+                                             html.Div(id='hidden')
+                                             ]
+                                         )
                         ])
              
 @app.callback(
@@ -123,7 +151,7 @@ def getChanceByWallet(wallet):
 def create_time_series(df, courts):
     data = []
     showlegend = True
-    colors = colormap.sequential.Plasma
+    colors = colormap.sequential.Viridis
     for court in courts:
         data.append(go.Bar(
                 x=df.index,
@@ -135,17 +163,19 @@ def create_time_series(df, courts):
 
 
 @app.callback(
-     Output(component_id='courts-graphs', component_property='figure'),
-        [Input(component_id='cortes-graph', component_property='value')]
+     Output(component_id='cortes-graph', component_property='figure'),
+     [Input(component_id='cortes-graph-dropdown', component_property='value'),
+      Input(component_id='cortes-graph-range', component_property='value')]
 )
-def update_graphs(courts):
+def update_graphs(courts, dates_range):
     fig = make_subplots(rows=2, cols=1,
                         shared_xaxes=True, shared_yaxes=False,
                         vertical_spacing=0.001)
-    traces = create_time_series(dfStaked, courts)
+    traces = create_time_series(dfStaked.iloc[dates_range[0]:dates_range[1]], courts)
     for trace in traces:
         fig.append_trace(trace, row=1, col=1)
-    traces = create_time_series(dfJurors, courts)
+    
+    traces = create_time_series(dfJurors.iloc[dates_range[0]:dates_range[1]], courts)
     for trace in traces:
         trace['showlegend']=False
         fig.append_trace(trace, row=2, col=1)
@@ -155,6 +185,15 @@ def update_graphs(courts):
                          barmode= 'stack',
                          legend= {'orientation':'h'})
     return fig
+
+
+@app.callback(
+    Output(component_id='hidden', component_property='children'),
+    [Input(component_id='copy-to-clipboard', component_property='value')]
+)
+def copy_to_clipboard(value):
+    pd.DataFrame({'text':"0x1d48668E22dE59C2177532d624AA981567401D2a"}, index=[0]).to_clipboard(index=False, header=False)
+    return None
 
 
 if __name__ == '__main__':
