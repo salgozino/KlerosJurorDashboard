@@ -1,0 +1,5 @@
+klerosenv/
+env/
+static/lib/etherscan_api_key.json
+static/lib/infura_node.json
+testW3.py
