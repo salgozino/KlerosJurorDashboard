@@ -89,10 +89,17 @@ class StakesKleros(Etherscan, web3Node):
             cls.data['subcourtLabel'] = cls.data['subcourtID'].map(courtNames)
             cls.data.drop_duplicates(keep='last',inplace=True)
             cls.dataToCSV()
+        with open(os.path.join(THIS_FOLDER,'static/data/last_update.json'), 'w') as fp:
+            json.dump({'last_update':datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, fp)
         logger.info('The Stakes Database was updated')
         return cls.data
 
 
+    @staticmethod
+    def getLastUpdate():
+        return json.load(open(os.path.join(THIS_FOLDER,'static/data/last_update.json'),'r'))['last_update']
+
+        
     @classmethod
     def dataToCSV(cls, filename=os.path.join(THIS_FOLDER,'static/data/setStakesLogs.csv')):
         df = cls.data.copy()
