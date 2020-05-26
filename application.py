@@ -184,6 +184,9 @@ def update_graphs(courts, dates_range):
                          title= 'Stakes along time',
                          barmode= 'stack',
                          legend= {'orientation':'h'})
+    fig.update_yaxes(title_text="PNK Staked", row=1, col=1)
+    fig.update_yaxes(title_text="N° de Jurados", row=2, col=1)
+    fig.update_xaxes(title_text="Fecha", row=2, col=1)
     return fig
 
 
