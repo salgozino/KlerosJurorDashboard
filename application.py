@@ -4,13 +4,15 @@ import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+from plotly.express import colors as colormap
 from dash.dependencies import Input, Output
 from datetime import datetime
 from Kleros import *
 from flask import Flask
+import json
 
 sk = StakesKleros()
-sk.updateData()
 sk.loadCSV()
 dfStaked = sk.historicStakesInCourts()
 dfJurors = sk.historicJurorsInCourts()
@@ -28,17 +30,16 @@ app.layout = html.Div(className="container",
                       children=[
                           html.Div(className='Title',
                               children=[
-                                  html.H1(children='Hola Jurado de Kleros!'),
-                                  html.Div(children='''
+                                  html.H1(children='Kleros Stakes DashBoard!'),
+                                  dcc.Markdown(children='''
                                     Esta app te permitirá conocer cuales son tus chances de ser elegido como jurado.
-                                    Es una versión beta, y los datos están siendo auditados en este momento.
+                                    Es una versión beta, ante cualquier duda, escribime en [telegram](https://t.me/kokialgo).
                                     
                                     El campo wallet revisa en nuestra base de datos los montos stakeados, nunca interactua con su wallet. Si quiere verificarlo, ingrese a la web sin metamask.
                                     
-                                    Kleros es un sistema de disputas descentralizado, para más información visite kleros.io
+                                    Kleros es un sistema de disputas descentralizado, para más información visite [kleros.io](https://kleros.io)
                                     '''),
-                                  dcc.Interval(id='updateInterval', interval=1000*60*30, n_intervals=0),
-                                  html.Div(id='updateTime'),
+                                  html.Div(id='updateTime', children=[sk.getLastUpdate()]),
                                   html.Hr()
                               ]),
                            html.Div(className='two-cols',
@@ -88,8 +89,9 @@ app.layout = html.Div(className="container",
                                        value = [0, 2, 8],
                                        multi=True,
                                        ),
-                            dcc.Graph(id='stakedgraph-time', animate=True),
-                            dcc.Graph(id='jurorsgraph-time', animate=True),
+                            # dcc.Graph(id='stakedgraph-time', animate=True),
+                            # dcc.Graph(id='jurorsgraph-time', animate=True),
+                            dcc.Graph(id='courts-graphs'),
                         ])
              
 @app.callback(
@@ -117,53 +119,46 @@ def getChanceByWallet(wallet):
             text = 'Por favor ingrese una dirección correcta'
     return text
 
-@app.callback(
-    Output(component_id='updateTime', component_property='children'),
-    [Input(component_id='updateInterval', component_property='n_intervals')]
-)
-def updateDataBase(n_intervals):
-    sk.updateData()
-    dfCourts = sk.getstakedInCourts()
-    dfHistoric = sk.historicStakesInCourts()
-    return 'Última vez actualizado en {}'.format(datetime.now())
 
-def create_time_series(df, courts, title):
+def create_time_series(df, courts):
     data = []
+    showlegend = True
+    colors = colormap.sequential.Plasma
     for court in courts:
         data.append(go.Bar(
                 x=df.index,
                 y=df[court],
-                name=courtNames[court]))
-    return {
-        'data': data,
-        'layout': {
-            'height': 525,
-            'margin': {'l': 20, 'b': 30, 'r': 10, 't': 10},
-            'yaxis': {'type': 'linear', 'title' : title},
-            'xaxis': {'showgrid': False},
-            'barmode':'stack',
-            'hovermode' : 'x'
-        }
-    }
+                name=courtNames[court],
+                legendgroup = 'group'+str(court),
+                marker_color=colors[court]))
+    return data
 
 
 @app.callback(
-    [Output(component_id='stakedgraph-time', component_property='figure'),
-     Output(component_id='jurorsgraph-time', component_property='figure')],
+     Output(component_id='courts-graphs', component_property='figure'),
         [Input(component_id='cortes-graph', component_property='value')]
 )
 def update_graphs(courts):
-    return go.Figure(create_time_series(dfStaked, courts, 'PNK Staked')), go.Figure(create_time_series(dfJurors, courts, 'N° de Jurors'))
+    fig = make_subplots(rows=2, cols=1,
+                        shared_xaxes=True, shared_yaxes=False,
+                        vertical_spacing=0.001)
+    traces = create_time_series(dfStaked, courts)
+    for trace in traces:
+        fig.append_trace(trace, row=1, col=1)
+    traces = create_time_series(dfJurors, courts)
+    for trace in traces:
+        trace['showlegend']=False
+        fig.append_trace(trace, row=2, col=1)
+    fig['layout'].update(height= 500,
+                         margin= {'l': 10, 'b': 50, 't': 30, 'r': 10},
+                         title= 'Stakes along time',
+                         barmode= 'stack',
+                         legend= {'orientation':'h'})
+    return fig
 
-# @app.callback(
-#     ,
-#         [Input(component_id='cortes-graph', component_property='value')]
-# )
-# def updateJurors_graph(courts):
-#     return go.Figure(create_time_series(dfJurors, courts, 'N° de Jurors'))
 
 if __name__ == '__main__':
-    # app.run_server(debug=True, port=8080)
-    app.run_server()
+    app.run_server(debug=True, port=8080)
+    # app.run_server()
 
 
