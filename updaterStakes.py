@@ -1,3 +1,3 @@
-from Kleros import StakesKleros
+from Kleros import KlerosLiquid
 
-StakesKleros().updateData()
+KlerosLiquid().updateDB()

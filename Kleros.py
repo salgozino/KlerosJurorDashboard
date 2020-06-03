@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 import logging
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(THIS_FOLDER,'static/data/')
 
 
 FORMAT = '%(asctime)-15s - %(message)s'
@@ -24,10 +25,16 @@ courtNames = {0:'General',
               6:'English Language',
               7:'Video Production',
               8:'Ongoing'}
+disputePeriods = {0: 'Evidence', 
+                  1: 'Commit', 
+                  2: 'Vote',
+                  3: 'Appeal',
+                  4: 'Execution'}
 
 
-class KlerosLiquid(Contract, web3Node):
-
+class KlerosLiquid(Contract, web3Node, Etherscan):
+    stakes_event_topic = "0x8f753321c98641397daaca5e8abf8881fff1fd7a7bc229924a012e2cb61763d5"
+    create_dispute_event_topic = "0x141dfc18aa6a56fc816f44f0e9e2f1ebc92b15ab167770e17db5b084c10ed995"
 
     def __init__(self):
         with open(os.path.join(THIS_FOLDER,'static/lib/ABI_KlerosLiquid.json'),'r') as f:
@@ -36,11 +43,12 @@ class KlerosLiquid(Contract, web3Node):
         self.contract = web3Node.web3.eth.contract(abi=contract_abi,
                                                    address=address)
 
+
     def getCourtChildrens(self, courtID):
         return self.contract.functions.getSubcourt(courtID).call()[0]
 
 
-    def getAllChilds(self, courtID):
+    def getAllCourtChilds(self, courtID):
         childs = set(self.getCourtChildrens(courtID))
         allChilds = []
         while childs:
@@ -50,78 +58,21 @@ class KlerosLiquid(Contract, web3Node):
         return allChilds
 
 
-    def filtering(self,topic):
-        print(topic)
+    def getEventFromTo(self, event='stake', fromblock=None):
+        if event == 'stake':
+            topic = self.stakes_event_topic
+        elif (event == 'dispute') or (event == 'disputes'):
+            event = 'dispute'
+            topic = self.create_dispute_event_topic
+        else:
+            raise Exception("Error, the event is not defined")
 
-
-class StakesKleros(Etherscan, web3Node):
-    data = pd.DataFrame()
-    jurors = pd.DataFrame()
-    
-    setStake_topic = '0x8f753321c98641397daaca5e8abf8881fff1fd7a7bc229924a012e2cb61763d5'
-    
-    
-    @classmethod
-    def loadCSV(cls, filename=os.path.join(THIS_FOLDER,'static/data/setStakesLogs.csv')):
-        df = pd.read_csv(filename, index_col=0)
-        df.timestamp = pd.to_datetime(df.timestamp)
-        df.set_index('timestamp', inplace=True)
-        df.index = pd.to_datetime(df.index)
-        # filter to get the last stake by court of each juror.
-        cls.data = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
-        return cls.data
-
-    @classmethod
-    def updateData(cls):
-        try:
-            cls.loadCSV()
-            fromblock = cls.data.blockNumber.max()
-        except:
-            fromblock = 7303600
-            cls.data = pd.DataFrame()
-            
-        endblock = cls.web3.eth.blockNumber+1
-
-        allItems = cls.getStakesFromTo(fromblock=fromblock, endblock=endblock)
-        if len(allItems) > 0:
-            newData = pd.DataFrame(allItems).set_index('timestamp')
-            cls.data = pd.concat([cls.data, newData])
-            cls.data['subcourtLabel'] = cls.data['subcourtID'].map(courtNames)
-            cls.data.drop_duplicates(keep='last',inplace=True)
-            cls.dataToCSV()
-        with open(os.path.join(THIS_FOLDER,'static/data/last_update.json'), 'w') as fp:
-            json.dump({'last_update':datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, fp)
-        logger.info('The Stakes Database was updated')
-        return cls.data
-
-
-    @staticmethod
-    def getLastUpdate():
-        return json.load(open(os.path.join(THIS_FOLDER,'static/data/last_update.json'),'r'))['last_update']
-
-        
-    @classmethod
-    def dataToCSV(cls, filename=os.path.join(THIS_FOLDER,'static/data/setStakesLogs.csv')):
-        df = cls.data.copy()
-        if isinstance(df.index, pd.DatetimeIndex):
-            df.index.set_names(['timestamp'], inplace=True)
-            df.reset_index(inplace=True)
-        df.to_csv(filename)
-        return df
-
-
-    @classmethod
-    def getStakesFromTo(cls, fromblock=None, endblock=None):
         if fromblock is None:
-            fromblock = 7303600
-        if endblock is None:
-            endblock = cls.web3.eth.blockNumber+1
-        elif isinstance(endblock, str):
-            if endblock == 'latest':
-                endblock = cls.web3.eth.blockNumber+1
-
-        toblock = fromblock + 5000
-        step = 10000
+            # fromblock = 7303690
+            fromblock = 7315700
+        endblock = self.web3.eth.blockNumber
+        step = 1000
+        toblock = fromblock + step
         if endblock < toblock:
             endblock = toblock + 1
 
@@ -133,13 +84,13 @@ class StakesKleros(Etherscan, web3Node):
                 'action':'getLogs',
                 'fromBlock':fromblock,
                 'toBlock':toblock,
-                'address':"0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069",
-                'topic0':cls.setStake_topic,
-                'apikey': cls.api_key
+                'address':self.contract.address,
+                'topic0':topic,
+                'apikey': self.api_key
                 }
     
-            setStake_url = cls.api_url + urllib.parse.urlencode(api_options)
-            response = requests.get(setStake_url)
+            url = self.api_url + urllib.parse.urlencode(api_options)
+            response = requests.get(url)
             get_json = response.json()
             
             items = get_json['result']
@@ -150,15 +101,11 @@ class StakesKleros(Etherscan, web3Node):
 
             for item in items:
                 try:
-                    decodedData = decode_abi(('uint96','uint128','int256'),
-                                             web3Node.web3.toBytes(hexstr=item['data']))
-                    dataWanted = {}
-                    dataWanted['subcourtID'] = decodedData[0]
-                    dataWanted['setStake'] = float(decodedData[1]/1e18)
-                    dataWanted['newTotalStake'] = float(decodedData[2]/1e18)
-                    dataWanted['address'] = cls.topic_to_address(item['topics'][1])
-                    dataWanted['blockNumber'] = cls.web3.toInt(hexstr=item['blockNumber'])
-                    dataWanted['timestamp'] = datetime.utcfromtimestamp(cls.web3.toInt(hexstr=item['timeStamp']))
+                    if event == 'stake':
+                        dataWanted = self.parseStakesEvent(item)
+                    elif event == 'dispute':
+                        dataWanted = self.parseDisputeEvent(item)
+                        # dataWanted = item
                     allItems.append(dataWanted)
                 except:
                     logger.info("error processing the information. {}".format(item))
@@ -166,6 +113,74 @@ class StakesKleros(Etherscan, web3Node):
             fromblock = toblock + 1
             toblock = fromblock + step
         return allItems
+
+    @classmethod
+    def parseStakesEvent(cls, item):
+        decodedData = decode_abi(('uint96','uint128','int256'),
+                                             web3Node.web3.toBytes(hexstr=item['data']))
+        dataWanted = {}
+        dataWanted['subcourtID'] = decodedData[0]
+        dataWanted['setStake'] = float(decodedData[1]/1e18)
+        dataWanted['newTotalStake'] = float(decodedData[2]/1e18)
+        dataWanted['address'] = cls.topic_to_address(item['topics'][1])
+        dataWanted['blockNumber'] = cls.web3.toInt(hexstr=item['blockNumber'])
+        dataWanted['timestamp'] = datetime.utcfromtimestamp(cls.web3.toInt(hexstr=item['timeStamp']))
+        return dataWanted
+
+
+    def parseDisputeEvent(self, item):
+        dataWanted = {}
+        dataWanted['disputeID'] = web3Node.web3.toInt(hexstr=item['topics'][1])
+        dataWanted['creator'] = self.topic_to_address(item['topics'][2])
+        dataWanted['blockNumber'] = self.web3.toInt(hexstr=item['blockNumber'])
+        dataWanted['timestamp'] = datetime.utcfromtimestamp(self.web3.toInt(hexstr=item['timeStamp']))
+        dataWanted['txid'] = item['transactionHash']
+        
+        detailedData = self.dispute_data(dataWanted['disputeID'])
+        rounds = {'rounds':self.dispute_rounds(dataWanted['disputeID'])}
+        
+        return {**dataWanted, **detailedData, **rounds}
+
+
+    def dispute_data(self, dispute_id):
+        """
+        This function was made by Marc Zeller
+        https://github.com/marczeller/Kleros-Monitor-Bot
+        """
+        raw_dispute = self.contract.functions.disputes(dispute_id).call()
+        ruling = self.contract.functions.currentRuling(dispute_id).call()
+        current_status = self.contract.functions.disputeStatus(dispute_id).call()
+        return {
+            'subcourtID': int(raw_dispute[0]),
+            'arbitrated': raw_dispute[1],
+            'number_of_choices': int(raw_dispute[2]),
+            'period': disputePeriods[int(raw_dispute[3])],
+            'last_period_change': datetime.utcfromtimestamp(int(raw_dispute[4])),
+            'draws_in_round': int(raw_dispute[5]),
+            'commits_in_round': int(raw_dispute[6]),
+            'ruled': bool(raw_dispute[7]),
+            'ruling': ruling,
+            'current_status': current_status
+        }
+
+
+    def dispute_rounds(self, dispute_id):
+        """
+        This function was made by Marc Zeller
+        https://github.com/marczeller/Kleros-Monitor-Bot
+        """
+        rounds_raw_data = self.contract.functions.getDispute(dispute_id).call()
+        rounds = []
+        for i in range(0, len(rounds_raw_data[0])):
+            rounds.append({
+                'jury_size': rounds_raw_data[0][i],
+                'tokens_at_stake_per_juror': rounds_raw_data[1][i] / 10**18,
+                'total_fees': rounds_raw_data[2][i]/ 10**18,
+                'votes': rounds_raw_data[3][i],
+                'repartition': rounds_raw_data[4][i],
+                'penalties': rounds_raw_data[5][i] / 10**18
+            })
+        return rounds
 
 
     @staticmethod
@@ -183,10 +198,86 @@ class StakesKleros(Etherscan, web3Node):
             raise Exception("Error in the address")
 
 
-    @classmethod
-    def plotStatsforCourts(cls):
-        raise NotImplementedError('Plot is not implemented')
+    def getStakes(self):
+        logger.info("Start of the updating process in the Disputes DB")
+        filename = os.path.join(DATA_PATH,'setStakesLogs.csv')
+        try:
+            df = pd.read_csv(filename, index_col=0)
+            fromblock = df.blockNumber.max() + 1
+        except:
+            fromblock = None
+            df = pd.DataFrame()
+        allItems = self.getEventFromTo(fromblock=fromblock, 
+                                       event='stake')
+        if len(allItems) > 0:
+            newData = pd.DataFrame(allItems)
+            df = pd.concat([df, newData]).reset_index(drop=True)
+            df['subcourtLabel'] = df['subcourtID'].map(courtNames)
+            # if there is some duplicates
+            df.drop_duplicates(keep='last',
+                               inplace=True)
+            df.to_csv(filename)
+        logger.info('The Stakes Database was updated')
+        return df
 
+    
+    def getDisputes(self):
+        logger.info("Start of the updating process in the Disputes DB")
+        filename = os.path.join(DATA_PATH,'createDisputesLogs.csv')
+        try:
+            df = pd.read_csv(filename, index_col=0)
+            fromblock = df.blockNumber.max() + 1
+        except:
+            fromblock = None
+            df = pd.DataFrame()
+        allItems = self.getEventFromTo(fromblock=fromblock, 
+                                       event='dispute')
+        if len(allItems) > 0:
+            newData = pd.DataFrame(allItems).set_index('timestamp')
+            df = pd.concat([df, newData]).reset_index(drop=True)
+            df['subcourtLabel'] = df['subcourtID'].map(courtNames)
+            df.to_csv(filename)
+        logger.info('The Disputes Database was updated')
+        return df
+        
+    def updateDB(self):
+        self.getDisputes()
+        self.getStakes()
+        with open(os.path.join(DATA_PATH,'last_update.json'), 'w') as fp:
+            json.dump({'last_update':datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, fp)
+            
+    @staticmethod
+    def getLastUpdate():
+        return json.load(open(os.path.join(DATA_PATH,'last_update.json'),'r'))['last_update']
+
+
+# class StakesKleros(Etherscan, web3Node):
+class StakesKleros():
+    data = pd.DataFrame()
+    jurors = pd.DataFrame()
+    
+    def __init__(self):
+        self.loadCSV()
+    
+    def loadCSV(self):
+        filename=os.path.join(DATA_PATH,'setStakesLogs.csv')
+        df = pd.read_csv(filename, index_col=0)
+        df.timestamp = pd.to_datetime(df.timestamp)
+        df.set_index('timestamp', inplace=True)
+        df.index = pd.to_datetime(df.index)
+        # filter to get the last stake by court of each juror.
+        self.data = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
+        return self.data
+        
+    @staticmethod
+    def dataToCSV(data, filename='setStakesLogs.csv'):
+        df = data.copy()
+        filename = os.path.join(DATA_PATH,filename)
+        if isinstance(df.index, pd.DatetimeIndex):
+            df.index.set_names(['timestamp'], inplace=True)
+            df.reset_index(inplace=True)
+        df.to_csv(filename)
+        return df
 
     @classmethod
     def getAllJurors(cls):
@@ -200,11 +291,10 @@ class StakesKleros(Etherscan, web3Node):
         cls.allJurors['Total'] = cls.allJurors.sum(axis=1)
         return cls.allJurors
 
-
     @classmethod
     def getJurorsByCourt(cls, courtID):
         if cls.data.empty:
-            cls.loadCSV()
+            cls.loadCSV(cls)
         df = cls.data.copy()
         df_nonZero = df.loc[(df.newTotalStake>0) & (df.subcourtID == courtID)]
         df_nonZero = df_nonZero[~df_nonZero.duplicated(subset=['address', 'subcourtID'], keep='last')]
@@ -212,16 +302,14 @@ class StakesKleros(Etherscan, web3Node):
         jurors = jurors.sort_values(ascending=False)
         return jurors
 
-
     @classmethod
     def getstakedByAddress(cls, address):
         if cls.data.empty:
-            cls.loadCSV()
+            cls.loadCSV(cls)
         df_nonZero = cls.data.loc[(cls.data.address==address.lower())]
-        cls.jurors = df_nonZero.groupby('subcourtID')[['newTotalStake','subcourtLabel']].last()
-        cls.jurors = cls.jurors.sort_values(by='subcourtID',ascending=False)
-        return cls.jurors
-
+        jurors = df_nonZero.groupby('subcourtID')[['newTotalStake','subcourtLabel']].last()
+        jurors = jurors.sort_values(by='subcourtID',ascending=False)
+        return jurors
 
     @classmethod
     def getChanceByCourt(cls, courtID, pnkstaked):
@@ -236,16 +324,15 @@ class StakesKleros(Etherscan, web3Node):
             chance = 0
         return chance
 
-
     @classmethod
     def getChanceByAddress(cls, address):
         stakedInCourts = cls.getstakedByAddress(address).reset_index().values
         chances = []
         for row in stakedInCourts:
             totalstakedInCourt = cls.totalStakedByCourt(row[0])
-            chances.append({'courtID':row[0],
-                            'courtLabel':row[2],
-                            'chance':row[1]/totalstakedInCourt})
+            chances.append({'courtID': row[0],
+                            'courtLabel': row[2],
+                            'chance': row[1]/totalstakedInCourt})
         
             
             print("You have {:.3f}% of chances to been drawn in the court {}".format(
@@ -253,36 +340,44 @@ class StakesKleros(Etherscan, web3Node):
                 row[2]))
         return chances
 
-
     @classmethod
     def getstakedInCourts(cls):
         if cls.data.empty:
-            cls.loadCSV()
+            cls.loadCSV(cls)
         courts = cls.data.subcourtID.unique()
         totalInCourts = []
         for court in courts:
             jurors = cls.getJurorsByCourt(court)
-            totalInCourts.append({'courtID':court,
-                                  'totalstaked':cls.totalStakedByCourt(int(court)),
-                                  'courtLabel':courtNames[court],
-                                  'n_Jurors':jurors.count(),
-                                  'meanStack':jurors.mean(),
-                                  'maxStack':jurors.max()})
+            totalInCourts.append({'courtID': court,
+                                  'totalstaked': cls.totalStakedByCourt(int(court)),
+                                  'courtLabel': courtNames[court],
+                                  'n_Jurors': jurors.count(),
+                                  'meanStake': jurors.mean(),
+                                  'maxStake': jurors.max()})
         df = pd.DataFrame(totalInCourts)
         return df
 
-
+    @staticmethod
+    def readHistoric(filename):
+        filename = os.path.join(DATA_PATH, filename)
+        df = pd.read_csv(filename, index_col=0)
+        df.timestamp = pd.to_datetime(df.timestamp)
+        df.set_index('timestamp', inplace=True)
+        df.index = pd.to_datetime(df.index)
+        return df
+        
     @classmethod
-    def getChanceByAddressAndCourt(cls, address, court):
-        # TODO
-        raise NotImplementedError("not yet implemented")
-
-
+    def historicStakesInCourts(cls):
+        return cls.readHistoric('historicStakes.csv')   
+    
     @classmethod
-    def historicStakesInCourts(cls, freq = 'D'):
-        if cls.data.empty:
-            cls.loadCSV()
-        df = cls.data.copy()
+    def historicJurorsInCourts(cls):
+        return cls.readHistoric('historicJurors.csv')
+
+    def calculateHistoricStakesInCourts(self, freq = 'D'):
+        if self.data.empty:
+            self.loadCSV()
+        df = self.data.copy()
         # df.timestamp = pd.to_datetime(df.timestamp)
         # df.set_index('timestamp', inplace=True)
         start = min(df.index)
@@ -295,13 +390,15 @@ class StakesKleros(Etherscan, web3Node):
             dff = dff[~dff.duplicated(subset=['address', 'subcourtID'], keep='last')]
             dff = dff.groupby('subcourtID')['newTotalStake'].sum()
             data.loc[end] = dff
-        return data.fillna(0)
+        data = data.fillna(0)
+        self.dataToCSV(data, 
+                      os.path.join(DATA_PATH, 'historicStakes.csv'))
+        return data
 
-    @classmethod
-    def historicJurorsInCourts(cls, freq = 'D'):
-        if cls.data.empty:
-            cls.loadCSV()
-        df = cls.data.copy()
+    def calculateHistoricJurorsInCourts(self, freq = 'D'):
+        if self.data.empty:
+            self.loadCSV()
+        df = self.data.copy()
         start = min(df.index).replace(hour=0, minute=0, second=0)
         end = max(df.index).replace(hour=23, minute=59, second=59)
         rango = pd.date_range(start=start, end=end, freq=freq)
@@ -312,28 +409,28 @@ class StakesKleros(Etherscan, web3Node):
             dff = dff[dff.newTotalStake > 0]
             dff = dff.groupby('subcourtID')['address'].count()
             data.loc[end] = dff
-        return data.fillna(0)
-
+        data.fillna(0, inplace=True)
+        self.dataToCSV(data,
+                      os.path.join(DATA_PATH,'historicJurors.csv'))
+        return data
 
     @classmethod
     def stakedInCourts(cls):
         if cls.data.empty:
-            cls.loadCSV()
+            cls.loadCSV(cls)
         df = cls.data.copy()
         df = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
         df = df.groupby('subcourtID')['newTotalStake'].sum()
         return df
-
 
     @classmethod
     def stakedByCourt(cls, court):
         df = cls.stakedInCourts()
         return df[court]
 
-
     @classmethod
     def totalStakedByCourt(cls, court):
-        childs = KlerosLiquid().getAllChilds(court)
+        childs = KlerosLiquid().getAllCourtChilds(court)
         total = cls.stakedByCourt(court)
         for child in childs:
             total += cls.stakedByCourt(child)
@@ -342,11 +439,11 @@ class StakesKleros(Etherscan, web3Node):
     @classmethod
     def getJurors(cls, court):
         if cls.data.empty:
-            cls.loadCSV()
+            cls.loadCSV(cls)
         df = cls.data.copy()
-        # df.timestamp = pd.to_datetime(df.timestamp)
-        # df.set_index('timestamp', inplace=True)
         df = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
         return df
             
         
+class DisputesEvents():
+    data = pd.DataFrame()

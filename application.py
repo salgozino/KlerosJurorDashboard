@@ -10,12 +10,14 @@ from Kleros import *
 from flask import Flask
 import json
 
+
+kl = KlerosLiquid()
 sk = StakesKleros()
-sk.loadCSV()
+# sk.loadCSV()
 dfStaked = sk.historicStakesInCourts()
 dfJurors = sk.historicJurorsInCourts()
 dfCourts = sk.getstakedInCourts()
-cols_to_format = ['totalstaked', 'meanStack', 'maxStack']
+cols_to_format = ['totalstaked', 'meanStake', 'maxStake']
 for col in cols_to_format:
     dfCourts[col]=dfCourts[col].map("{:,.1f}".format)
 totalJurors = len(sk.getAllJurors())
@@ -49,7 +51,7 @@ app.layout = html.Div(className="container",
                                     
                                     Kleros es un sistema de disputas descentralizado, para más información visite [kleros.io](https://kleros.io)
                                     '''),
-                                  html.Div(id='updateTime', children=['''Última actualización: ''',sk.getLastUpdate()]),
+                                  html.Div(id='updateTime', children=['''Última actualización: ''',kl.getLastUpdate()]),
                                   html.Hr()
                               ]),
                            html.Div(className='two-cols',
@@ -155,7 +157,7 @@ def create_time_series(df, courts):
     for court in courts:
         data.append(go.Bar(
                 x=df.index,
-                y=df[court],
+                y=df[str(court)],
                 name=courtNames[court],
                 legendgroup = 'group'+str(court),
                 marker_color=colors[court]))
