@@ -232,7 +232,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         if len(allItems) > 0:
             newData = pd.DataFrame(allItems)
             df = pd.concat([df, newData]).reset_index(drop=True)
-            df['subcourtLabel'] = df['subcourtID'].map(courtNames)
+            df['subcourtLabel'] = df['subcourtID'].map(courtNames, na_action='ignore')
             # if there is some duplicates
             df.drop_duplicates(keep='last',
                                inplace=True)
@@ -255,7 +255,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         if len(allItems) > 0:
             newData = pd.DataFrame(allItems).set_index('timestamp')
             df = pd.concat([df, newData]).reset_index()
-            df['subcourtLabel'] = df['subcourtID'].map(courtNames)
+            df['subcourtLabel'] = df['subcourtID'].map(courtNames, na_action='ignore')
             df.to_csv(filename)
         logger.info('The Disputes Database was updated')
         return df
