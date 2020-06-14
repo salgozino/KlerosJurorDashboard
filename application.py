@@ -7,16 +7,21 @@ from plotly.subplots import make_subplots
 from plotly.express import colors as colormap
 from dash.dependencies import Input, Output
 from Kleros import *
+import pandas as pd
 from flask import Flask
 import json
 
-
-kl = KlerosLiquid()
+daybarwidth = 1000*60*60*24*0.8
 sk = StakesKleros()
-# sk.loadCSV()
-dfStaked = sk.historicStakesInCourts()
-dfJurors = sk.historicJurorsInCourts()
-dfCourts = sk.getstakedInCourts()
+kl = KlerosLiquid()
+dK = DisputesEvents()
+dfStaked = StakesKleros().historicStakesInCourts()
+dfJurors = StakesKleros().historicJurorsInCourts()
+dfCourts = StakesKleros().getstakedInCourts()
+totalStaked = sum(dfCourts.meanStake * dfCourts.n_Jurors)
+totalSupply = kl.tokenSupply
+percentageStaked = totalStaked/totalSupply
+
 cols_to_format = ['totalstaked', 'meanStake', 'maxStake']
 for col in cols_to_format:
     dfCourts[col]=dfCourts[col].map("{:,.1f}".format)
@@ -32,6 +37,57 @@ def get_marks(f, max_marks=15):
         # dates[f.index.get_loc(z)] = {}
         dates[f.index.get_loc(z)] = f"{z.year}-{z.month}-{z.day}"
     return dates
+
+def create_time_series(df, courts, colname=None):
+    data = []
+    showlegend = True
+    colors = colormap.sequential.Viridis
+    
+    for i, court in enumerate(courts):
+        if not colname:
+            colname = courtNames[court]
+        data.append(go.Bar(
+                x=df.index,
+                y=df[str(court)].astype(float),
+                name = colname,
+                legendgroup = 'group'+str(court),
+                marker_color=colors[i]))
+    return data
+
+def update_disputes_graph():
+    fig = make_subplots(rows=3, cols=1,
+                        shared_xaxes=True, shared_yaxes=False,
+                        vertical_spacing=0.001)
+    df = dK.historicDisputes()
+    fig.add_trace(go.Scatter(x=df.index,
+                                y=df,
+                                name='Disputes'),
+                     row=1,
+                     col=1)
+
+    df = dK.historicRounds()
+    fig.add_trace(go.Scatter(x=df.index,
+                            y=df['nRounds_cum'],
+                            name='Rounds'),
+                     row=2,
+                     col=1)
+    
+    df = dK.historicJurorsDrawn()
+    fig.add_trace(go.Scatter(x=df.index,
+                            y=df['n_jurors_cum'],
+                            name='Jurors Drawn'),
+                     row=3,
+                     col=1)
+            
+    fig['layout'].update(height= 500,
+                         margin= {'l': 10, 'b': 50, 't': 50, 'r': 10},
+                         title= 'Disputes and Rounds in KLEROS time evolution',
+                         showlegend=False)
+    fig.update_yaxes(title_text="n° Disputes", row=1, col=1)
+    fig.update_yaxes(title_text="N° Rounds", row=2, col=1)
+    fig.update_yaxes(title_text="N° Jurors Drawn", row=3, col=1)
+    fig.update_xaxes(title_text="Fecha", row=3, col=1)
+    return fig
 
 
 server = Flask(__name__)
@@ -92,6 +148,7 @@ app.layout = html.Div(className="container",
                                 sort_action="native"
                             ),
                             html.Div(id="totalJurors", children=[f'Hay un total de {totalJurors} jurados activos en las cortes.' ]),
+                            html.Div(id="Staked-TotalSupply", children=[f'Existen {totalSupply} PNK (Dato de etherscan) y {totalStaked} están stakeados en las cortes. Es decir un {percentageStaked:.2%}']),
                             html.H3(className='one-col',
                                 children='Evolución de los depósitos en las cortes'),
                             dcc.Dropdown(
@@ -112,6 +169,15 @@ app.layout = html.Div(className="container",
                                                 marks=get_marks(dfStaked),
                                             )
                                         ]),
+                            html.Hr(),
+                            dcc.Graph(id='disputes-graph', figure=update_disputes_graph()),
+                            dcc.Dropdown(
+                                       id='disputes-graph-dropdown',
+                                       options=[{'label': courtNames[corte], 'value': corte} for corte in courtNames],
+                                       value = [0, 2, 8],
+                                       multi=True,
+                                       ),
+                            dcc.Graph(id='disputes-court-graph'),
                             html.Footer(id='footer', children=[
                                             dcc.Markdown('''
                                                          Si te resultó útil esta web, podés donar PNK o cualquier otra moneda ERC20 a esta wallet: 0x1d48668E22dE59C2177532d624AA981567401D2a
@@ -150,19 +216,6 @@ def getChanceByWallet(wallet):
     return text
 
 
-def create_time_series(df, courts):
-    data = []
-    showlegend = True
-    colors = colormap.sequential.Viridis
-    for court in courts:
-        data.append(go.Bar(
-                x=df.index,
-                y=df[str(court)],
-                name=courtNames[court],
-                legendgroup = 'group'+str(court),
-                marker_color=colors[court]))
-    return data
-
 
 @app.callback(
      Output(component_id='cortes-graph', component_property='figure'),
@@ -187,11 +240,39 @@ def update_graphs(courts, dates_range):
                          barmode= 'stack',
                          legend= {'orientation':'h'})
     fig.update_yaxes(title_text="PNK Staked", row=1, col=1)
-    fig.update_yaxes(title_text="N° de Jurados", row=2, col=1)
+    fig.update_yaxes(title_text="N° de Jurados Activos", row=2, col=1)
     fig.update_xaxes(title_text="Fecha", row=2, col=1)
     return fig
 
-
+@app.callback(
+     Output(component_id='disputes-court-graph', component_property='figure'),
+     [Input(component_id='disputes-graph-dropdown', component_property='value')]
+)
+def update_dispute_courts_graphs(courts):
+    fig = go.Figure()
+    colors = colormap.diverging.Picnic
+    for i, court in enumerate(courts):
+        df = dK.historicDisputesbyCourt(court)
+        fig.add_trace(go.Scatter(x=df.index,
+                             y=df['count'],
+                             showlegend=False,
+                             legendgroup = 'group'+str(court),
+                             marker_color=colors[i]
+                             ))
+        fig.add_trace(go.Scatter(x=df.index,
+                                 y=df['count'],
+                                 mode='markers',
+                                 name=courtNames[court],
+                                 legendgroup = 'group'+str(court),
+                                 marker_color=colors[i]))
+    fig['layout'].update(barmode= 'stack',
+                         title= 'Disputes in the Selected Courts',
+                         height= 300,
+                         margin= {'l': 10, 'b': 50, 't': 30, 'r': 10},
+                         legend= {'orientation':'h'})
+    fig.update_yaxes(title_text="Disputes")
+    return fig
+    
 @app.callback(
     Output(component_id='hidden', component_property='children'),
     [Input(component_id='copy-to-clipboard', component_property='value')]

@@ -9,6 +9,7 @@ import json
 import os
 from datetime import datetime
 import logging
+from ast import literal_eval
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(THIS_FOLDER,'static/data/')
 
@@ -24,7 +25,8 @@ courtNames = {0:'General',
               5:'Marketing Services',
               6:'English Language',
               7:'Video Production',
-              8:'Ongoing'}
+              8:'Ongoing',
+              9:'Curate'}
 disputePeriods = {0: 'Evidence', 
                   1: 'Commit', 
                   2: 'Vote',
@@ -35,13 +37,32 @@ disputePeriods = {0: 'Evidence',
 class KlerosLiquid(Contract, web3Node, Etherscan):
     stakes_event_topic = "0x8f753321c98641397daaca5e8abf8881fff1fd7a7bc229924a012e2cb61763d5"
     create_dispute_event_topic = "0x141dfc18aa6a56fc816f44f0e9e2f1ebc92b15ab167770e17db5b084c10ed995"
-
+    
     def __init__(self):
         with open(os.path.join(THIS_FOLDER,'static/lib/ABI_KlerosLiquid.json'),'r') as f:
             contract_abi = json.loads(f.read())['result']
         address = "0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069"
         self.contract = web3Node.web3.eth.contract(abi=contract_abi,
                                                    address=address)
+        with open(os.path.join(THIS_FOLDER,'static/data/PNKSupply.json'),'r') as f:
+            self.tokenSupply = json.loads(f.read())['tokenSupply']
+        
+       
+    def getTokenSupply(self):
+        api_options = {
+                'module':'stats',
+                'action':'tokensupply',
+                'contractaddress':'0x93ed3fbe21207ec2e8f2d3c3de6e058cb73bc04d',
+                'apikey': self.api_key
+                }
+        url = self.api_url + urllib.parse.urlencode(api_options)
+        response = requests.get(url)
+        get_json = response.json()
+        if get_json['status']:
+            tokenSupply = float(get_json['result'])/10**18
+        else:
+            raise "Error trying to get the token supply" + get_json['message']
+        return tokenSupply
 
 
     def getCourtChildrens(self, courtID):
@@ -75,7 +96,6 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         toblock = fromblock + step
         if endblock < toblock:
             endblock = toblock + 1
-
         allItems = []
         while toblock < endblock:
             print(fromblock, '-',toblock)
@@ -234,7 +254,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
                                        event='dispute')
         if len(allItems) > 0:
             newData = pd.DataFrame(allItems).set_index('timestamp')
-            df = pd.concat([df, newData]).reset_index(drop=True)
+            df = pd.concat([df, newData]).reset_index()
             df['subcourtLabel'] = df['subcourtID'].map(courtNames)
             df.to_csv(filename)
         logger.info('The Disputes Database was updated')
@@ -245,6 +265,9 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         self.getStakes()
         with open(os.path.join(DATA_PATH,'last_update.json'), 'w') as fp:
             json.dump({'last_update':datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, fp)
+        with open(os.path.join(DATA_PATH,'PNKSupply.json'), 'w') as fp:
+            json.dump({'tokenSupply':self.getTokenSupply()}, fp)
+        
             
     @staticmethod
     def getLastUpdate():
@@ -264,7 +287,6 @@ class StakesKleros():
         df = pd.read_csv(filename, index_col=0)
         df.timestamp = pd.to_datetime(df.timestamp)
         df.set_index('timestamp', inplace=True)
-        df.index = pd.to_datetime(df.index)
         # filter to get the last stake by court of each juror.
         self.data = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
         return self.data
@@ -282,7 +304,7 @@ class StakesKleros():
     @classmethod
     def getAllJurors(cls):
         if cls.data.empty:
-            cls.loadCSV()
+            cls.loadCSV(cls)
         cls.allJurors = pd.DataFrame()
         for court in range(len(courtNames)):
             jurors = cls.getJurorsByCourt(court)
@@ -341,7 +363,7 @@ class StakesKleros():
         return chances
 
     @classmethod
-    def getstakedInCourts(cls):
+    def calculateStakedInCourts(cls):
         if cls.data.empty:
             cls.loadCSV(cls)
         courts = cls.data.subcourtID.unique()
@@ -355,6 +377,15 @@ class StakesKleros():
                                   'meanStake': jurors.mean(),
                                   'maxStake': jurors.max()})
         df = pd.DataFrame(totalInCourts)
+        cls.dataToCSV(df, 
+                      os.path.join(DATA_PATH, 'StakedInCourts.csv'))
+        return df
+    
+    @staticmethod
+    def getstakedInCourts():
+        filename = os.path.join(DATA_PATH, 'StakedInCourts.csv')
+        df = pd.read_csv(filename, index_col=0)
+        df.set_index('courtID', inplace=True)
         return df
 
     @staticmethod
@@ -446,4 +477,49 @@ class StakesKleros():
             
         
 class DisputesEvents():
-    data = pd.DataFrame()
+    
+    def __init__(self):
+        self.data = self.loadCSV()
+
+    def loadCSV(self):
+        filename=os.path.join(DATA_PATH,'createDisputesLogs.csv')
+        df = pd.read_csv(filename, converters={'rounds': literal_eval})
+        df.timestamp = pd.to_datetime(df.timestamp)
+        self.data = df.set_index('timestamp')
+        return self.data
+    
+    def historicDisputes(self):
+        df = self.data.copy()
+        df = df['disputeID']
+        return df
+    
+    def historicRounds(self):
+        df = self.data.copy()
+        df['nRounds'] = df.rounds.apply(len)
+        df['nRounds_cum'] = df.nRounds.cumsum()
+        return df
+    
+    def historicDisputesbyCourt(self, court):
+        df = self.data.copy()
+        df = df[df.subcourtID == court]
+        df.reset_index(inplace=True)
+        df.index.rename('count', inplace=True)
+        df.reset_index(inplace=True)
+        df = df[['timestamp', 'count', 'disputeID']]
+        df.set_index('timestamp', inplace=True)
+        return df
+    
+    def historicJurorsDrawn(self):
+        """
+        Return the amount of jurors drawn by dispute and dates
+        """
+        df = self.data.copy()
+        df['n_jurors'] = df.rounds.apply(lambda x: sum([r['jury_size'] for r in x]))
+        df['n_jurors_cum'] = df.n_jurors.cumsum()
+        return df[['n_jurors','n_jurors_cum', 'disputeID']]
+    
+    def historicJurorsDrawnByCourt(self, court):
+        df = self.data[self.data.subcourtID == court].copy()
+        df['n_jurors'] = df.rounds.apply(lambda x: sum([r['jury_size'] for r in x]))
+        df['n_jurors_cum'] = df.n_jurors.cumsum()
+        return df[['n_jurors','n_jurors_cum', 'disputeID']]
