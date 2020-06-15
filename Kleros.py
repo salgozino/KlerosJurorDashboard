@@ -25,7 +25,7 @@ courtNames = {0:'General',
               5:'Marketing Services',
               6:'English Language',
               7:'Video Production',
-              8:'Ongoing',
+              8:'Onboarding',
               9:'Curate'}
 disputePeriods = {0: 'Evidence', 
                   1: 'Commit', 

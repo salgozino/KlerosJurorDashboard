@@ -97,7 +97,7 @@ def update_disputes_graph(pathname):
 def getChanceInCourt(courtID, staked, pathname):
     chance = sk.getChanceByCourt(courtID, staked)
     if 'en' in pathname:
-        return 'With {:,} PNK staked in the Court "{}", your chances are 1 each {:.2f} cases, this means a {:.3%} chance.'.format(staked, courtNames[courtID], 1/chance, chance)
+        return 'With {:,} PNK staked in the Court "{}", your chances are 1 in {:.2f} cases. This means a {:.3%} chance to be drawn.'.format(staked, courtNames[courtID], 1/chance, chance)
     else:
         return 'Con {:,} PNK depositados en la corte "{}", tus chances son 1 de cada {:.2f} casos, es decir un {:.3%}'.format(staked, courtNames[courtID], 1/chance, chance)
         
