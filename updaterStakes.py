@@ -1,3 +1,6 @@
-from Kleros import StakesKleros
+from Kleros import KlerosLiquid, StakesKleros
 
-StakesKleros().updateData()
+KlerosLiquid().updateDB()
+StakesKleros().calculateStakedInCourts()
+StakesKleros().calculateHistoricStakesInCourts()
+StakesKleros().calculateHistoricJurorsInCourts()

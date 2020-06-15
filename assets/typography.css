@@ -8,16 +8,10 @@ h1, h2, h3{
   padding-top:3%;
 }
 
-.two-cols {
-  float: left;
-  width: 46%;
-  padding-left:3%;
-  padding-right:1%;
-}
 
-.one-col{
-  content: "";
-  display: table;
-  clear: both;
 
+footer{
+    font-family: sans-serif;
+    font-size: 14px;
+    color:black
 }

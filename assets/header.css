@@ -2,9 +2,43 @@
   margin-right: auto;
   margin-left:  auto;
   max-width: 960px;
-  width:80%;
+  width:90%;
+  background:white;
+}
 
-  padding-right: 10px;
-  padding-left:  10px;
-  background-color:red:
+.two-cols {
+  float: left;
+  width: 46%;
+  padding-left:3%;
+  padding-right:1%;
+}
+
+.one-col{
+  content: "";
+  display: table;
+  clear: both;
+
+}
+
+body {
+ overflow-x:hidden;
+}
+
+footer {
+    clear:both;
+    position: relative;
+    width: 100%;
+    background: grey;
+    padding-top:30px;
+    text-align:center;
+}
+footer:before{
+  content:"";
+  z-index:-1;
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:-100vw;
+  right:-100vw;
+  background:inherit;
 }
