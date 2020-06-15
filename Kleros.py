@@ -338,10 +338,10 @@ class StakesKleros():
         if int(pnkstaked) > 0:
             total = cls.totalStakedByCourt(courtID)
             chance = pnkstaked/total
-            print("You have {:.3%} of chances to been drawn".format(
-                chance, 
-                pnkstaked,
-                courtNames[courtID]))
+            # print("You have {:.3%} of chances to been drawn".format(
+            #     chance, 
+            #     pnkstaked,
+            #     courtNames[courtID]))
         else:
             chance = 0
         return chance
@@ -357,9 +357,9 @@ class StakesKleros():
                             'chance': row[1]/totalstakedInCourt})
         
             
-            print("You have {:.3f}% of chances to been drawn in the court {}".format(
-                row[1]/totalstakedInCourt*100, 
-                row[2]))
+            # print("You have {:.3f}% of chances to been drawn in the court {}".format(
+            #     row[1]/totalstakedInCourt*100, 
+            #     row[2]))
         return chances
 
     @classmethod
