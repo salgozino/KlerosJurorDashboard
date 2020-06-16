@@ -320,7 +320,7 @@ class StakesKleros():
         df = cls.data.copy()
         df_nonZero = df.loc[(df.newTotalStake>0) & (df.subcourtID == courtID)]
         df_nonZero = df_nonZero[~df_nonZero.duplicated(subset=['address', 'subcourtID'], keep='last')]
-        jurors = df_nonZero.groupby('address')['newTotalStake'].last()
+        jurors = df_nonZero.groupby('address')['setStake'].last()
         jurors = jurors.sort_values(ascending=False)
         return jurors
 
@@ -329,7 +329,7 @@ class StakesKleros():
         if cls.data.empty:
             cls.loadCSV(cls)
         df_nonZero = cls.data.loc[(cls.data.address==address.lower())]
-        jurors = df_nonZero.groupby('subcourtID')[['newTotalStake','subcourtLabel']].last()
+        jurors = df_nonZero.groupby('subcourtID')[['setStake','subcourtLabel']].last()
         jurors = jurors.sort_values(by='subcourtID',ascending=False)
         return jurors
 
@@ -419,7 +419,7 @@ class StakesKleros():
         for end in rango:
             dff = df[(df.index >= start) & (df.index <= end)].copy()
             dff = dff[~dff.duplicated(subset=['address', 'subcourtID'], keep='last')]
-            dff = dff.groupby('subcourtID')['newTotalStake'].sum()
+            dff = dff.groupby('subcourtID')['setStake'].sum()
             data.loc[end] = dff
         data = data.fillna(0)
         self.dataToCSV(data, 
@@ -451,7 +451,7 @@ class StakesKleros():
             cls.loadCSV(cls)
         df = cls.data.copy()
         df = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
-        df = df.groupby('subcourtID')['newTotalStake'].sum()
+        df = df.groupby('subcourtID')['setStake'].sum()
         return df
 
     @classmethod
