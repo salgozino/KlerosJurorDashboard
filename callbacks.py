@@ -99,9 +99,9 @@ def getChanceInCourt(courtID, staked, pathname):
     # TODO! Where I can find the min number of Jurors by Court?
     nJurors = 3
     if 'en' in pathname:
-        return 'With {:,} PNK staked in the Court "{}", your chances are 1 in {:.2f}. This means a {:.3%} chance to be drawn. I\'m assuming 3 jurors for the case.'.format(staked, courtNames[courtID], 1/(chance*nJurors), chance*nJurors)
+        return 'With {:,} PNK staked in the Court "{}", your chances are 1 in {:.2f}. This means a {:.3%} chance to be drawn. I\'m assuming 3 jurors for the case, can be more in some courts.'.format(staked, courtNames[courtID], 1/(chance*nJurors), chance*nJurors)
     else:
-        return 'Con {:,} PNK depositados en la corte "{}", tus chances de ser elegido en cada sorteo es de 1 cada {:.2f}, es decir un {:.3%}. Ten en cuenta que en cada caso se eligen como mínimo 3 jurados, dependiendo de la corte.'.format(staked, courtNames[courtID], 1/(chance*nJurors), nJurors*chance)
+        return 'Con {:,} PNK depositados en la corte "{}", tus chances de ser elegido es de 1 cada {:.2f}, es decir un {:.3%}. Estoy considerando 3 jurados para cada caso, pueden ser más en algunas cortes.'.format(staked, courtNames[courtID], 1/(chance*nJurors), nJurors*chance)
         
 
 @app.callback(
