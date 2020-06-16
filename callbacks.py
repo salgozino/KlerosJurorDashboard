@@ -26,7 +26,7 @@ totalJurors = len(allJurors[(allJurors.T != 0).any()])
 
 def create_time_series(df, courts, colname=None):
     data = []
-    colors = colormap.sequential.Viridis
+    colors = colormap.diverging.Picnic
     
     for i, court in enumerate(courts):
         if not colname:
@@ -157,11 +157,11 @@ def update_graphs(courts, dates_range, pathname):
     fig = make_subplots(rows=2, cols=1,
                         shared_xaxes=True, shared_yaxes=False,
                         vertical_spacing=0.001)
-    traces = create_time_series(dfStaked.iloc[dates_range[0]:dates_range[1]], courts)
+    traces = create_time_series(dfStaked.iloc[dates_range[0]:dates_range[1]+1], courts)
     for trace in traces:
         fig.append_trace(trace, row=1, col=1)
     
-    traces = create_time_series(dfJurors.iloc[dates_range[0]:dates_range[1]], courts)
+    traces = create_time_series(dfJurors.iloc[dates_range[0]:dates_range[1]+1], courts)
     for trace in traces:
         trace['showlegend']=False
         fig.append_trace(trace, row=2, col=1)

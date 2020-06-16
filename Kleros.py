@@ -287,8 +287,9 @@ class StakesKleros():
         df = pd.read_csv(filename, index_col=0)
         df.timestamp = pd.to_datetime(df.timestamp)
         df.set_index('timestamp', inplace=True)
+        self.data = df
         # filter to get the last stake by court of each juror.
-        self.data = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
+        # self.data = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
         return self.data
         
     @staticmethod
@@ -430,14 +431,14 @@ class StakesKleros():
         if self.data.empty:
             self.loadCSV()
         df = self.data.copy()
-        start = min(df.index).replace(hour=0, minute=0, second=0)
-        end = max(df.index).replace(hour=23, minute=59, second=59)
+        start = min(df.index)
+        end = max(df.index)
         rango = pd.date_range(start=start, end=end, freq=freq)
         data = pd.DataFrame(columns = [i for i in range(len(courtNames))])
         for end in rango:
             dff = df[(df.index >= start) & (df.index <= end)].copy()
             dff = dff[~dff.duplicated(subset=['address', 'subcourtID'], keep='last')]
-            dff = dff[dff.newTotalStake > 0]
+            dff = dff[dff.setStake > 0]
             dff = dff.groupby('subcourtID')['address'].count()
             data.loc[end] = dff
         data.fillna(0, inplace=True)
