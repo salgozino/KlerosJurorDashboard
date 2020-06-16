@@ -5,6 +5,8 @@ es_es = {'header':{'title':'Kleros Jurors Dashboard',
                                 
                                 El campo wallet revisa en nuestra base de datos los montos stakeados, nunca interactua con su wallet. Si quiere verificarlo, ingrese a la web sin metamask.
                                 
+                                El código fuente puede ser revisado en [github](https://github.com/salgozino/KlerosJurorDashboard)
+                                
                                 Kleros es un sistema de disputas descentralizado, para más información visite [kleros.io](https://kleros.io)
                                 ''',
                     'updateTime': 'Última Actualización: '},
@@ -33,7 +35,9 @@ en_en = {'header':{'title':'Kleros Jurors Dashboard',
                                 THIS IS STILL IN BETA. If you find a bug or values that don't make sense, please contact me on Telegram.
 
                                 The wallet field below reviews the staked amounts to calculate chances - no actual interaction occurs with the wallet. If you have concerns, please use a web browser without Metamask installed. 
-
+                                    
+                                The source code can be found in [github](https://github.com/salgozino/KlerosJurorDashboard)
+                                
                                 Kleros is a decentralized dispute platform. For more information, visit [kleros.io](https://kleros.io)
                                 ''',
                     'updateTime': 'Last Update: '},
