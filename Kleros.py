@@ -311,15 +311,14 @@ class StakesKleros():
             jurors.name = court
             cls.allJurors = pd.concat([cls.allJurors, jurors],axis=1)
         cls.allJurors['Total'] = cls.allJurors.sum(axis=1)
-        return cls.allJurors
+        return cls.allJurors.fillna(0)
 
     @classmethod
     def getJurorsByCourt(cls, courtID):
         if cls.data.empty:
             cls.loadCSV(cls)
         df = cls.data.copy()
-        df_nonZero = df.loc[(df.newTotalStake>0) & (df.subcourtID == courtID)]
-        df_nonZero = df_nonZero[~df_nonZero.duplicated(subset=['address', 'subcourtID'], keep='last')]
+        df_nonZero = df.loc[df.subcourtID == courtID]
         jurors = df_nonZero.groupby('address')['setStake'].last()
         jurors = jurors.sort_values(ascending=False)
         return jurors
@@ -373,10 +372,11 @@ class StakesKleros():
             totalInCourts.append({'courtID': court,
                                   'totalstaked': cls.totalStakedByCourt(int(court)),
                                   'courtLabel': courtNames[court],
-                                  'n_Jurors': jurors.count(),
-                                  'meanStake': jurors.mean(),
-                                  'maxStake': jurors.max()})
+                                  'n_Jurors': jurors.loc[jurors>0].count(),
+                                  'meanStake': jurors.loc[jurors>0].mean(),
+                                  'maxStake': jurors.loc[jurors>0].max()})
         df = pd.DataFrame(totalInCourts)
+        df = df.fillna(0)
         cls.dataToCSV(df, 
                       os.path.join(DATA_PATH, 'StakedInCourts.csv'))
         return df
