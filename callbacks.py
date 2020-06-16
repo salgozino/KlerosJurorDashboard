@@ -9,7 +9,7 @@ import pandas as pd
 from app import app
 
 
-daybarwidth = 1000*60*60*24*0.8
+# daybarwidth = 1000*60*60*24*0.8 # not used any more.
 sk = StakesKleros()
 kl = KlerosLiquid()
 dK = DisputesEvents()
@@ -19,7 +19,8 @@ dfCourts = StakesKleros().getstakedInCourts()
 totalStaked = sum(dfCourts.meanStake * dfCourts.n_Jurors)
 totalSupply = kl.tokenSupply
 percentageStaked = totalStaked/totalSupply
-totalJurors = len(sk.getAllJurors())
+allJurors = sk.getAllJurors()
+totalJurors = len(allJurors[(allJurors.T != 0).any()])
 
 
 
