@@ -98,11 +98,10 @@ def update_disputes_graph(pathname):
 def getChanceInCourt(courtID, staked, pathname):
     chance = sk.getChanceByCourt(courtID, staked)
     # TODO! Where I can find the min number of Jurors by Court?
-    nJurors = 3
     if 'en' in pathname:
-        return 'With {:,} PNK staked in the Court "{}", your chances are 1 in {:.2f}. This means a {:.3%} chance to be drawn. I\'m assuming 3 jurors for the case, can be more in some courts.'.format(staked, courtNames[courtID], 1/(chance*nJurors), chance*nJurors)
+        return 'With {:,} PNK staked in the Court "{}", your chances are 1 in {:.2f}. This means a {:.3%} chance to be drawn. I\'m assuming 3 jurors for the case, can be more in some courts.'.format(staked, courtNames[courtID], 1/chance, chance)
     else:
-        return 'Con {:,} PNK depositados en la corte "{}", tus chances de ser elegido es de 1 cada {:.2f}, es decir un {:.3%}. Estoy considerando 3 jurados para cada caso, pueden ser más en algunas cortes.'.format(staked, courtNames[courtID], 1/(chance*nJurors), nJurors*chance)
+        return 'Con {:,} PNK depositados en la corte "{}", tus chances de ser elegido es de 1 cada {:.2f}, es decir un {:.3%}. Estoy considerando 3 jurados para cada caso, pueden ser más en algunas cortes.'.format(staked, courtNames[courtID], 1/chance, chance)
         
 
 @app.callback(
@@ -112,7 +111,6 @@ def getChanceInCourt(courtID, staked, pathname):
 )
 def getChanceByWallet(wallet, pathname):
     # TODO! Where I can find the min number of Jurors by Court?
-    nJurors = 3
     if 'en' in pathname:
         text = 'Input a valid wallet address'
     else:
@@ -130,9 +128,9 @@ def getChanceByWallet(wallet, pathname):
             for chance in chances:
                 if chance['chance']!=0:
                     if 'es' in pathname:
-                        text += "En la corte {} tienes la chance de 1 cada {:.2f} casos, osea un {:.3%}. Estoy asumiendo 3 jurados por caso.\n".format(chance['courtLabel'], 1/(chance['chance']*nJurors), nJurors*chance['chance'])
+                        text += "En la corte {} tienes la chance de 1 cada {:.2f} casos, osea un {:.3%}. Estoy asumiendo 3 jurados por caso.\n".format(chance['courtLabel'], 1/chance['chance'], chance['chance'])
                     else:
-                        text += "In the Court {} you has 1 each {:.2f} cases chance, this means a {:.3%} to be drawn in a case. I\'m assuming 3 jurors by case.\n".format(chance['courtLabel'], 1/(chance['chance']*nJurors), nJurors*chance['chance'])
+                        text += "In the Court {} you has 1 each {:.2f} cases chance, this means a {:.3%} to be drawn in a case. I\'m assuming 3 jurors by case.\n".format(chance['courtLabel'], 1/chance['chance'], chance['chance'])
         else:
             if 'es' in pathname:
                 text = 'Por favor ingrese una dirección correcta'

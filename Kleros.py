@@ -337,7 +337,7 @@ class StakesKleros():
     def getChanceByCourt(cls, courtID, pnkstaked):
         if int(pnkstaked) > 0:
             total = cls.totalStakedByCourt(courtID)
-            chance = pnkstaked/total
+            chance = cls.chanceCalculator(pnkstaked, total)
             # print("You have {:.3%} of chances to been drawn".format(
             #     chance, 
             #     pnkstaked,
@@ -354,7 +354,8 @@ class StakesKleros():
             totalstakedInCourt = cls.totalStakedByCourt(row[0])
             chances.append({'courtID': row[0],
                             'courtLabel': row[2],
-                            'chance': row[1]/totalstakedInCourt})
+                            'chance': cls.chanceCalculator(row[1], 
+                                                           totalstakedInCourt)})
         
             
             # print("You have {:.3f}% of chances to been drawn in the court {}".format(
@@ -475,6 +476,17 @@ class StakesKleros():
         df = cls.data.copy()
         df = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
         return df
+    
+    @staticmethod
+    def chanceCalculator(amountStaked, totalStaked, nJurors = 3):
+        """
+        Calculate the chance of been drawn according to the formula of Dr. 
+        William George
+        """
+        p = amountStaked/totalStaked
+        noDrawn = (1 - p)**nJurors
+        chanceDrawnOnce = 1 - noDrawn
+        return chanceDrawnOnce
             
         
 class DisputesEvents():
