@@ -28,7 +28,7 @@
                 <th> {{ key }} </th>
                 <td> {{ courtNames[key] }} </td>
                 <td> {{ '{0:0.2%}'.format(value) }} </td>
-                <td> {{ '1 in %0.2f cases'|format(1/value|float) }} </td>
+                <td> {{ '1 in {0:0.2f} cases'.format(1/value|float) }} </td>
             </tr>
             {% endfor %}
         </table>
