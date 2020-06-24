@@ -1,28 +1,81 @@
 # -*- coding: utf-8 -*-
+from flask import Flask, render_template, request
 
-import dash_core_components as dcc
-import dash_html_components as html
-from dash.dependencies import Input, Output
+from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
+from bin.Kleros import KlerosLiquid, StakesKleros, DisputesEvents, courtNames
 
-from app import app, server
-from layouts import layout_es, layout_en
-import callbacks
-
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
+app = Flask(__name__)
 
 
-@app.callback(Output('page-content', 'children'),
-              [Input('url', 'pathname')])
-def display_page(pathname):
-    if pathname == '/es':
-        return layout_es
-    elif pathname == '/en':
-        return layout_en
-    else:
-        return layout_es
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+
+@app.route('/')
+def index():
+    dfStaked = StakesKleros().historicStakesInCourts()
+    dfJurors = StakesKleros().historicJurorsInCourts()
+    dfCourts = StakesKleros().getstakedInCourts()
+    allJurors = StakesKleros().getAllJurors()
+    disputesEvents = DisputesEvents().historicDisputes()
+    pnkStaked = sum(dfCourts.meanStake * dfCourts.n_Jurors)
+    tokenSupply =  KlerosLiquid().tokenSupply
+    activeJurors = len(allJurors[(allJurors.T != 0).any()])
+    
+    return render_template('main.html',
+                           last_update= KlerosLiquid().getLastUpdate(),
+                           disputes= disputesEvents.iloc[-1],
+                           activeJurors= activeJurors,
+                           retention= " Soon ",
+                           adoption= " Soon ",
+                           most_active_court = " Soon ",
+                           cases_closed = " Soon ",
+                           cases_rulling = " Soon ",
+                           tokenSupply= tokenSupply,
+                           pnkStaked= "{:.2f}".format(pnkStaked),
+                           pnkStakedPercent= "{:.2%}".format(pnkStaked/tokenSupply),
+                           courtTable= dfCourts.sort_values('courtID',ascending=True).reset_index().to_html(classes="table table-striped",
+                                                                                                            border=0,
+                                                                                                            float_format='{:.2f}'.format,
+                                                                                                            index=False),
+                           disputesgraph= disputesGraph(DisputesEvents()),
+                           stakedPNKgraph= stakesJurorsGraph(dfStaked, dfJurors),
+                           disputeCourtgraph=disputesbyCourtGraph(DisputesEvents())
+                           )
+
+
+@app.template_filter()
+def currencyFormat(value):
+    value = float(value)
+    return "${:,.2f}".format(value)
+
+@app.route('/support/')
+@app.route('/support-donate/')
+def support():
+    return render_template('support.html',
+                           last_update= KlerosLiquid().getLastUpdate(),)
+
+@app.route('/odds/', methods=['GET','POST'])
+def odds():
+    pnkStaked = 100000
+    if request.method == 'POST':
+        # Form being submitted; grab data from form.
+        try:
+            pnkStaked = int(request.form['pnkStaked'])
+        except:
+            pnkStaked = 100000        
+        
+
+        
+    return render_template('odds.html',
+                           last_update= KlerosLiquid().getLastUpdate(),
+                           courtNames= courtNames,
+                           pnkStaked= pnkStaked,
+                           courtChances= StakesKleros().getChancesInAllCourts(pnkStaked))
+
+@app.route('/kleros-map/')
+def map():
+    return render_template('kleros-map.html',
+                            last_update= KlerosLiquid().getLastUpdate(),
+                            )
+
+if __name__ == "__main__":
+    app.run(debug=True)
