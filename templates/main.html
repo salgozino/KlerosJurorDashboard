@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+
+{% block body%}
+<div class="container">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">General Information</h3>
+        </div>
+        <div class="panel-body">
+            <p>This is the Dashboard of the Kleros Court. Here you can find information about the cases, jurors, etc of the Kleros Court. Also, in the Juror Odds, you can estimate your chances of been drawn in the different courts.</p>
+            <p>The source code can be found in <a href="https://github.com/salgozino/KlerosJurorDashboard">github</a>. If you found issues or want some improvement, please open an issue there.</p>
+            <p>Kleros is a decentralized dispute platform. For more information, visit <a href="https://kleros.io">kleros.io</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- First Line Metrics -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Disputes</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ disputes }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of disputes created in Kleros Courts.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Active Jurors</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ activeJurors }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of active Jurors
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Retention</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ retention }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of address that keep staking after the first vote.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Adoption</h3>
+                </div>
+                <div class="panel-body text-center">
+                    <h4>{{ adoption }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of new address staked in the last month
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Line Metrics -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Most Active Court</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ most_active_court }}</h4>
+                </div>
+                <div class="panel-footer">
+                The court with more cases in the last 7 days.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Cases already Closed</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ cases_closed }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of cases already ruled
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Cases under rulling</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ cases_rulling }}</h4>
+                </div>
+                <div class="panel-footer">
+                Open cases.
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Third Line Metrics -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">PNK Total Supply</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ tokenSupply }} PNK</h4>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">PNK Staked in Courts</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ pnkStaked }} PNK</h4>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">% Staked of Total Supply</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ pnkStakedPercent }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <h3>Courts Statistics</h3>
+            <!-- Table -->
+            <div class="table-responsive">
+            {{ courtTable | safe }}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Graph of PNK Staked and Active Jurors -->
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2" id="Disputesgraph-id" style="min-height:150px; max-height:100%">
+            <script>
+                var graph = {{disputesgraph | safe}};
+                Plotly.plot('Disputesgraph-id',graph,{});
+            </script>
+        </div>
+    </div>
+</div>
+
+<!-- Graph of PNK Staked and Active Jurors -->
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2" id="StakedPNKgraph-id" style="min-height:150px; max-height:100%">
+            <script>
+                var graph = {{stakedPNKgraph | safe}};
+                Plotly.plot('StakedPNKgraph-id',graph,{});
+            </script>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="chart" id="disputeCourtsgraph-id" style="min-height:150px; max-height:100%">
+                <script>
+                    var fig = {{disputeCourtgraph | safe}};
+                    Plotly.plot('disputeCourtsgraph-id', fig.data, fig.layout);
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/plots.js') }}"></script>
+{% endblock %}

@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
-from etherscan import Etherscan
-from web3Node import web3Node, Contract
+import os
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+UPPER_FOLDER = os.path.split(THIS_FOLDER)[0]
+DATA_PATH = os.path.join(UPPER_FOLDER, "data")
+
+from bin.etherscan import Etherscan
+from bin.web3Node import web3Node, Contract
 import pandas as pd
 import requests
 import urllib
 from eth_abi import decode_abi
 import json
-import os
+
 from datetime import datetime
 import logging
 from ast import literal_eval
-THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(THIS_FOLDER,'static/data/')
+
 
 
 FORMAT = '%(asctime)-15s - %(message)s'
@@ -39,12 +43,12 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
     create_dispute_event_topic = "0x141dfc18aa6a56fc816f44f0e9e2f1ebc92b15ab167770e17db5b084c10ed995"
     
     def __init__(self):
-        with open(os.path.join(THIS_FOLDER,'static/lib/ABI_KlerosLiquid.json'),'r') as f:
+        with open(os.path.join(UPPER_FOLDER,'lib/ABI_KlerosLiquid.json'),'r') as f:
             contract_abi = json.loads(f.read())['result']
         address = "0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069"
         self.contract = web3Node.web3.eth.contract(abi=contract_abi,
                                                    address=address)
-        with open(os.path.join(THIS_FOLDER,'static/data/PNKSupply.json'),'r') as f:
+        with open(os.path.join(DATA_PATH,'PNKSupply.json'),'r') as f:
             self.tokenSupply = json.loads(f.read())['tokenSupply']
         
        
@@ -253,9 +257,9 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         allItems = self.getEventFromTo(fromblock=fromblock, 
                                        event='dispute')
         if len(allItems) > 0:
-            newData = pd.DataFrame(allItems).set_index('timestamp')
+            newData = pd.DataFrame(allItems)
+            newData['subcourtLabel'] = newData['subcourtID'].map(courtNames, na_action='ignore')
             df = pd.concat([df, newData]).reset_index()
-            df['subcourtLabel'] = df['subcourtID'].map(courtNames, na_action='ignore')
             df.to_csv(filename)
         logger.info('The Disputes Database was updated')
         return df
@@ -265,8 +269,10 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         self.getStakes()
         with open(os.path.join(DATA_PATH,'last_update.json'), 'w') as fp:
             json.dump({'last_update':datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, fp)
+        logger.info("Updated last_update field")
         with open(os.path.join(DATA_PATH,'PNKSupply.json'), 'w') as fp:
             json.dump({'tokenSupply':self.getTokenSupply()}, fp)
+        logger.info("Updated tokenSupply field")
         
             
     @staticmethod
@@ -336,15 +342,20 @@ class StakesKleros():
     @classmethod
     def getChanceByCourt(cls, courtID, pnkstaked):
         if int(pnkstaked) > 0:
-            total = cls.totalStakedByCourt(courtID)
+            total = cls.getstakedInCourts().loc[courtID].totalstaked
             chance = cls.chanceCalculator(pnkstaked, total)
-            # print("You have {:.3%} of chances to been drawn".format(
-            #     chance, 
-            #     pnkstaked,
-            #     courtNames[courtID]))
         else:
             chance = 0
         return chance
+
+
+    @classmethod
+    def getChancesInAllCourts(cls, pnkStaked):
+        chances = {}
+        for court in courtNames.keys():
+            chances[court] = cls.getChanceByCourt(int(court), float(pnkStaked))
+        return chances
+
 
     @classmethod
     def getChanceByAddress(cls, address):
@@ -483,10 +494,15 @@ class StakesKleros():
         Calculate the chance of been drawn according to the formula of Dr. 
         William George
         """
-        p = amountStaked/totalStaked
-        noDrawn = (1 - p)**nJurors
-        chanceDrawnOnce = 1 - noDrawn
-        return chanceDrawnOnce
+        totalStaked = float(totalStaked)
+        amountStaked = float(amountStaked)
+        if totalStaked == 0:
+            return 0    
+        else:
+            p = amountStaked/totalStaked
+            noDrawn = (1 - p)**nJurors
+            chanceDrawnOnce = 1 - noDrawn
+            return chanceDrawnOnce
             
         
 class DisputesEvents():
