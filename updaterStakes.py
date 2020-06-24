@@ -1,4 +1,4 @@
-from Kleros import KlerosLiquid, StakesKleros
+from bin.Kleros import KlerosLiquid, StakesKleros
 
 KlerosLiquid().updateDB()
 StakesKleros().calculateStakedInCourts()
