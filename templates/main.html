@@ -132,7 +132,7 @@
                     <h3 class="panel-title text-center">PNK Total Supply</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ tokenSupply }} PNK</h4>
+                <h4>{{ "%.0f"|format(tokenSupply) }} PNK</h4>
                 </div>
             </div>
         </div>
@@ -143,7 +143,7 @@
                     <h3 class="panel-title text-center">PNK Staked in Courts</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ pnkStaked }} PNK</h4>
+                <h4>{{ "%.0f"|format(pnkStaked) }} PNK</h4>
                 </div>
             </div>
         </div>
@@ -154,7 +154,7 @@
                     <h3 class="panel-title text-center">% Staked of Total Supply</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ pnkStakedPercent }}</h4>
+                <h4>{{ "%.2f"|format(pnkStakedPercent*100) }}%</h4>
                 </div>
             </div>
         </div>
