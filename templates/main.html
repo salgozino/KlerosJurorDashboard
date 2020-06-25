@@ -15,6 +15,7 @@
 </div>
 
 <!-- First Line Metrics -->
+<!-- Cases Metrics -->
 <div class="container">
     <div class="row">
         <div class="col-lg-3">
@@ -30,55 +31,7 @@
                 </div>
             </div>
         </div>
-        
         <div class="col-lg-3">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title text-center">Active Jurors</h3>
-                </div>
-                <div class="panel-body text-center">
-                <h4>{{ activeJurors }}</h4>
-                </div>
-                <div class="panel-footer">
-                Number of active Jurors
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title text-center">Retention</h3>
-                </div>
-                <div class="panel-body text-center">
-                <h4>{{ retention }}</h4>
-                </div>
-                <div class="panel-footer">
-                Number of address that keep staking after the first vote.
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title text-center">Adoption</h3>
-                </div>
-                <div class="panel-body text-center">
-                    <h4>{{ adoption }}</h4>
-                </div>
-                <div class="panel-footer">
-                Number of new address staked in the last month
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Second Line Metrics -->
-<div class="container">
-    <div class="row">
-        <div class="col-lg-4">
             <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Most Active Court</h3>
@@ -92,7 +45,7 @@
             </div>
         </div>
         
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="panel panel-success">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Cases already Closed</h3>
@@ -106,7 +59,7 @@
             </div>
         </div>
         
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="panel panel-warning">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Cases under rulling</h3>
@@ -116,6 +69,55 @@
                 </div>
                 <div class="panel-footer">
                 Open cases.
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Second Line Metrics -->
+<!-- Jurors metrics -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Active Jurors</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ activeJurors }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of active Jurors
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Retention</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ retention }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of address that keep staking after the first vote.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Adoption</h3>
+                </div>
+                <div class="panel-body text-center">
+                    <h4>{{ adoption }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of new address staked in the last month
                 </div>
             </div>
         </div>
