@@ -48,8 +48,11 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         address = "0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069"
         self.contract = web3Node.web3.eth.contract(abi=contract_abi,
                                                    address=address)
-        with open(os.path.join(DATA_PATH,'PNKSupply.json'),'r') as f:
-            self.tokenSupply = json.loads(f.read())['tokenSupply']
+        try:
+            with open(os.path.join(DATA_PATH,'PNKSupply.json'),'r') as f:
+                self.tokenSupply = json.loads(f.read())['tokenSupply']
+        except:
+            self.tokenSupply = 0
         
        
     def getTokenSupply(self):
@@ -512,7 +515,7 @@ class DisputesEvents():
 
     def loadCSV(self):
         filename=os.path.join(DATA_PATH,'createDisputesLogs.csv')
-        df = pd.read_csv(filename, converters={'rounds': literal_eval})
+        df = pd.read_csv(filename, converters={'rounds': literal_eval}, index_col=0)
         df.timestamp = pd.to_datetime(df.timestamp)
         self.data = df.set_index('timestamp')
         return self.data
@@ -527,6 +530,12 @@ class DisputesEvents():
         df['nRounds'] = df.rounds.apply(len)
         df['nRounds_cum'] = df.nRounds.cumsum()
         return df
+    
+    def mostLongCases(self):
+        df = self.data.copy()
+        df['nRounds'] = df.rounds.apply(len)
+        df = df[df['nRounds'] == max(df['nRounds'])]
+        return df[['disputeID', 'nRounds', 'subcourtID']].to_dict('records')
     
     def historicDisputesbyCourt(self, court):
         df = self.data.copy()
