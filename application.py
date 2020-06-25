@@ -42,11 +42,6 @@ def index():
                            )
 
 
-@app.template_filter()
-def currencyFormat(value):
-    value = float(value)
-    return "${:,.2f}".format(value)
-
 @app.route('/support/')
 @app.route('/support-donate/')
 def support():
@@ -76,6 +71,10 @@ def map():
     return render_template('kleros-map.html',
                             last_update= KlerosLiquid().getLastUpdate(),
                             )
+
+@app.errorhandler(404) 
+def not_found(e): 
+  return render_template("404.html") 
 
 if __name__ == "__main__":
     app.run(debug=True)
