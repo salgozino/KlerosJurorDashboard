@@ -18,25 +18,40 @@
   </head>
   
   <header>
-    <div class="nav  nav-tab">
-        <div class = "container">
-            <a class="navbar-left" href="/"><img alt="Logo" style="max-height:50px;" src="{{ url_for('static', filename='images/kleros-symbol-grey-flat.png') }}"></a>
-            <ul class="nav navbar-nav">
-                <li class="navbar-item"><a href="/">DashBoard</a></li>
-                <li class="navbar-item"><a href="/odds/">Jurror Odds!</a></li>
-                <li class="navbar-item"><a href="/kleros-map/">Kleros Community Map!</a></li>
-            </ul>
-            
-            <ul class="nav navbar-nav navbar-right">
-                <div style="margin-right: 10px; margin-left: 15px; margin-top: 5px; margin-bottom: 5px;"  class="container-fluid">
-                    <p class="nav navbar-text"> Last Update: {{ last_update }}</p>
-                    <a href="/support/" class="navbar-text"> <span class="glyphicon glyphicon-heart"></span> Support</a>
-                </div>
-            </ul>
-        </div>
+    <nav class="navbar navbar-default" role="navigation">
+    <!-- El logotipo y el icono que despliega el menú se agrupan
+       para mostrarlos mejor en los dispositivos móviles -->
+    <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse"
+            data-target=".navbar-ex1-collapse">
+      <span class="sr-only">Menu</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-left" href="/"><img alt="Logo" style="max-height:50px;" src="{{ url_for('static', filename='images/kleros-symbol-grey-flat.png') }}"></a>
     </div>
+
+    <!-- Agrupar los enlaces de navegación, los formularios y cualquier
+       otro elemento que se pueda ocultar al minimizar la barra -->
+    <div class="collapse navbar-collapse navbar-ex1-collapse">
+    <ul class="nav navbar-nav">
+        <li class="navbar-item"><a href="/">DashBoard</a></li>
+        <li class="navbar-item"><a href="/odds/">Jurror Odds!</a></li>
+        <li class="navbar-item"><a href="/kleros-map/">Kleros Community Map!</a></li>
+    </ul>
+
+    <ul class="nav navbar-nav navbar-right">
+        <div style="margin-right: 10px; margin-left: 15px; margin-top: 5px; margin-bottom: 5px;"  class="container-fluid">
+            <p class="nav navbar-text"> Last Update: {{ last_update }}</p>
+            <a href="/support/" class="navbar-text"> <span class="glyphicon glyphicon-heart"></span> Support</a>
+        </div>
+    </ul>
+    </div>
+    </nav>
     <div class="container-fluid">
         <div class="alert alert-info alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <p>This Dashboard is still under development in beta mode. If you find a bug or values that don't make sense,
             please contact me on <a href="https://www.t.me/kokialgo" class="alert-link">Telegram</a> or oppen an issue 
             on <a href="https://github.com/salgozino/KlerosJurorDashboard/issues" class="alert-link">github</a>
@@ -52,7 +67,6 @@
     
     
     <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
-
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
 
     <footer class="footer">
