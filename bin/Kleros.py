@@ -259,7 +259,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         if len(allItems) > 0:
             newData = pd.DataFrame(allItems)
             newData['subcourtLabel'] = newData['subcourtID'].map(courtNames, na_action='ignore')
-            df = pd.concat([df, newData]).reset_index()
+            df = pd.concat([df, newData]).reset_index(drop=True)
             df.to_csv(filename)
         logger.info('The Disputes Database was updated')
         return df

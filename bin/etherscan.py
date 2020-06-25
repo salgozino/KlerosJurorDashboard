@@ -8,7 +8,7 @@ import json
 
 import os
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
-
+UPPER_FOLDER = os.path.split(THIS_FOLDER)[0]
 
 class Etherscan():
 
@@ -17,7 +17,7 @@ class Etherscan():
         api_key = os.environ['ETHERSCAN_KEY']
     except:
         print("NO OS ETHERSCAN_KEY VARIABLE FOUND")
-        api_key = json.load(open(os.path.join(THIS_FOLDER,'static/lib/etherscan_api_key.json'),'r'))['api_key']
+        api_key = json.load(open(os.path.join(UPPER_FOLDER,'lib/etherscan_api_key.json'),'r'))['api_key']
 
 
     @classmethod
