@@ -522,10 +522,14 @@ class StakesKleros():
         """
         New jurors in the last month.
         """
-        df = self.getJurors()
-        df = df[~df.duplicated(subset=['address', 'subcourtID'], keep='first')]
+        if self.data.empty:
+            self.loadCSV()
+        df = self.data.copy()
+        # keep just the first stake by wallet.
+        df = df[~df.duplicated(subset=['address'], keep='first')]
         since = (datetime.today() - timedelta(days=since_days)).replace(hour=0, minute=0, second=0)
-        df = df[df.index >= since]
+        # filter by the last days, and if setStake > 0. The second condition is just in case of somewhoe staking 0.
+        df = df[(df.index >= since) & (df.setStake > 0)]
         return len(df)
             
         
@@ -624,6 +628,7 @@ class DisputesEvents():
                 for j in range(0, len(disputeround['jurors'])):
                     jurors.append(disputeround['jurors'][j]['address'])
         return list(set(jurors))
+
 
 
     def jurorsRetention(self):
