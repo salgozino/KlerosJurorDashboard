@@ -12,7 +12,7 @@ import urllib
 from eth_abi import decode_abi
 import json
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from ast import literal_eval
 
@@ -561,3 +561,29 @@ class DisputesEvents():
         df['n_jurors'] = df.rounds.apply(lambda x: sum([r['jury_size'] for r in x]))
         df['n_jurors_cum'] = df.n_jurors.cumsum()
         return df[['n_jurors','n_jurors_cum', 'disputeID']]
+    
+    def ruledCases(self):
+        df = self.data.copy()
+        not_ruled = df[df.ruled == False].ruled.count()
+        ruled = df[df.ruled == True].ruled.count()
+        return {'ruled':ruled,
+                'not_ruled':not_ruled}
+    
+    def mostActiveCourt(self):
+        df = self.data.copy()
+        oneweekbefore = datetime.today() - timedelta(days=7)
+        df = df[df.index >= oneweekbefore]
+        dfgrouped = df.groupby('subcourtLabel')['disputeID'].count()
+        dfgrouped = dfgrouped[dfgrouped==max(dfgrouped)].to_dict()
+        if len(dfgrouped) == 0:
+            return "There were no cases this week"
+        elif len(dfgrouped) == 2:
+            courts = list(dfgrouped.keys())
+            cases = list(dfgrouped.values())
+            return 'There is a tie between {} and {} at {} cases'.format(courts[0], courts[1], cases[0])
+        elif len(dfgrouped) > 2:
+            item = dfgrouped.popitem()
+            return "{} Court with {} cases. There are more courts with the same amount".format(item[0], item[1])
+        else:
+            item = dfgrouped.popitem()
+            return "{} Court with {} cases".format(item[0], item[1])

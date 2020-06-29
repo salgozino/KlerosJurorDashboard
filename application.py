@@ -11,31 +11,39 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    dfStaked = StakesKleros().historicStakesInCourts()
-    dfJurors = StakesKleros().historicJurorsInCourts()
-    dfCourts = StakesKleros().getstakedInCourts()
-    allJurors = StakesKleros().getAllJurors()
-    disputesEvents = DisputesEvents().historicDisputes()
+    DE = DisputesEvents()
+    SK = StakesKleros()
+    dfStaked = SK.historicStakesInCourts()
+    dfJurors = SK.historicJurorsInCourts()
+    dfCourts = SK.getstakedInCourts()
+    allJurors = SK.getAllJurors()
+    disputesEvents = DE.historicDisputes()
     pnkStaked = sum(dfCourts.meanStake * dfCourts.n_Jurors)
     tokenSupply =  KlerosLiquid().tokenSupply
     activeJurors = len(allJurors[(allJurors.T != 0).any()])
-    
+    ruledCases = DE.ruledCases()
+    mostActiveCourt = DE.mostActiveCourt()
+    newNames = {'totalstaked':'Total Staked',
+                'maxStake': 'Max. Stake',
+                'meanStake': 'Mean Stake',
+                'courtLabel': 'Court',
+                'n_Jurors': 'Jurors'}
     return render_template('main.html',
                            last_update= KlerosLiquid().getLastUpdate(),
                            disputes= disputesEvents.iloc[-1],
                            activeJurors= activeJurors,
                            retention= " Soon ",
                            adoption= " Soon ",
-                           most_active_court = " Soon ",
-                           cases_closed = " Soon ",
-                           cases_rulling = " Soon ",
+                           most_active_court = mostActiveCourt,
+                           cases_closed = ruledCases['ruled'],
+                           cases_rulling = ruledCases['not_ruled'],
                            tokenSupply= tokenSupply,
                            pnkStaked= pnkStaked,
                            pnkStakedPercent= pnkStaked/tokenSupply,
-                           courtTable= dfCourts.sort_values('courtID',ascending=True).reset_index().to_html(classes="table table-striped",
-                                                                                                            border=0,
-                                                                                                            float_format='{:.0f}'.format,
-                                                                                                            index=False),
+                           courtTable= dfCourts[['courtLabel', 'n_Jurors', 'totalstaked', 'meanStake', 'maxStake']].rename(columns=newNames).sort_values('courtID',ascending=True).to_html(classes="table table-striped",
+                                                                                                                        border=0,
+                                                                                                                        float_format='{:.0f}'.format,
+                                                                                                                        index=False),
                            disputesgraph= disputesGraph(DisputesEvents()),
                            stakedPNKgraph= stakesJurorsGraph(dfStaked, dfJurors),
                            disputeCourtgraph=disputesbyCourtGraph(DisputesEvents())
