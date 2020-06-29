@@ -199,13 +199,24 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         rounds_raw_data = self.contract.functions.getDispute(dispute_id).call()
         rounds = []
         for i in range(0, len(rounds_raw_data[0])):
+            juror_size = rounds_raw_data[0][i]
+            jurors_info = []
+            for j in range(0, juror_size):
+                # Get juror address and vote.
+                # getVote of dispute, round, vote_ID
+                juror_info = self.contract.functions.getVote(dispute_id, i, j).call()
+                jurors_info.append({'address':juror_info[0],
+                                  'commit':self.web3.toInt(juror_info[1]),
+                                  'choice':juror_info[2],
+                                  'voted':juror_info[3]})
             rounds.append({
-                'jury_size': rounds_raw_data[0][i],
+                'jury_size': juror_size,
                 'tokens_at_stake_per_juror': rounds_raw_data[1][i] / 10**18,
                 'total_fees': rounds_raw_data[2][i]/ 10**18,
                 'votes': rounds_raw_data[3][i],
                 'repartition': rounds_raw_data[4][i],
-                'penalties': rounds_raw_data[5][i] / 10**18
+                'penalties': rounds_raw_data[5][i] / 10**18,
+                'jurors':jurors_info,
             })
         return rounds
 
@@ -484,7 +495,7 @@ class StakesKleros():
         return total
     
     @classmethod
-    def getJurors(cls, court):
+    def getJurors(cls):
         if cls.data.empty:
             cls.loadCSV(cls)
         df = cls.data.copy()
@@ -506,6 +517,16 @@ class StakesKleros():
             noDrawn = (1 - p)**nJurors
             chanceDrawnOnce = 1 - noDrawn
             return chanceDrawnOnce
+    
+    def jurorAdoption(self, since_days=30):
+        """
+        New jurors in the last month.
+        """
+        df = self.getJurors()
+        df = df[~df.duplicated(subset=['address', 'subcourtID'], keep='first')]
+        since = (datetime.today() - timedelta(days=since_days)).replace(hour=0, minute=0, second=0)
+        df = df[df.index >= since]
+        return len(df)
             
         
 class DisputesEvents():
@@ -587,3 +608,35 @@ class DisputesEvents():
         else:
             item = dfgrouped.popitem()
             return "{} Court with {} cases".format(item[0], item[1])
+        
+    def drawnJurors(self):
+        """
+        Filter the jurors that has been drawn at least one time
+        
+        # TODO: this for loop nested isn't the best approach, but works.
+        """
+        df = self.data.copy()
+        jurors = []
+        for i in range(0, len(df)):
+            dispute = df.iloc[i]
+            for r in range(0, len(dispute['rounds'])):
+                disputeround = dispute['rounds'][r]
+                for j in range(0, len(disputeround['jurors'])):
+                    jurors.append(disputeround['jurors'][j]['address'])
+        return list(set(jurors))
+
+
+    def jurorsRetention(self):
+        """
+        Jurors that keep staking after first vote.
+        """
+        jurorsDrawn = self.drawnJurors()
+        jurorsDrawn = set(map(lambda x:x.upper(),jurorsDrawn))
+
+        allJurors = StakesKleros().getAllJurors()
+        allJurors = allJurors[allJurors['Total'] > 0].index.to_list()
+        allJurors = set(map(lambda x:x.upper(),allJurors))
+        jurorsRetained = allJurors.intersection(jurorsDrawn)
+        return len(jurorsRetained)
+
+            

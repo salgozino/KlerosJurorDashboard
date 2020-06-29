@@ -80,7 +80,7 @@
 <!-- Jurors metrics -->
 <div class="container">
     <div class="row">
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Active Jurors</h3>
@@ -94,13 +94,27 @@
             </div>
         </div>
         
-        <div class="col-lg-4">
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Drawn Jurors</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ jurorsdrawn }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of Jurors that were drawn at least one time.
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
             <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Retention</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ retention }}</h4>
+                <h4>{{ "%.2f"|format(retention*100) }}%</h4>
                 </div>
                 <div class="panel-footer">
                 Number of Jurors that keep staking after the first vote.
@@ -108,13 +122,13 @@
             </div>
         </div>
         
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Adoption</h3>
                 </div>
                 <div class="panel-body text-center">
-                    <h4>{{ adoption }}</h4>
+                    <h4>{{ "%.0f"|format(adoption) }}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of new Jurors staked in the last month

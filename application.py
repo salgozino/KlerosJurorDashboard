@@ -7,8 +7,6 @@ from bin.Kleros import KlerosLiquid, StakesKleros, DisputesEvents, courtNames
 app = Flask(__name__)
 
 
-
-
 @app.route('/')
 def index():
     DE = DisputesEvents()
@@ -21,6 +19,9 @@ def index():
     pnkStaked = sum(dfCourts.meanStake * dfCourts.n_Jurors)
     tokenSupply =  KlerosLiquid().tokenSupply
     activeJurors = len(allJurors[(allJurors.T != 0).any()])
+    drawnJurors = len(DE.drawnJurors())
+    retention = DE.jurorsRetention() / drawnJurors
+    adoption = SK.jurorAdoption()
     ruledCases = DE.ruledCases()
     mostActiveCourt = DE.mostActiveCourt()
     newNames = {'totalstaked':'Total Staked',
@@ -32,8 +33,9 @@ def index():
                            last_update= KlerosLiquid().getLastUpdate(),
                            disputes= disputesEvents.iloc[-1],
                            activeJurors= activeJurors,
-                           retention= " Soon ",
-                           adoption= " Soon ",
+                           jurorsdrawn = drawnJurors,
+                           retention= retention,
+                           adoption= adoption,
                            most_active_court = mostActiveCourt,
                            cases_closed = ruledCases['ruled'],
                            cases_rulling = ruledCases['not_ruled'],

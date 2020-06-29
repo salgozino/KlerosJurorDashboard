@@ -42,3 +42,15 @@ class Etherscan():
             if item['isError'] != '1' and item['to'] == address : filtered_items.append(item)
         return filtered_items
 
+    @classmethod
+    def getContractName(cls, address):  
+        api_options = {
+            'module': 'contract',
+            'action': 'getsourcecode',
+            'address': address,
+            'apikey': cls.api_key
+        }
+        url = cls.api_url + urllib.parse.urlencode(api_options)
+        response = requests.get(url).json()
+        
+        return response['result'][0]['ContractName']
