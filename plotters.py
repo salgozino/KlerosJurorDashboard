@@ -48,7 +48,7 @@ def disputesGraph(dK, pathname="en"):
     if 'en' == pathname:
         ylabels = ['Disputes', 'Jurors Drawn']
         xlabel = 'Dates'
-        title = 'Disputes and Rounds in KLEROS time evolution'
+        title = 'Time Evolution of Disputes and Rounds in KLEROS'
     else:
         ylabels = ['Disputas', 'Jurados Seleccionados']
         xlabel = 'Fechas'
@@ -84,9 +84,9 @@ def disputesGraph(dK, pathname="en"):
 
 def stakesJurorsGraph(dfStaked, dfJurors, courts=['0','2','8','9'], pathname='en'):
     if 'en' in pathname:
-        title = 'Stakes along time'
+        title = 'Time evolution of Stakes in courts'
     else:
-        title = 'Evolución de Depósitos'
+        title = 'Evolución de Depósitos por Corte'
     fig = make_subplots(rows=2, cols=1,
                         shared_xaxes=True, shared_yaxes=False,
                         vertical_spacing=0.05)
