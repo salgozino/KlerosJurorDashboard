@@ -73,7 +73,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
 
 
     def getCourtChildrens(self, courtID):
-        return self.contract.functions.getSubcourt(courtID).call()[0]
+        return self.contract.functions.getSubcourt(int(courtID)).call()[0]
 
 
     def getAllCourtChilds(self, courtID):
@@ -339,7 +339,9 @@ class StakesKleros():
         if cls.data.empty:
             cls.loadCSV(cls)
         df = cls.data.copy()
-        df_nonZero = df.loc[df.subcourtID == courtID]
+        courts = KlerosLiquid().getAllCourtChilds(courtID)
+        courts.append(courtID)
+        df_nonZero = df.loc[df.subcourtID.isin(courts)]
         jurors = df_nonZero.groupby('address')['setStake'].last()
         jurors = jurors.sort_values(ascending=False)
         return jurors
@@ -394,14 +396,18 @@ class StakesKleros():
             cls.loadCSV(cls)
         courts = cls.data.subcourtID.unique()
         totalInCourts = []
+        allJurors = cls.getAllJurors()
+        
         for court in courts:
-            jurors = cls.getJurorsByCourt(court)
+            courtChilds = KlerosLiquid().getAllCourtChilds(court)
+            courtChilds.append(court)
+            courtJurors = allJurors[(allJurors[courtChilds] > 0).any(axis=1)]
             totalInCourts.append({'courtID': court,
                                   'totalstaked': cls.totalStakedByCourt(int(court)),
                                   'courtLabel': courtNames[court],
-                                  'n_Jurors': jurors.loc[jurors>0].count(),
-                                  'meanStake': jurors.loc[jurors>0].mean(),
-                                  'maxStake': jurors.loc[jurors>0].max()})
+                                  'n_Jurors': len(courtJurors),
+                                  'meanStake': courtJurors.mean().mean(),
+                                  'maxStake': courtJurors.max().max()})
         df = pd.DataFrame(totalInCourts)
         df = df.fillna(0)
         cls.dataToCSV(df, 
