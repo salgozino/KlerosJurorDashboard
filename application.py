@@ -5,12 +5,13 @@ from flask import Flask, render_template, request
 from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
 from bin.Kleros import KlerosLiquid, StakesKleros, DisputesEvents, courtNames
 import json
+import os
 
 app = Flask(__name__)
-
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
 def addVisit(page):
     # TODO: This is so so so so basic.
-    filename = 'data/visitors.json' 
+    filename = os.path.join(THIS_FOLDER,'data/visitors.json')
     with open(filename, 'r') as f:
         visitors = json.load(f)
         try:
@@ -101,7 +102,7 @@ def maps():
 
 @app.route('/visitorMetrics/')
 def visitorMetrics():
-    filename = 'data/visitors.json' 
+    filename = os.path.join(THIS_FOLDER,'data/visitors.json')
     with open(filename, 'r') as f:
         visitors = json.load(f)
     return render_template('visitors.html',
