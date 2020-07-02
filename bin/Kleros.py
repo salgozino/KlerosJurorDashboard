@@ -73,7 +73,10 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
 
 
     def getCourtChildrens(self, courtID):
-        return self.contract.functions.getSubcourt(int(courtID)).call()[0]
+        #return self.contract.functions.getSubcourt(int(courtID)).call()[0]
+        with open(os.path.join(DATA_PATH,'courtsInformation.json'), 'r') as f:
+            courtsInfo = json.loads(f.read())
+        return courtsInfo[str(courtID)]['childs']
 
 
     def getAllCourtChilds(self, courtID):

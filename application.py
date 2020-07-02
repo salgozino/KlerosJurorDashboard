@@ -4,12 +4,27 @@ from flask import Flask, render_template, request
 
 from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
 from bin.Kleros import KlerosLiquid, StakesKleros, DisputesEvents, courtNames
+import json
+import os
 
 app = Flask(__name__)
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+def addVisit(page):
+    # TODO: This is so so so so basic.
+    filename = os.path.join(THIS_FOLDER,'data/visitors.json')
+    with open(filename, 'r') as f:
+        visitors = json.load(f)
+        try:
+            visitors[page] += 1
+        except:
+            visitors["unknown"] += 1
+    with open(filename, 'w') as f:
+        json.dump(visitors, f)
 
 
 @app.route('/')
 def index():
+    addVisit('home')
     DE = DisputesEvents()
     SK = StakesKleros()
     dfStaked = SK.historicStakesInCourts()
@@ -54,13 +69,14 @@ def index():
 
 
 @app.route('/support/')
-@app.route('/support-donate/')
 def support():
+    addVisit('support')
     return render_template('support.html',
                            last_update= KlerosLiquid().getLastUpdate(),)
 
 @app.route('/odds/', methods=['GET','POST'])
 def odds():
+    addVisit('odds')
     pnkStaked = 100000
     if request.method == 'POST':
         # Form being submitted; grab data from form.
@@ -78,14 +94,36 @@ def odds():
                            courtChances= StakesKleros().getChancesInAllCourts(pnkStaked))
 
 @app.route('/kleros-map/')
+def maps():
+    addVisit('map')
+    return render_template('kleros-map.html',
+                            last_update= KlerosLiquid().getLastUpdate(),
+                            )
+
+@app.route('/visitorMetrics/')
+def visitorMetrics():
+    filename = os.path.join(THIS_FOLDER,'data/visitors.json')
+    with open(filename, 'r') as f:
+        visitors = json.load(f)
+    return render_template('visitors.html',
+                           home=visitors["home"],
+                           odds=visitors["odds"],
+                           map=visitors["map"],
+                           support=visitors["support"],
+                           last_update= KlerosLiquid().getLastUpdate(),
+                           )
+
+@app.errorhandler(404) 
+def not_found(e): 
+    addVisit('unknown')
+    return render_template("404.html") 
+
+@app.route('/kleros-map/')
 def map():
     return render_template('kleros-map.html',
                             last_update= KlerosLiquid().getLastUpdate(),
                             )
 
-@app.errorhandler(404) 
-def not_found(e): 
-  return render_template("404.html") 
 
 if __name__ == "__main__":
     app.run(debug=True)
