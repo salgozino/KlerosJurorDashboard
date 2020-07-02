@@ -58,7 +58,7 @@ def index():
                            tokenSupply= tokenSupply,
                            pnkStaked= pnkStaked,
                            pnkStakedPercent= pnkStaked/tokenSupply,
-                           courtTable= dfCourts[['courtLabel', 'n_Jurors', 'totalstaked', 'meanStake', 'maxStake']].rename(columns=newNames).sort_values('courtID',ascending=True).to_html(classes="table table-striped",
+                           courtTable= dfCourts[['courtLabel', 'n_Jurors', 'totalstaked', 'meanStake', 'maxStake']].rename(columns=newNames).sort_values('courtID',ascending=True).to_html(classes="table table-striped text-right",
                                                                                                                         border=0,
                                                                                                                         float_format='{:.0f}'.format,
                                                                                                                         index=False),
