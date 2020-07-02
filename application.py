@@ -118,12 +118,6 @@ def not_found(e):
     addVisit('unknown')
     return render_template("404.html") 
 
-@app.route('/kleros-map/')
-def map():
-    return render_template('kleros-map.html',
-                            last_update= KlerosLiquid().getLastUpdate(),
-                            )
-
 
 if __name__ == "__main__":
     app.run(debug=True)
