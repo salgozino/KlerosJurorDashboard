@@ -404,7 +404,7 @@ class StakesKleros():
         for court in courts:
             courtChilds = KlerosLiquid().getAllCourtChilds(court)
             courtChilds.append(court)
-            courtJurors = allJurors[(allJurors[courtChilds] > 0).any(axis=1)]
+            courtJurors = allJurors[(allJurors[courtChilds] > 0).any(axis=1)][courtChilds]
             totalInCourts.append({'courtID': court,
                                   'totalstaked': cls.totalStakedByCourt(int(court)),
                                   'courtLabel': courtNames[court],
