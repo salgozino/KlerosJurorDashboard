@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
-from etherscan import Etherscan
-from web3Node import web3Node, Contract
+import os
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+UPPER_FOLDER = os.path.split(THIS_FOLDER)[0]
+DATA_PATH = os.path.join(UPPER_FOLDER, "data")
+
+from bin.etherscan import Etherscan
+from bin.web3Node import web3Node, Contract
 import pandas as pd
 import requests
 import urllib
 from eth_abi import decode_abi
 import json
-import os
-from datetime import datetime
+
+from datetime import datetime, timedelta
 import logging
 from ast import literal_eval
-THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(THIS_FOLDER,'static/data/')
+
 
 
 FORMAT = '%(asctime)-15s - %(message)s'
@@ -39,13 +43,16 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
     create_dispute_event_topic = "0x141dfc18aa6a56fc816f44f0e9e2f1ebc92b15ab167770e17db5b084c10ed995"
     
     def __init__(self):
-        with open(os.path.join(THIS_FOLDER,'static/lib/ABI_KlerosLiquid.json'),'r') as f:
+        with open(os.path.join(UPPER_FOLDER,'lib/ABI_KlerosLiquid.json'),'r') as f:
             contract_abi = json.loads(f.read())['result']
         address = "0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069"
         self.contract = web3Node.web3.eth.contract(abi=contract_abi,
                                                    address=address)
-        with open(os.path.join(THIS_FOLDER,'static/data/PNKSupply.json'),'r') as f:
-            self.tokenSupply = json.loads(f.read())['tokenSupply']
+        try:
+            with open(os.path.join(DATA_PATH,'PNKSupply.json'),'r') as f:
+                self.tokenSupply = json.loads(f.read())['tokenSupply']
+        except:
+            self.tokenSupply = 0
         
        
     def getTokenSupply(self):
@@ -66,7 +73,10 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
 
 
     def getCourtChildrens(self, courtID):
-        return self.contract.functions.getSubcourt(courtID).call()[0]
+        #return self.contract.functions.getSubcourt(int(courtID)).call()[0]
+        with open(os.path.join(DATA_PATH,'courtsInformation.json'), 'r') as f:
+            courtsInfo = json.loads(f.read())
+        return courtsInfo[str(courtID)]['childs']
 
 
     def getAllCourtChilds(self, courtID):
@@ -192,13 +202,24 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         rounds_raw_data = self.contract.functions.getDispute(dispute_id).call()
         rounds = []
         for i in range(0, len(rounds_raw_data[0])):
+            juror_size = rounds_raw_data[0][i]
+            jurors_info = []
+            for j in range(0, juror_size):
+                # Get juror address and vote.
+                # getVote of dispute, round, vote_ID
+                juror_info = self.contract.functions.getVote(dispute_id, i, j).call()
+                jurors_info.append({'address':juror_info[0],
+                                  'commit':self.web3.toInt(juror_info[1]),
+                                  'choice':juror_info[2],
+                                  'voted':juror_info[3]})
             rounds.append({
-                'jury_size': rounds_raw_data[0][i],
+                'jury_size': juror_size,
                 'tokens_at_stake_per_juror': rounds_raw_data[1][i] / 10**18,
                 'total_fees': rounds_raw_data[2][i]/ 10**18,
                 'votes': rounds_raw_data[3][i],
                 'repartition': rounds_raw_data[4][i],
-                'penalties': rounds_raw_data[5][i] / 10**18
+                'penalties': rounds_raw_data[5][i] / 10**18,
+                'jurors':jurors_info,
             })
         return rounds
 
@@ -253,9 +274,9 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         allItems = self.getEventFromTo(fromblock=fromblock, 
                                        event='dispute')
         if len(allItems) > 0:
-            newData = pd.DataFrame(allItems).set_index('timestamp')
-            df = pd.concat([df, newData]).reset_index()
-            df['subcourtLabel'] = df['subcourtID'].map(courtNames, na_action='ignore')
+            newData = pd.DataFrame(allItems)
+            newData['subcourtLabel'] = newData['subcourtID'].map(courtNames, na_action='ignore')
+            df = pd.concat([df, newData]).reset_index(drop=True)
             df.to_csv(filename)
         logger.info('The Disputes Database was updated')
         return df
@@ -265,8 +286,10 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         self.getStakes()
         with open(os.path.join(DATA_PATH,'last_update.json'), 'w') as fp:
             json.dump({'last_update':datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, fp)
+        logger.info("Updated last_update field")
         with open(os.path.join(DATA_PATH,'PNKSupply.json'), 'w') as fp:
             json.dump({'tokenSupply':self.getTokenSupply()}, fp)
+        logger.info("Updated tokenSupply field")
         
             
     @staticmethod
@@ -319,7 +342,9 @@ class StakesKleros():
         if cls.data.empty:
             cls.loadCSV(cls)
         df = cls.data.copy()
-        df_nonZero = df.loc[df.subcourtID == courtID]
+        courts = KlerosLiquid().getAllCourtChilds(courtID)
+        courts.append(courtID)
+        df_nonZero = df.loc[df.subcourtID.isin(courts)]
         jurors = df_nonZero.groupby('address')['setStake'].last()
         jurors = jurors.sort_values(ascending=False)
         return jurors
@@ -336,15 +361,20 @@ class StakesKleros():
     @classmethod
     def getChanceByCourt(cls, courtID, pnkstaked):
         if int(pnkstaked) > 0:
-            total = cls.totalStakedByCourt(courtID)
+            total = cls.getstakedInCourts().loc[courtID].totalstaked
             chance = cls.chanceCalculator(pnkstaked, total)
-            # print("You have {:.3%} of chances to been drawn".format(
-            #     chance, 
-            #     pnkstaked,
-            #     courtNames[courtID]))
         else:
             chance = 0
         return chance
+
+
+    @classmethod
+    def getChancesInAllCourts(cls, pnkStaked):
+        chances = {}
+        for court in courtNames.keys():
+            chances[court] = cls.getChanceByCourt(int(court), float(pnkStaked))
+        return chances
+
 
     @classmethod
     def getChanceByAddress(cls, address):
@@ -369,14 +399,18 @@ class StakesKleros():
             cls.loadCSV(cls)
         courts = cls.data.subcourtID.unique()
         totalInCourts = []
+        allJurors = cls.getAllJurors()
+        
         for court in courts:
-            jurors = cls.getJurorsByCourt(court)
+            courtChilds = KlerosLiquid().getAllCourtChilds(court)
+            courtChilds.append(court)
+            courtJurors = allJurors[(allJurors[courtChilds] > 0).any(axis=1)][courtChilds]
             totalInCourts.append({'courtID': court,
                                   'totalstaked': cls.totalStakedByCourt(int(court)),
                                   'courtLabel': courtNames[court],
-                                  'n_Jurors': jurors.loc[jurors>0].count(),
-                                  'meanStake': jurors.loc[jurors>0].mean(),
-                                  'maxStake': jurors.loc[jurors>0].max()})
+                                  'n_Jurors': len(courtJurors),
+                                  'meanStake': courtJurors.mean().mean(),
+                                  'maxStake': courtJurors.max().max()})
         df = pd.DataFrame(totalInCourts)
         df = df.fillna(0)
         cls.dataToCSV(df, 
@@ -470,7 +504,7 @@ class StakesKleros():
         return total
     
     @classmethod
-    def getJurors(cls, court):
+    def getJurors(cls):
         if cls.data.empty:
             cls.loadCSV(cls)
         df = cls.data.copy()
@@ -483,10 +517,29 @@ class StakesKleros():
         Calculate the chance of been drawn according to the formula of Dr. 
         William George
         """
-        p = amountStaked/totalStaked
-        noDrawn = (1 - p)**nJurors
-        chanceDrawnOnce = 1 - noDrawn
-        return chanceDrawnOnce
+        totalStaked = float(totalStaked)
+        amountStaked = float(amountStaked)
+        if totalStaked == 0:
+            return 0    
+        else:
+            p = amountStaked/totalStaked
+            noDrawn = (1 - p)**nJurors
+            chanceDrawnOnce = 1 - noDrawn
+            return chanceDrawnOnce
+    
+    def jurorAdoption(self, since_days=30):
+        """
+        New jurors in the last month.
+        """
+        if self.data.empty:
+            self.loadCSV()
+        df = self.data.copy()
+        # keep just the first stake by wallet.
+        df = df[~df.duplicated(subset=['address'], keep='first')]
+        since = (datetime.today() - timedelta(days=since_days)).replace(hour=0, minute=0, second=0)
+        # filter by the last days, and if setStake > 0. The second condition is just in case of somewhoe staking 0.
+        df = df[(df.index >= since) & (df.setStake > 0)]
+        return len(df)
             
         
 class DisputesEvents():
@@ -496,7 +549,7 @@ class DisputesEvents():
 
     def loadCSV(self):
         filename=os.path.join(DATA_PATH,'createDisputesLogs.csv')
-        df = pd.read_csv(filename, converters={'rounds': literal_eval})
+        df = pd.read_csv(filename, converters={'rounds': literal_eval}, index_col=0)
         df.timestamp = pd.to_datetime(df.timestamp)
         self.data = df.set_index('timestamp')
         return self.data
@@ -511,6 +564,12 @@ class DisputesEvents():
         df['nRounds'] = df.rounds.apply(len)
         df['nRounds_cum'] = df.nRounds.cumsum()
         return df
+    
+    def mostLongCases(self):
+        df = self.data.copy()
+        df['nRounds'] = df.rounds.apply(len)
+        df = df[df['nRounds'] == max(df['nRounds'])]
+        return df[['disputeID', 'nRounds', 'subcourtID']].to_dict('records')
     
     def historicDisputesbyCourt(self, court):
         df = self.data.copy()
@@ -536,3 +595,62 @@ class DisputesEvents():
         df['n_jurors'] = df.rounds.apply(lambda x: sum([r['jury_size'] for r in x]))
         df['n_jurors_cum'] = df.n_jurors.cumsum()
         return df[['n_jurors','n_jurors_cum', 'disputeID']]
+    
+    def ruledCases(self):
+        df = self.data.copy()
+        not_ruled = df[df.ruled == False].ruled.count()
+        ruled = df[df.ruled == True].ruled.count()
+        return {'ruled':ruled,
+                'not_ruled':not_ruled}
+    
+    def mostActiveCourt(self):
+        df = self.data.copy()
+        oneweekbefore = datetime.today() - timedelta(days=7)
+        df = df[df.index >= oneweekbefore]
+        dfgrouped = df.groupby('subcourtLabel')['disputeID'].count()
+        dfgrouped = dfgrouped[dfgrouped==max(dfgrouped)].to_dict()
+        if len(dfgrouped) == 0:
+            return "There were no cases this week"
+        elif len(dfgrouped) == 2:
+            courts = list(dfgrouped.keys())
+            cases = list(dfgrouped.values())
+            return 'There is a tie between {} and {} at {} cases'.format(courts[0], courts[1], cases[0])
+        elif len(dfgrouped) > 2:
+            item = dfgrouped.popitem()
+            return "{} Court with {} cases. There are more courts with the same amount".format(item[0], item[1])
+        else:
+            item = dfgrouped.popitem()
+            return "{} Court with {} cases".format(item[0], item[1])
+        
+    def drawnJurors(self):
+        """
+        Filter the jurors that has been drawn at least one time
+        
+        # TODO: this for loop nested isn't the best approach, but works.
+        """
+        df = self.data.copy()
+        jurors = []
+        for i in range(0, len(df)):
+            dispute = df.iloc[i]
+            for r in range(0, len(dispute['rounds'])):
+                disputeround = dispute['rounds'][r]
+                for j in range(0, len(disputeround['jurors'])):
+                    jurors.append(disputeround['jurors'][j]['address'])
+        return list(set(jurors))
+
+
+
+    def jurorsRetention(self):
+        """
+        Jurors that keep staking after first vote.
+        """
+        jurorsDrawn = self.drawnJurors()
+        jurorsDrawn = set(map(lambda x:x.upper(),jurorsDrawn))
+
+        allJurors = StakesKleros().getAllJurors()
+        allJurors = allJurors[allJurors['Total'] > 0].index.to_list()
+        allJurors = set(map(lambda x:x.upper(),allJurors))
+        jurorsRetained = allJurors.intersection(jurorsDrawn)
+        return len(jurorsRetained)
+
+            

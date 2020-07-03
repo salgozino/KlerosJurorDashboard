@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block body%}
+
+<!-- First Line Metrics -->
+<!-- Cases Metrics -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Home</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ home }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of page views in the Home Page.
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Odds</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ odds }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of page views in the Odds Page.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Map</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ map }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of page views in the Map Page.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Support</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ support }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of page views in the Support Page.
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+{% endblock %}

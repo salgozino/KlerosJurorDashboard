@@ -8,7 +8,7 @@ import json
 
 import os
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
-
+UPPER_FOLDER = os.path.split(THIS_FOLDER)[0]
 
 class Etherscan():
 
@@ -17,7 +17,7 @@ class Etherscan():
         api_key = os.environ['ETHERSCAN_KEY']
     except:
         print("NO OS ETHERSCAN_KEY VARIABLE FOUND")
-        api_key = json.load(open(os.path.join(THIS_FOLDER,'static/lib/etherscan_api_key.json'),'r'))['api_key']
+        api_key = json.load(open(os.path.join(UPPER_FOLDER,'lib/etherscan_api_key.json'),'r'))['api_key']
 
 
     @classmethod
@@ -42,3 +42,15 @@ class Etherscan():
             if item['isError'] != '1' and item['to'] == address : filtered_items.append(item)
         return filtered_items
 
+    @classmethod
+    def getContractName(cls, address):  
+        api_options = {
+            'module': 'contract',
+            'action': 'getsourcecode',
+            'address': address,
+            'apikey': cls.api_key
+        }
+        url = cls.api_url + urllib.parse.urlencode(api_options)
+        response = requests.get(url).json()
+        
+        return response['result'][0]['ContractName']
