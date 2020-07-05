@@ -21,7 +21,7 @@ from ast import literal_eval
 FORMAT = '%(asctime)-15s - %(message)s'
 logging.basicConfig(format=FORMAT, filename='log.log', level='INFO')
 logger = logging.getLogger()
-courtNames = {0:'General', 
+courtNames = {0:'General',
               1:'Blockchain',
               2:'Blockchain>NonTechnical',
               3:'Blockchain>NonTechnical>TokenListing',
@@ -31,8 +31,8 @@ courtNames = {0:'General',
               7:'Video Production',
               8:'Onboarding',
               9:'Curation'}
-disputePeriods = {0: 'Evidence', 
-                  1: 'Commit', 
+disputePeriods = {0: 'Evidence',
+                  1: 'Commit',
                   2: 'Vote',
                   3: 'Appeal',
                   4: 'Execution'}
@@ -41,7 +41,7 @@ disputePeriods = {0: 'Evidence',
 class KlerosLiquid(Contract, web3Node, Etherscan):
     stakes_event_topic = "0x8f753321c98641397daaca5e8abf8881fff1fd7a7bc229924a012e2cb61763d5"
     create_dispute_event_topic = "0x141dfc18aa6a56fc816f44f0e9e2f1ebc92b15ab167770e17db5b084c10ed995"
-    
+
     def __init__(self):
         with open(os.path.join(UPPER_FOLDER,'lib/ABI_KlerosLiquid.json'),'r') as f:
             contract_abi = json.loads(f.read())['result']
@@ -53,8 +53,8 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
                 self.tokenSupply = json.loads(f.read())['tokenSupply']
         except:
             self.tokenSupply = 0
-        
-       
+
+
     def getTokenSupply(self):
         api_options = {
                 'module':'stats',
@@ -108,7 +108,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
             endblock = toblock + 1
         allItems = []
         while toblock < endblock:
-            print(fromblock, '-',toblock)
+            # print(fromblock, '-',toblock)
             api_options = {
                 'module':'logs',
                 'action':'getLogs',
@@ -118,11 +118,11 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
                 'topic0':topic,
                 'apikey': self.api_key
                 }
-    
+
             url = self.api_url + urllib.parse.urlencode(api_options)
             response = requests.get(url)
             get_json = response.json()
-            
+
             items = get_json['result']
             if len(items) == 1000:
                 print("Ups!, maybe there are missed items, slow down the iterations")
@@ -165,10 +165,10 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         dataWanted['blockNumber'] = self.web3.toInt(hexstr=item['blockNumber'])
         dataWanted['timestamp'] = datetime.utcfromtimestamp(self.web3.toInt(hexstr=item['timeStamp']))
         dataWanted['txid'] = item['transactionHash']
-        
+
         detailedData = self.dispute_data(dataWanted['disputeID'])
         rounds = {'rounds':self.dispute_rounds(dataWanted['disputeID'])}
-        
+
         return {**dataWanted, **detailedData, **rounds}
 
 
@@ -248,7 +248,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         except:
             fromblock = None
             df = pd.DataFrame()
-        allItems = self.getEventFromTo(fromblock=fromblock, 
+        allItems = self.getEventFromTo(fromblock=fromblock,
                                        event='stake')
         if len(allItems) > 0:
             newData = pd.DataFrame(allItems)
@@ -261,7 +261,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         logger.info('The Stakes Database was updated')
         return df
 
-    
+
     def getDisputes(self):
         logger.info("Start of the updating process in the Disputes DB")
         filename = os.path.join(DATA_PATH,'createDisputesLogs.csv')
@@ -271,7 +271,7 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         except:
             fromblock = None
             df = pd.DataFrame()
-        allItems = self.getEventFromTo(fromblock=fromblock, 
+        allItems = self.getEventFromTo(fromblock=fromblock,
                                        event='dispute')
         if len(allItems) > 0:
             newData = pd.DataFrame(allItems)
@@ -280,8 +280,9 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
             df.to_csv(filename)
         logger.info('The Disputes Database was updated')
         return df
-        
+
     def updateDB(self):
+        logger.info("Starting to update the DB")
         self.getDisputes()
         self.getStakes()
         with open(os.path.join(DATA_PATH,'last_update.json'), 'w') as fp:
@@ -290,8 +291,8 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         with open(os.path.join(DATA_PATH,'PNKSupply.json'), 'w') as fp:
             json.dump({'tokenSupply':self.getTokenSupply()}, fp)
         logger.info("Updated tokenSupply field")
-        
-            
+
+
     @staticmethod
     def getLastUpdate():
         return json.load(open(os.path.join(DATA_PATH,'last_update.json'),'r'))['last_update']
@@ -301,10 +302,10 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
 class StakesKleros():
     data = pd.DataFrame()
     jurors = pd.DataFrame()
-    
+
     def __init__(self):
         self.loadCSV()
-    
+
     def loadCSV(self):
         filename=os.path.join(DATA_PATH,'setStakesLogs.csv')
         df = pd.read_csv(filename, index_col=0)
@@ -314,7 +315,7 @@ class StakesKleros():
         # filter to get the last stake by court of each juror.
         # self.data = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
         return self.data
-        
+
     @staticmethod
     def dataToCSV(data, filename='setStakesLogs.csv'):
         df = data.copy()
@@ -384,12 +385,12 @@ class StakesKleros():
             totalstakedInCourt = cls.totalStakedByCourt(row[0])
             chances.append({'courtID': row[0],
                             'courtLabel': row[2],
-                            'chance': cls.chanceCalculator(row[1], 
+                            'chance': cls.chanceCalculator(row[1],
                                                            totalstakedInCourt)})
-        
-            
+
+
             # print("You have {:.3f}% of chances to been drawn in the court {}".format(
-            #     row[1]/totalstakedInCourt*100, 
+            #     row[1]/totalstakedInCourt*100,
             #     row[2]))
         return chances
 
@@ -400,7 +401,7 @@ class StakesKleros():
         courts = cls.data.subcourtID.unique()
         totalInCourts = []
         allJurors = cls.getAllJurors()
-        
+
         for court in courts:
             courtChilds = KlerosLiquid().getAllCourtChilds(court)
             courtChilds.append(court)
@@ -413,10 +414,10 @@ class StakesKleros():
                                   'maxStake': courtJurors.max().max()})
         df = pd.DataFrame(totalInCourts)
         df = df.fillna(0)
-        cls.dataToCSV(df, 
+        cls.dataToCSV(df,
                       os.path.join(DATA_PATH, 'StakedInCourts.csv'))
         return df
-    
+
     @staticmethod
     def getstakedInCourts():
         filename = os.path.join(DATA_PATH, 'StakedInCourts.csv')
@@ -432,11 +433,11 @@ class StakesKleros():
         df.set_index('timestamp', inplace=True)
         df.index = pd.to_datetime(df.index)
         return df
-        
+
     @classmethod
     def historicStakesInCourts(cls):
-        return cls.readHistoric('historicStakes.csv')   
-    
+        return cls.readHistoric('historicStakes.csv')
+
     @classmethod
     def historicJurorsInCourts(cls):
         return cls.readHistoric('historicJurors.csv')
@@ -458,7 +459,7 @@ class StakesKleros():
             dff = dff.groupby('subcourtID')['setStake'].sum()
             data.loc[end] = dff
         data = data.fillna(0)
-        self.dataToCSV(data, 
+        self.dataToCSV(data,
                       os.path.join(DATA_PATH, 'historicStakes.csv'))
         return data
 
@@ -502,7 +503,7 @@ class StakesKleros():
         for child in childs:
             total += cls.stakedByCourt(child)
         return total
-    
+
     @classmethod
     def getJurors(cls):
         if cls.data.empty:
@@ -510,23 +511,23 @@ class StakesKleros():
         df = cls.data.copy()
         df = df[~df.duplicated(subset=['address', 'subcourtID'], keep='last')]
         return df
-    
+
     @staticmethod
     def chanceCalculator(amountStaked, totalStaked, nJurors = 3):
         """
-        Calculate the chance of been drawn according to the formula of Dr. 
+        Calculate the chance of been drawn according to the formula of Dr.
         William George
         """
         totalStaked = float(totalStaked)
         amountStaked = float(amountStaked)
         if totalStaked == 0:
-            return 0    
+            return 0
         else:
             p = amountStaked/totalStaked
             noDrawn = (1 - p)**nJurors
             chanceDrawnOnce = 1 - noDrawn
             return chanceDrawnOnce
-    
+
     def jurorAdoption(self, since_days=30):
         """
         New jurors in the last month.
@@ -540,10 +541,10 @@ class StakesKleros():
         # filter by the last days, and if setStake > 0. The second condition is just in case of somewhoe staking 0.
         df = df[(df.index >= since) & (df.setStake > 0)]
         return len(df)
-            
-        
+
+
 class DisputesEvents():
-    
+
     def __init__(self):
         self.data = self.loadCSV()
 
@@ -553,24 +554,24 @@ class DisputesEvents():
         df.timestamp = pd.to_datetime(df.timestamp)
         self.data = df.set_index('timestamp')
         return self.data
-    
+
     def historicDisputes(self):
         df = self.data.copy()
         df = df['disputeID']
         return df
-    
+
     def historicRounds(self):
         df = self.data.copy()
         df['nRounds'] = df.rounds.apply(len)
         df['nRounds_cum'] = df.nRounds.cumsum()
         return df
-    
+
     def mostLongCases(self):
         df = self.data.copy()
         df['nRounds'] = df.rounds.apply(len)
         df = df[df['nRounds'] == max(df['nRounds'])]
         return df[['disputeID', 'nRounds', 'subcourtID']].to_dict('records')
-    
+
     def historicDisputesbyCourt(self, court):
         df = self.data.copy()
         df = df[df.subcourtID == court]
@@ -580,7 +581,7 @@ class DisputesEvents():
         df = df[['timestamp', 'count', 'disputeID']]
         df.set_index('timestamp', inplace=True)
         return df
-    
+
     def historicJurorsDrawn(self):
         """
         Return the amount of jurors drawn by dispute and dates
@@ -589,20 +590,20 @@ class DisputesEvents():
         df['n_jurors'] = df.rounds.apply(lambda x: sum([r['jury_size'] for r in x]))
         df['n_jurors_cum'] = df.n_jurors.cumsum()
         return df[['n_jurors','n_jurors_cum', 'disputeID']]
-    
+
     def historicJurorsDrawnByCourt(self, court):
         df = self.data[self.data.subcourtID == court].copy()
         df['n_jurors'] = df.rounds.apply(lambda x: sum([r['jury_size'] for r in x]))
         df['n_jurors_cum'] = df.n_jurors.cumsum()
         return df[['n_jurors','n_jurors_cum', 'disputeID']]
-    
+
     def ruledCases(self):
         df = self.data.copy()
         not_ruled = df[df.ruled == False].ruled.count()
         ruled = df[df.ruled == True].ruled.count()
         return {'ruled':ruled,
                 'not_ruled':not_ruled}
-    
+
     def mostActiveCourt(self):
         df = self.data.copy()
         oneweekbefore = datetime.today() - timedelta(days=7)
@@ -621,11 +622,11 @@ class DisputesEvents():
         else:
             item = dfgrouped.popitem()
             return "{} Court with {} cases".format(item[0], item[1])
-        
+
     def drawnJurors(self):
         """
         Filter the jurors that has been drawn at least one time
-        
+
         # TODO: this for loop nested isn't the best approach, but works.
         """
         df = self.data.copy()
@@ -653,4 +654,3 @@ class DisputesEvents():
         jurorsRetained = allJurors.intersection(jurorsDrawn)
         return len(jurorsRetained)
 
-            

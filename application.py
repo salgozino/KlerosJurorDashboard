@@ -60,7 +60,7 @@ def index():
                            pnkStakedPercent= pnkStaked/tokenSupply,
                            courtTable= dfCourts[['courtLabel', 'n_Jurors', 'totalstaked', 'meanStake', 'maxStake']].rename(columns=newNames).sort_values('courtID',ascending=True).to_html(classes="table table-striped text-right",
                                                                                                                         border=0,
-                                                                                                                        float_format='{:.0f}'.format,
+                                                                                                                        float_format='{:,.0f}'.format,
                                                                                                                         index=False),
                            disputesgraph= disputesGraph(DisputesEvents()),
                            stakedPNKgraph= stakesJurorsGraph(dfStaked, dfJurors),
@@ -83,10 +83,10 @@ def odds():
         try:
             pnkStaked = int(request.form['pnkStaked'])
         except:
-            pnkStaked = 100000        
-        
+            pnkStaked = 100000
 
-        
+
+
     return render_template('odds.html',
                            last_update= KlerosLiquid().getLastUpdate(),
                            courtNames= courtNames,
@@ -113,10 +113,10 @@ def visitorMetrics():
                            last_update= KlerosLiquid().getLastUpdate(),
                            )
 
-@app.errorhandler(404) 
-def not_found(e): 
+@app.errorhandler(404)
+def not_found(e):
     addVisit('unknown')
-    return render_template("404.html") 
+    return render_template("404.html")
 
 
 if __name__ == "__main__":
