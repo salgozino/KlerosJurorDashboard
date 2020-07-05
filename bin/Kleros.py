@@ -271,13 +271,24 @@ class KlerosLiquid(Contract, web3Node, Etherscan):
         except:
             fromblock = None
             df = pd.DataFrame()
+        
+        # update open disputes
+        openDisputes = df[df.ruled == False]
+        for i in range(0, len(openDisputes)):
+            disputeID = int(openDisputes.disputeID.iloc[i])
+            newData = KlerosLiquid().dispute_data(disputeID)
+            for key, value in newData.items():
+                df.loc[df.disputeID==disputeID, key] = value
+            
+        # search for new disputes or rounds
         allItems = self.getEventFromTo(fromblock=fromblock,
                                        event='dispute')
         if len(allItems) > 0:
             newData = pd.DataFrame(allItems)
             newData['subcourtLabel'] = newData['subcourtID'].map(courtNames, na_action='ignore')
             df = pd.concat([df, newData]).reset_index(drop=True)
-            df.to_csv(filename)
+        # save into the DB
+        df.to_csv(filename)
         logger.info('The Disputes Database was updated')
         return df
 
