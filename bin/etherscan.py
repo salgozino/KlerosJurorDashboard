@@ -5,7 +5,7 @@ Script  clonned from https://github.com/marczeller/Kleros-Monitor-Bot
 import requests
 import urllib
 import json
-from web3Node import web3Node
+from bin.web3Node import web3Node
 import os
 
 class Etherscan(web3Node):
@@ -14,7 +14,7 @@ class Etherscan(web3Node):
         api_key = os.environ['ETHERSCAN_KEY']
     except:
         print("NO OS ETHERSCAN_KEY VARIABLE FOUND")
-        api_key = json.load(open('../lib/etherscan_api_key.json','r'))['api_key']
+        api_key = json.load(open('lib/etherscan_api_key.json','r'))['api_key']
 
 
     @classmethod
@@ -83,3 +83,53 @@ class Etherscan(web3Node):
             fromblock = toblock + 1
             toblock = fromblock + step
         return allItems
+    
+    
+class CMC():
+    """
+    Class for interaction with CoinMarketCap and get the ETH and PNK prices.
+    """
+    
+    def __init__(self):
+        self.api_url = "http://pro-api.coinmarketcap.com/v1/cryptocurrency/"
+        
+        try:
+            self.api_key = os.environ['CMC_KEY']
+        except:
+            print("NO OS CMC_KEY VARIABLE FOUND")
+            self.api_key = json.load(open('lib/coinmarketcap.json','r'))['api_key']
+
+
+    def getCryptoInfo(self, id=3581):
+        parameters = {'id': id
+        }
+        headers = {
+          'Accepts': 'application/json',
+          'Accept-Enconding':'deflate, gzip',
+          'X-CMC_PRO_API_KEY': self.api_key,
+        }
+        url = self.api_url + 'quotes/latest?' + urllib.parse.urlencode(parameters)
+        print(url)
+        response = requests.get(url, headers=headers)
+        return response.json()
+    
+    def getPNKprice(self):
+        pnkId = 3581
+        response = self.getCryptoInfo(id=pnkId)
+        return response['data'][str(pnkId)]['quote']['USD']['price']
+    
+    def getETHprice(self):
+        ethId = 1027
+        response = self.getCryptoInfo(id=ethId)
+        return response['data'][str(ethId)]['quote']['USD']['price']
+    
+    def cryptoMap(self):
+        headers = {
+          'Accepts': 'application/json',
+          'Accept-Enconding':'deflate, gzip',
+          'X-CMC_PRO_API_KEY': self.api_key,
+        }
+        url = self.api_url + 'map'
+        print(url)
+        response = requests.get(url, headers=headers)
+        return response.json()
