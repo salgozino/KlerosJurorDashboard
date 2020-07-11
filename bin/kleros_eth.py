@@ -4,8 +4,8 @@ import json, urllib, requests
 from eth_abi import decode_abi
 from datetime import datetime
 import logging
-from etherscan import Etherscan
-from KlerosDB import db, Config, JurorStake, Dispute, Vote, Round
+from bin.etherscan import Etherscan
+from bin.KlerosDB import db, Config, JurorStake, Dispute, Vote, Round
 
 FORMAT = '%(asctime)-15s - %(message)s'
 logging.basicConfig(format=FORMAT, filename='log.log', level='INFO')
@@ -15,7 +15,7 @@ class KlerosLiquid(Etherscan):
     stakes_event_topic = "0x8f753321c98641397daaca5e8abf8881fff1fd7a7bc229924a012e2cb61763d5"
     create_dispute_event_topic = "0x141dfc18aa6a56fc816f44f0e9e2f1ebc92b15ab167770e17db5b084c10ed995"
     address = "0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069"
-    with open('../lib/ABI_KlerosLiquid.json','r') as f:
+    with open('lib/ABI_KlerosLiquid.json','r') as f:
             abi = json.loads(f.read())['result']
 
     def __init__(self, initial_block = None):
@@ -63,7 +63,7 @@ class KlerosLiquid(Etherscan):
         # TODO: Seach for a better way to do this.
         if topic.startswith('0x'):
             topic = topic[2:]
-        while topic.startswith('00'):
+        while topic.startswith('00') and len(topic)>40:
             topic = topic[2:]
         address = '0x'+topic
         #print(address)
@@ -94,7 +94,7 @@ class KlerosLiquid(Etherscan):
         step = 1000
         endblock = fromblock + step
         allItems = []
-        while endblock < self.web3.eth.blockNumber:
+        while endblock < self.web3.eth.blockNumber+step-1:
             logger.debug(f"{fromblock} - {endblock}")
             items = self.getEventFromTo(fromblock=fromblock,
                                            contract_address=self.address,
@@ -201,7 +201,7 @@ class KlerosLiquid(Etherscan):
         step = 1000
         endblock = fromblock + step
         allItems = []
-        while endblock < self.web3.eth.blockNumber:
+        while endblock < self.web3.eth.blockNumber+step-1:
             # print(f"{fromblock} - {endblock}")
             items = self.getEventFromTo(fromblock=fromblock,
                                         contract_address=self.address,
@@ -283,3 +283,30 @@ class KlerosLiquid(Etherscan):
             logger.error("Error trying to add a Dispute into the database")
             logger.error(e)
             logger.error(dispute_eth)
+
+    def courtInfo(self, courtID):
+        courtData = self.contract.functions.courts(courtID).call()
+        return {'parent':courtData[0],
+                'hiddenVotes':courtData[1],
+                'minStake':courtData[2]/10**18,
+                'alpha':courtData[3],
+                'feeForJuror':courtData[4]/10**18,
+                'jurorsForCourtJump':courtData[5],
+                'votesStake': (courtData[2]/10**18) * (courtData[3]/10**4)}
+        
+    def mapCourtNames(self, courtID):
+        courtNames = {0:'General',
+                      1:'Blockchain',
+                      2:'Blockchain>NonTechnical',
+                      3:'Blockchain>NonTechnical>TokenListing',
+                      4:'Blockchain>Technical',
+                      5:'Marketing Services',
+                      6:'English Language',
+                      7:'Video Production',
+                      8:'Onboarding',
+                      9:'Curation'}
+        try:
+            return courtNames[courtID]
+        except:
+            logger.error(f"Could not found the Court ID {courtID}")
+            return "Unknown"

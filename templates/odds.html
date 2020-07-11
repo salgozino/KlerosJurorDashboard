@@ -4,39 +4,62 @@
 
 <h3>Know Your Odds by Court!</h3>
 <div class="container">
-    <form class="form-inline text-center" method="post">
-      <div class="form-group">
-        <label for="pnkStakedInput">PNK Staked</label>
-        <input class="form-control box-shadow" id="pnkStakedInput" name="pnkStaked" type="text" value={{ pnkStaked }}>
-      </div>
-      <button type="submit" class="btn btn-default">Refresh</button>
-    </form>
-
-    <!-- Table -->
-    <div class="table-responsive">
-        <table class="table table-condensed table-hover">
-            <thead>
-                <tr>
-                    <th> Court N&deg; </th>
-                    <th> Court Name </th>
-                    <th> Odd </th>
-                    <th> Chances </th>
-                </tr>
-            </thead>
-            {% for key, value in courtChances.items() %}
-            <tr>
-                <th> {{ key }} </th>
-                <td> {{ courtNames[key] }} </td>
-                <td> {{ '{0:0.2%}'.format(value) }} </td>
-                <td> {{ '1 in {0:0.2f} cases'.format(1/value|float) }} </td>
-            </tr>
-            {% endfor %}
-        </table>
+    <!-- PNK Staked Form input -->
+    <div class="row">
+        <form class="form-inline text-center" method="post">
+          <div class="form-group">
+            <label for="pnkStakedInput">PNK Staked</label>
+            <input class="form-control box-shadow" id="pnkStakedInput" name="pnkStaked" type="text" value={{ pnkStaked }}>
+          </div>
+          <button type="submit" class="btn btn-default">Refresh</button>
+        </form>
     </div>
-</div>
+    <br></br>
+    <!-- Table -->
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table table-hover ">
+                <thead>
+                    <tr class="active">
+                        <th scope="col" class="text-center">Court</th>
+                        {% for col in courtChances['General'].keys() %}
+                        <th scope="col" class="text-center">{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for c, data in courtChances.items() %}
+                    <tr>
+                        <th scope="row" style="word-break: break-all"> {{ c }}</th>
+                        {% for col, value in data.items() %}
+                            {% if col == 'Odds' %}
+                                <td class="text-right">{{ "{:.2%}".format(value) }}</td>
+                            {% elif col == 'Chances'%}
+                                <td class="text-right" style="white-space: nowrap">1 in {{ "{:.2f}".format(value) }}</td>
+                            {% elif 'USD' in col %}
+                                <td class="text-right">{{ "{:.2f}".format(value) }}$</td>
+                            {% elif 'Reward' in col %}
+                                <td class="text-right">{{ "{:.2f}".format(value) }}</td>
+                            {% elif 'Risk' in col %}
+                                <td class="text-right">{{ "{:.3f}".format(value) }}</td>
+                            {% else %}
+                                <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
+                            {%endif%}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<div class="alert alert-info alert-dismissible" role="alert">
-    <p>3 jurors are considered for the drawn odds</p>
+    <!-- Explainers -->
+    <div class="alert alert-info alert-dismissible" role="alert">
+        <p>3 jurors are considered for the drawn odds</p>
+    </div>
+    <div class="alert alert-info alert-dismissible" role="alert">
+        <p>Risk/Reward is the ratio between Reward(USD) and VoteStake(USD)</p>
+    </div>
 </div>
 
 {% endblock %}

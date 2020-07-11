@@ -1,82 +1,70 @@
 
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, request
+import sys
+sys.path.extend(('db'))
 
+from flask import Flask, render_template, request
+from flask_sqlalchemy import SQLAlchemy
 from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
-from bin.Kleros import KlerosLiquid, StakesKleros, DisputesEvents, courtNames
-import json
-import os
+from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute
+from bin.Kleros import StakesKleros
 
 app = Flask(__name__)
-THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
-def addVisit(page):
-    # TODO: This is so so so so basic.
-    filename = os.path.join(THIS_FOLDER,'data/visitors.json')
-    with open(filename, 'r') as f:
-        visitors = json.load(f)
-        try:
-            visitors[page] += 1
-        except:
-            visitors["unknown"] += 1
-    with open(filename, 'w') as f:
-        json.dump(visitors, f)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/kleros.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
 
 
 @app.route('/')
 def index():
-    addVisit('home')
-    DE = DisputesEvents()
-    SK = StakesKleros()
-    dfStaked = SK.historicStakesInCourts()
-    dfJurors = SK.historicJurorsInCourts()
-    dfCourts = SK.getstakedInCourts()
-    allJurors = SK.getAllJurors()
-    disputesEvents = DE.historicDisputes()
-    pnkStaked = sum(dfCourts.meanStake * dfCourts.n_Jurors)
-    tokenSupply =  KlerosLiquid().tokenSupply
-    activeJurors = len(allJurors[(allJurors.T != 0).any()])
-    drawnJurors = len(DE.drawnJurors())
-    retention = DE.jurorsRetention() / drawnJurors
-    adoption = SK.jurorAdoption()
-    ruledCases = DE.ruledCases()
-    mostActiveCourt = DE.mostActiveCourt()
-    newNames = {'totalstaked':'Total Staked',
-                'maxStake': 'Max. Stake',
-                'meanStake': 'Mean Stake',
-                'courtLabel': 'Court',
-                'n_Jurors': 'Jurors'}
+    Visitor().addVisit('dashboard')
+
+    pnkStaked = Court(id=0).juror_stats()['total']
+    tokenSupply =  float(Config().get('token_supply'))
+    activeJurors = Court(id=0).juror_stats()['uniqueJurors']
+    drawnJurors = len(Juror.list())
+    retention =  Juror.retention() / drawnJurors
+    adoption = len(Juror.adoption())
+    ruledCases = Dispute().ruledCases
+    openCases = Dispute().openCases
+    mostActiveCourt = Court.query.filter(Court.id==list(Dispute.mostActiveCourt().keys())[0]).first().name,
+    pnkPrice = float(Config.get('PNKprice'))
+    courtTable = StakesKleros.getCourtInfoTable()
+    for c in courtTable.keys():
+        courtTable[c]['Min Stake in USD'] = courtTable[c]['Min Stake']*pnkPrice
     return render_template('main.html',
-                           last_update= KlerosLiquid().getLastUpdate(),
-                           disputes= disputesEvents.iloc[-1],
+                           last_update= Config.get('updated'),
+                           disputes= Dispute.query.order_by(Dispute.id.desc()).first().id,
                            activeJurors= activeJurors,
                            jurorsdrawn = drawnJurors,
                            retention= retention,
                            adoption= adoption,
-                           most_active_court = mostActiveCourt,
-                           cases_closed = ruledCases['ruled'],
-                           cases_rulling = ruledCases['not_ruled'],
+                           most_active_court = mostActiveCourt[0],
+                           cases_closed = ruledCases,
+                           cases_rulling = openCases,
                            tokenSupply= tokenSupply,
                            pnkStaked= pnkStaked,
                            pnkStakedPercent= pnkStaked/tokenSupply,
-                           courtTable= dfCourts[['courtLabel', 'n_Jurors', 'totalstaked', 'meanStake', 'maxStake']].rename(columns=newNames).sort_values('courtID',ascending=True).to_html(classes="table table-striped text-right",
-                                                                                                                        border=0,
-                                                                                                                        float_format='{:,.0f}'.format,
-                                                                                                                        index=False),
-                           disputesgraph= disputesGraph(DisputesEvents()),
-                           stakedPNKgraph= stakesJurorsGraph(dfStaked, dfJurors),
-                           disputeCourtgraph=disputesbyCourtGraph(DisputesEvents())
+                           ethPrice= float(Config.get('ETHprice')),
+                           pnkPrice= pnkPrice,
+                           pnkPctChange = float(Config.get('PNKpctchange24h'))/100,
+                           pnkVol24= float(Config.get('PNKvolume24h')),
+                           pnkCircSupply= float(Config.get('PNKcirculating_supply')),
+                           courtTable = courtTable
                            )
 
 
 @app.route('/support/')
 def support():
-    addVisit('support')
+    Visitor().addVisit('support')
     return render_template('support.html',
-                           last_update= KlerosLiquid().getLastUpdate(),)
+                           last_update= Config.get('updated'))
 
 @app.route('/odds/', methods=['GET','POST'])
 def odds():
-    addVisit('odds')
+    Visitor().addVisit('odds')
     pnkStaked = 100000
     if request.method == 'POST':
         # Form being submitted; grab data from form.
@@ -85,37 +73,32 @@ def odds():
         except:
             pnkStaked = 100000
 
-
-
     return render_template('odds.html',
-                           last_update= KlerosLiquid().getLastUpdate(),
-                           courtNames= courtNames,
+                           last_update= Config.get('updated'),
                            pnkStaked= pnkStaked,
-                           courtChances= StakesKleros().getChancesInAllCourts(pnkStaked))
+                           courtChances= StakesKleros.getAllCourtChances(pnkStaked))
 
 @app.route('/kleros-map/')
 def maps():
-    addVisit('map')
+    Visitor().addVisit('map')
     return render_template('kleros-map.html',
-                            last_update= KlerosLiquid().getLastUpdate(),
+                            last_update= Config.get('updated')
                             )
 
 @app.route('/visitorMetrics/')
 def visitorMetrics():
-    filename = os.path.join(THIS_FOLDER,'data/visitors.json')
-    with open(filename, 'r') as f:
-        visitors = json.load(f)
+    visitors = Visitor()
     return render_template('visitors.html',
-                           home=visitors["home"],
-                           odds=visitors["odds"],
-                           map=visitors["map"],
-                           support=visitors["support"],
+                           home=visitors.dashboard,
+                           odds=visitors.odds,
+                           map=visitors.map,
+                           support=visitors.support,
                            last_update= KlerosLiquid().getLastUpdate(),
                            )
 
 @app.errorhandler(404)
 def not_found(e):
-    addVisit('unknown')
+    Visitor().addVisit('unknown')
     return render_template("404.html")
 
 

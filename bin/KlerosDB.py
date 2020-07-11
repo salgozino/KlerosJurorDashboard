@@ -42,8 +42,30 @@ class Court(db.Model):
     voteStake = db.Column(db.Integer)
     
 
-    def disputes(self):
-        return Dispute.query.filter(Dispute.subcourtID == self.id).order_by(Dispute.id.desc()).all()
+    def disputes(self, days=None):
+        """
+        Return the disputes in the previous days. If days is None, return all 
+        the disputes in that Court
+
+        Parameters
+        ----------
+        days : int, optional
+            Number of days to count the disputes backwards.
+            The default is None.
+
+        Returns
+        -------
+        List
+            List of all the Disputes
+
+        """
+        if days:
+            filter_after = (datetime.now() - timedelta(days=days)).replace(hour=0, minute=0, second=0)
+            return Dispute.query \
+                .filter(Dispute.subcourtID == self.id, Dispute.timestamp >= filter_after ) \
+                .order_by(Dispute.id.desc()).all()
+        else:
+            return Dispute.query.filter(Dispute.subcourtID == self.id).order_by(Dispute.id.desc()).all()
 
     def children_ids(self):
         children_ids = []

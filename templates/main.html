@@ -142,7 +142,7 @@
 <!-- Third Line Metrics -->
 <div class="container">
     <div class="row">
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">PNK Total Supply</h3>
@@ -153,7 +153,18 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">PNK Circulating Supply</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ "{:,.2f}".format(pnkCircSupply) }}</h4>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">PNK Staked in Courts</h3>
@@ -164,7 +175,7 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">% Staked of Total Supply</h3>
@@ -177,14 +188,98 @@
     </div>
 </div>
 
+<!-- Fourth Line Metrics | Prices-->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">ETH Price</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>${{ "{:,.2f}".format(ethPrice) }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">PNK in USD</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>${{ "{:,.3f}".format(pnkPrice) }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">PNK Vol in last 24 hs</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>${{ "{:,.2f}".format(pnkVol24) }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">PNK Price change in last 24 hs.</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ "{:,.2%}".format(pnkPctChange) }}</h4>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
 <!-- Table -->
 <div class="container">
     <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <h3>Courts Statistics</h3>
+        <div class="col-md-12">
+
             <!-- Table -->
-            <div class="table-responsive">
-            {{ courtTable | safe }}
+            <div class="panel panel-default table-responsive">
+                <div class="panel-heading">
+                    <h2 class="panel-title text-center">Courts Statistics</h3>
+                </div>
+                
+                <table class="table table-hover ">
+                    <thead>
+                        <tr class="active">
+                            <th scope="col">Court</th>
+                            {% for col in courtTable['General'].keys() %}
+                            <th scope="col">{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% set ns = namespace(mostActive='General') %} 
+                    {% for c, data in courtTable.items() %}
+                        {% if data['Disputes in the last 30 days'] > courtTable[ns.mostActive]['Disputes in the last 30 days']%}
+                            {% set ns.mostActive = c%}
+                        {% endif%}
+                    {% endfor%}
+                    
+                    {% for c, data in courtTable.items() %}
+                    {% if c == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
+                            <th scope="row"> {{ c }}</th>
+                            {% for col, value in data.items() %}
+                            {% if col == 'Min Stake in USD' %}
+                            <td class="text-right">${{ "{:,.2f}".format(value) }}</td>
+                            {%else%}
+                            <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
+                            {%endif%}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

@@ -8,6 +8,7 @@ import json
 from bin.web3Node import web3Node
 import os
 
+
 class Etherscan(web3Node):
     api_url = "https://api.etherscan.io/api?"
     try:
@@ -109,19 +110,18 @@ class CMC():
           'X-CMC_PRO_API_KEY': self.api_key,
         }
         url = self.api_url + 'quotes/latest?' + urllib.parse.urlencode(parameters)
-        print(url)
         response = requests.get(url, headers=headers)
-        return response.json()
+        return response.json()['data'][str(id)]
     
     def getPNKprice(self):
         pnkId = 3581
         response = self.getCryptoInfo(id=pnkId)
-        return response['data'][str(pnkId)]['quote']['USD']['price']
+        return response['quote']['USD']['price']
     
     def getETHprice(self):
         ethId = 1027
         response = self.getCryptoInfo(id=ethId)
-        return response['data'][str(ethId)]['quote']['USD']['price']
+        return response['quote']['USD']['price']
     
     def cryptoMap(self):
         headers = {
@@ -130,6 +130,5 @@ class CMC():
           'X-CMC_PRO_API_KEY': self.api_key,
         }
         url = self.api_url + 'map'
-        print(url)
         response = requests.get(url, headers=headers)
         return response.json()
