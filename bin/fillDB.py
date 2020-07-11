@@ -50,6 +50,8 @@ def rebuildDB():
     logger.info("Tables created")
 
 def fillDB():
+    db.session.rollback()
+    db.session.close_all()
     kl = KlerosLiquid()
     logger.info("Fetching all the disputes")
     kl.getDisputes()

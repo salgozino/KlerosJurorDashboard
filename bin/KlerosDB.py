@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
 
 import statistics
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../db/kleros.db'
@@ -99,15 +100,25 @@ class Court(db.Model):
 
     def juror_stats(self):
         amounts = []
-        for juror in self.jurors_stakings():
-            amounts.append(juror['setStake'])
+        unique_jurors = []
+        childCourts = self.getAllCourtChilds(self.id)
+        childCourts.append(self.id)
+        for courtID in childCourts:
+            for juror in Court(id=courtID).jurors_stakings():
+                amounts.append(juror['setStake'])
+                if juror['address'] not in unique_jurors:
+                    unique_jurors.append(juror['address']) 
         return {
             'length': len(amounts),
             'mean': statistics.mean(amounts),
             'median': statistics.median(amounts),
             'max': max(amounts),
-            'total': sum(amounts)
+            'total': sum(amounts),
+            'uniqueJurors':len(unique_jurors),
         }
+    
+
+        
 
 
 class Dispute(db.Model):
@@ -149,7 +160,44 @@ class Dispute(db.Model):
         print("Deleting Dispute %s" % self.id)
         db.session.delete(self)
         db.session.commit()
+     
+    @property
+    def openCases(self):
+        openCases = self.query.filter(Dispute.ruled == 0).all()
+        return len(openCases)
+        
+    @property
+    def ruledCases(self):
+        ruledCases = self.query.filter(Dispute.ruled == 1).all()
+        return len(ruledCases)
+        
+    @staticmethod
+    def mostActiveCourt(days=7):
+        """
+        Most active cour in the last days
 
+        Parameters
+        ----------
+        days : int, optional
+            DESCRIPTION. Last Days to filter. The default is 7.
+
+        Returns
+        -------
+        Court object with the most active Court in the last days.
+
+        """
+        filter_after = datetime.today() - timedelta(days=days)
+        
+        disputes = Dispute.query.filter(Dispute.timestamp >= filter_after).all()
+        counts = {}
+        for dispute in disputes:
+            try:
+                counts[dispute.subcourtID] += 1
+            except:
+                counts[dispute.subcourtID] = 1
+        mostActive = max(counts, key=counts.get)
+        return {mostActive:counts[mostActive]}
+            
 
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -217,7 +265,7 @@ class Juror():
         jurors_query = db.session.execute(
             "SELECT DISTINCT(vote.account), count(vote.id) from vote, round, dispute \
             WHERE vote.round_id = round.id \
-            AND round.dispute_id = dispute.id \
+            AND round.disputeID = dispute.id \
             GROUP BY vote.account"
         )
         jurors = []
@@ -227,6 +275,22 @@ class Juror():
                 'votes': jq[1]
             })
         return jurors
+    
+    def stakedJurors():
+        allStakes = db.session.execute(
+            "SELECT MAX(id), address, subcourtID, setStake FROM juror_stake \
+            group by subcourtID, address"
+        )
+        stakedJurors = {}
+        for stake in allStakes:
+            if stake.setStake > 0:
+                if stake.address.lower() not in stakedJurors.keys():
+                    stakedJurors[stake.address.lower()] = [{stake.subcourtID:stake.setStake}]
+                else:
+                    stakedJurors[stake.address.lower()].append({stake.subcourtID:stake.setStake})
+            
+        return stakedJurors
+
 
     def votes_in_court(self, court_id):
         votes_in_court = db.session.execute(
@@ -247,6 +311,23 @@ class Juror():
         for staking in stakings_query:
             stakings.append(staking)
         return stakings
+    
+    @property
+    def stakings_nonZero(self):
+        stakings_query = JurorStake.query.filter(JurorStake.address == self.address).order_by(JurorStake.timestamp.desc())
+        stakings = []
+        for staking in stakings_query:
+            if staking.setStake > 0:
+                stakings.append(staking)
+        return stakings
+    
+    @property
+    def totalStaked(self):
+        stakings_query = JurorStake.query.filter(JurorStake.address == self.address).order_by(JurorStake.timestamp.desc())
+        stake = 0
+        for staking in stakings_query:
+            stake += staking.setStake
+        return stake
 
     @property
     def current_stakings_per_court(self):
@@ -278,6 +359,33 @@ class Juror():
             'court_only': court_only_stakings,
             'court_and_children': court_and_children
         }
+    
+    
+    def retention():
+        jurorsDrawn = Juror.list()
+        jurorsDrawn = set(map(lambda x:x['address'].lower(),jurorsDrawn))
+        activeJurors = Juror.stakedJurors()
+        activeJurors = set(activeJurors.keys())
+        jurorsRetained = activeJurors.intersection(jurorsDrawn)
+        return len(jurorsRetained)
+
+    def adoption(days=30):
+        """
+        Select the first stake for address in the past days.
+        This is usefull to get the adoption
+        """
+        filter_after = (datetime.today() - timedelta(days=days)).replace(hour=0, minute=0, second=0)
+        lastStakes = db.session.execute(
+            "SELECT MIN(id), address, timestamp, setStake FROM juror_stake \
+            WHERE setStake > 0 \
+            group by address \
+            order by timestamp desc").fetchall()
+        newJuror = []
+        for stake in lastStakes:
+            if datetime.strptime(stake[2], "%Y-%m-%d %H:%M:%S.%f") >= filter_after:
+                newJuror.append(stake)
+        return newJuror
+        
 
 
 class JurorStake(db.Model):
