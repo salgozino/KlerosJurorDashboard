@@ -11,7 +11,7 @@ class web3Node():
         infura_node = os.environ['INFURA_NODE']
     except:
         print("NO OS INFURA_NODE VARIABLE FOUND")
-        infura_node = json.load(open('../lib/infura_node.json','r'))['http']
+        infura_node = json.load(open('lib/infura_node.json','r'))['http']
     web3 = Web3(Web3.HTTPProvider(infura_node))
     
     @classmethod

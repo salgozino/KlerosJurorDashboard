@@ -8,15 +8,14 @@ import statistics
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../db/kleros.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+app.config.from_object('config')
 db = SQLAlchemy(app)
+
 
 class Config(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    option = db.Column(db.String)
-    value = db.Column(db.String)
+    option = db.Column(db.String(50))
+    value = db.Column(db.String(50))
 
     @classmethod
     def get(cls, db_key):
@@ -34,8 +33,8 @@ class Config(db.Model):
 
 class Court(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    address = db.Column(db.String)
+    name = db.Column(db.String(50))
+    address = db.Column(db.String(50))
     parent = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=True)
     minStake = db.Column(db.Float)
     feeForJuror = db.Column(db.Float)
@@ -148,13 +147,13 @@ class Dispute(db.Model):
     number_of_choices = db.Column(db.Integer)
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
     status = db.Column(db.Integer)
-    arbitrated = db.Column(db.String)
+    arbitrated = db.Column(db.String(50))
     current_ruling = db.Column(db.Integer)
     period = db.Column(db.Integer)
     last_period_change = db.Column(db.DateTime)
     ruled = db.Column(db.Boolean)
-    creator = db.Column(db.String)
-    txid = db.Column(db.String)
+    creator = db.Column(db.String(50))
+    txid = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime)
     blocknumber = db.Column(db.Integer)
 
@@ -266,7 +265,7 @@ class Round(db.Model):
 class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     round_id = db.Column(db.Integer, db.ForeignKey("round.id"), nullable=False)
-    account = db.Column(db.Integer)
+    account = db.Column(db.String(50))
     commit = db.Column(db.Integer)
     choice = db.Column(db.Integer)
     vote = db.Column(db.Integer)
@@ -412,11 +411,11 @@ class Juror():
 
 class JurorStake(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    address = db.Column(db.String)
+    address = db.Column(db.String(50))
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
     timestamp = db.Column(db.DateTime)
     setStake = db.Column(db.Float)
-    txid = db.Column(db.String)
+    txid = db.Column(db.String(100))
     blocknumber = db.Column(db.Integer)
     
     @staticmethod
@@ -426,12 +425,12 @@ class JurorStake(db.Model):
 
 class Deposit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    address = db.Column(db.String)
+    address = db.Column(db.String(50))
     cdate = db.Column(db.DateTime)
     amount = db.Column(db.Float)
-    txid = db.Column(db.String)
+    txid = db.Column(db.String(50))
     court_id = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
-    token_contract = db.Column(db.String) # FIXME
+    token_contract = db.Column(db.String(50)) # FIXME
 
     @classmethod
     def total(cls):

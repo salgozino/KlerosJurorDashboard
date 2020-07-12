@@ -8,14 +8,14 @@ from flask_sqlalchemy import SQLAlchemy
 from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
 from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from bin.Kleros import StakesKleros
+from bin import db
 
+# Elastic Beanstalk initalization
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/kleros.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-
-
+app.config.from_object('config')
+app.debug=True
+db.init_app(app)
+# db = SQLAlchemy(app)
 
 @app.route('/')
 def index():
@@ -93,7 +93,7 @@ def visitorMetrics():
                            odds=visitors.odds,
                            map=visitors.map,
                            support=visitors.support,
-                           last_update= KlerosLiquid().getLastUpdate(),
+                           last_update= Config.get('updated'),
                            )
 
 @app.errorhandler(404)
@@ -103,4 +103,5 @@ def not_found(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+   
+    app.run()

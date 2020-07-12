@@ -218,6 +218,15 @@ class KlerosLiquid(Etherscan):
 
     def create_dispute(self, dispute_eth):
         logger.info("Creating dispute %s" % dispute_eth['disputeID'])
+        # search if the dispute already exist
+        dispute = Dispute.query.get(dispute_eth['disputeID'])
+        if dispute != None:
+            if dispute.ruled:
+                # if this dispute is already ruled, don't need to do anythin
+                return
+            # delete current dispute, and create the new one with new information
+            logger.info(f"Deleting the old Dispute {dispute_eth['disputeID']}")
+            dispute.delete_recursive()
         print("Creating dispute %s" % dispute_eth['disputeID'])
         try:
             dispute = Dispute(
@@ -286,7 +295,7 @@ class KlerosLiquid(Etherscan):
 
     def courtInfo(self, courtID):
         courtData = self.contract.functions.courts(courtID).call()
-        return {'parent':courtData[0],
+        return {'parent':None if courtData[0] == courtID else courtData[0],
                 'hiddenVotes':courtData[1],
                 'minStake':courtData[2]/10**18,
                 'alpha':courtData[3],

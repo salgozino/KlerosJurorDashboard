@@ -9,13 +9,11 @@ from bin.kleros_eth import KlerosLiquid, logger
 from bin.etherscan import Etherscan, CMC
 from datetime import datetime
 
-
-def rebuildDB():
-    logger.info("Droping all the tables")
-    kl = KlerosLiquid()
-    nCourts = len(db.session.query(Court).all())
-    db.drop_all()
+def createDB():
     db.create_all()
+    engine.execute(create_str)
+    kl = KlerosLiquid()
+    nCourts = 9
     courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
                       2: '0xebcf3bca271b26ae4b162ba560e243055af0e679',
                       3: '0x916deab80dfbc7030277047cd18b233b3ce5b4ab',
@@ -33,6 +31,7 @@ def rebuildDB():
             courtaddress = courtAddresses[courtID]
         except:
             courtaddress = None
+            
         db.session.add(Court(id = courtID,
                              parent = courtInfo['parent'],
                              name = courtName,
@@ -40,6 +39,8 @@ def rebuildDB():
                              voteStake = courtInfo['votesStake'] ,
                              feeForJuror = courtInfo['feeForJuror'],
                              minStake = courtInfo['minStake']))
+        db.session.commit()
+        logger.info(f"Court {courtID} added to the database")
     
     Config.set('dispute_search_block', kl.initial_block)
     Config.set('staking_search_block', kl.initial_block)
@@ -48,6 +49,16 @@ def rebuildDB():
     db.session.add(Visitor())
     db.session.commit()
     logger.info("Tables created")
+    
+def rebuildDB():
+    logger.info("Droping all the tables")
+    db.engine.execute("SET FOREIGN_KEY_CHECKS = 0;")
+    db.drop_all()
+
+    logger.info("Creating Tables")
+    db.engine.execute("SET sql_mode='NO_AUTO_VALUE_ON_ZERO'")
+    createDB()
+    
 
 def fillDB():
     db.session.rollback()
