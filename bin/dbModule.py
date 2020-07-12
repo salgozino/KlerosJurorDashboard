@@ -4,14 +4,15 @@ Created on Thu Jul  9 19:10:44 2020
 
 @author: 60070385
 """
-from bin.KlerosDB import db, Court, Config, Visitor, Deposit
+from bin import db
+from bin.KlerosDB import Court, Config, Visitor, Deposit
 from bin.kleros_eth import KlerosLiquid, logger
-from bin.etherscan import Etherscan, CMC
+from bin.etherscan import CMC, Etherscan
 from datetime import datetime
 
 def createDB():
     db.create_all()
-    engine.execute(create_str)
+    
     kl = KlerosLiquid()
     nCourts = 9
     courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
@@ -57,18 +58,33 @@ def rebuildDB():
 
     logger.info("Creating Tables")
     db.engine.execute("SET sql_mode='NO_AUTO_VALUE_ON_ZERO'")
+    
     createDB()
     
 
 def fillDB():
-    db.session.rollback()
-    db.session.close_all()
+    #db.session.rollback()
+    #db.session.close_all()
     kl = KlerosLiquid()
     logger.info("Fetching all the disputes")
     kl.getDisputes()
     logger.info("Fetching all the stakes")
     kl.getStakes()
+    updatePrices()
+    updated = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
+    Config.set('updated', updated)
+    db.session.commit()
     
+def updatePrices():
+    pnkInfo = CMC().getCryptoInfo()
+    Config.set('PNKvolume24h', pnkInfo['quote']['USD']['volume_24h'])
+    Config.set('PNKpctchange24h', pnkInfo['quote']['USD']['percent_change_24h'])
+    Config.set('PNKcirculating_supply', pnkInfo['circulating_supply'])
+    Config.set('PNKprice', CMC().getPNKprice())
+    Config.set('ETHprice', CMC().getETHprice())
+    db.session.commit()
+
+def fillDeposit():
     # Fetching deposits
     Deposit.query.delete()
     for court in Court.query.all():
@@ -84,18 +100,7 @@ def fillDB():
                 court_id = court.id
             )
             db.session.add(deposit)
-    
-    db.session.commit()    
-    updated = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
-    Config.set('updated', updated)
-    pnkInfo = CMC().getCryptoInfo()
-    Config.set('PNKvolume24h', pnkInfo['quote']['USD']['volume_24h'])
-    Config.set('PNKpctchange24h', pnkInfo['quote']['USD']['percent_change_24h'])
-    Config.set('PNKcirculating_supply', pnkInfo['circulating_supply'])
-    Config.set('PNKprice', CMC().getPNKprice())
-    Config.set('ETHprice', CMC().getETHprice())
-    db.session.commit()
-    
+    db.session.commit() 
 
 if __name__ == '__main__':
     rebuildDB()

@@ -1,10 +1,7 @@
 
 # -*- coding: utf-8 -*-
-import sys
-sys.path.extend(('db'))
 
 from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
 from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
 from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from bin.Kleros import StakesKleros
@@ -14,8 +11,7 @@ from bin import db
 application = Flask(__name__)
 application.config.from_object('config')
 application.debug=True
-db.init_application(application)
-# db = SQLAlchemy(application)
+db.init_app(application)
 
 @application.route('/')
 def index():
@@ -103,5 +99,4 @@ def not_found(e):
 
 
 if __name__ == "__main__":
-   
-    application.run()
+    application.run(debug=True)

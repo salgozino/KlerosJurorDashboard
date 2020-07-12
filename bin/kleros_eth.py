@@ -5,7 +5,8 @@ from eth_abi import decode_abi
 from datetime import datetime
 import logging
 from bin.etherscan import Etherscan
-from bin.KlerosDB import db, Config, JurorStake, Dispute, Vote, Round
+from bin.KlerosDB import Config, JurorStake, Dispute, Vote, Round
+from bin import db
 
 FORMAT = '%(asctime)-15s - %(message)s'
 logging.basicConfig(format=FORMAT, filename='log.log', level='INFO')

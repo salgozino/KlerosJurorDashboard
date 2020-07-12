@@ -1,15 +1,9 @@
 #!/usr/bin/python3
 
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
-
 import statistics
 from datetime import datetime, timedelta
-
-app = Flask(__name__)
-app.config.from_object('config')
-db = SQLAlchemy(app)
+from bin import db
 
 
 class Config(db.Model):
@@ -403,8 +397,12 @@ class Juror():
             order by timestamp desc").fetchall()
         newJuror = []
         for stake in lastStakes:
-            if datetime.strptime(stake[2], "%Y-%m-%d %H:%M:%S.%f") >= filter_after:
-                newJuror.append(stake)
+            if isinstance(stake[2],str):
+                if datetime.strptime(stake[2], "%Y-%m-%d %H:%M:%S.%f") >= filter_after:
+                    newJuror.append(stake)
+            else:
+                if stake[2] >= filter_after:
+                    newJuror.append(stake)
         return newJuror
         
 
