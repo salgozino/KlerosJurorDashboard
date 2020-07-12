@@ -11,13 +11,13 @@ from bin.Kleros import StakesKleros
 from bin import db
 
 # Elastic Beanstalk initalization
-app = Flask(__name__)
-app.config.from_object('config')
-app.debug=True
-db.init_app(app)
-# db = SQLAlchemy(app)
+application = Flask(__name__)
+application.config.from_object('config')
+application.debug=True
+db.init_application(application)
+# db = SQLAlchemy(application)
 
-@app.route('/')
+@application.route('/')
 def index():
     Visitor().addVisit('dashboard')
 
@@ -56,13 +56,13 @@ def index():
                            )
 
 
-@app.route('/support/')
+@application.route('/support/')
 def support():
     Visitor().addVisit('support')
     return render_template('support.html',
                            last_update= Config.get('updated'))
 
-@app.route('/odds/', methods=['GET','POST'])
+@application.route('/odds/', methods=['GET','POST'])
 def odds():
     Visitor().addVisit('odds')
     pnkStaked = 100000
@@ -78,14 +78,14 @@ def odds():
                            pnkStaked= pnkStaked,
                            courtChances= StakesKleros.getAllCourtChances(pnkStaked))
 
-@app.route('/kleros-map/')
+@application.route('/kleros-map/')
 def maps():
     Visitor().addVisit('map')
     return render_template('kleros-map.html',
                             last_update= Config.get('updated')
                             )
 
-@app.route('/visitorMetrics/')
+@application.route('/visitorMetrics/')
 def visitorMetrics():
     visitors = Visitor()
     return render_template('visitors.html',
@@ -96,7 +96,7 @@ def visitorMetrics():
                            last_update= Config.get('updated'),
                            )
 
-@app.errorhandler(404)
+@application.errorhandler(404)
 def not_found(e):
     Visitor().addVisit('unknown')
     return render_template("404.html")
@@ -104,4 +104,4 @@ def not_found(e):
 
 if __name__ == "__main__":
    
-    app.run()
+    application.run()
