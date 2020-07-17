@@ -56,7 +56,7 @@ class StakesKleros():
         for c in courts:
             if c.name != "unknown":
                 stats = c.juror_stats()
-                courtInfo[c.name] = {'Jurors':stats['uniqueJurors'],
+                courtInfo[c.name] = {'Jurors':stats['length'],
                                      'Total Staked':int(stats['total']),
                                      'Min Stake':int(c.minStake),
                                      'Mean Staked':int(stats['mean']),
@@ -79,7 +79,7 @@ class StakesKleros():
             stats = c.juror_stats()
             totalStaked = float(stats['total'])
             odds = cls.chanceCalculator(pnkStaked,totalStaked)
-            courtChances[c.name] = {'Jurors': stats['uniqueJurors'],
+            courtChances[c.name] = {'Jurors': stats['length'],
                          'Dispues in the last 30 days': len(c.disputes(30)),
                          'Odds': odds,
                          'Chances': 1/odds,

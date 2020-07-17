@@ -53,12 +53,11 @@ def createDB():
     
 def rebuildDB():
     logger.info("Droping all the tables")
+    # For MySQL
     db.engine.execute("SET FOREIGN_KEY_CHECKS = 0;")
-    db.drop_all()
-
-    logger.info("Creating Tables")
     db.engine.execute("SET sql_mode='NO_AUTO_VALUE_ON_ZERO'")
-    
+    db.drop_all()
+    logger.info("Creating Tables")
     createDB()
     
 
@@ -66,10 +65,11 @@ def fillDB():
     #db.session.rollback()
     #db.session.close_all()
     kl = KlerosLiquid()
-    logger.info("Fetching all the disputes")
-    kl.getDisputes()
     logger.info("Fetching all the stakes")
     kl.getStakes()
+    logger.info("Fetching all the disputes")
+    kl.getDisputes()
+    logger.info("Fetching eth and pnk prices")
     updatePrices()
     updated = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
     Config.set('updated', updated)

@@ -6,20 +6,23 @@ from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
 from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from bin.Kleros import StakesKleros
 from bin import db
+from datetime import datetime
+import logging
 
 # Elastic Beanstalk initalization
 application = Flask(__name__)
 application.config.from_object('config')
 application.debug=True
 db.init_app(application)
+logger = logging.getLogger()
 
 @application.route('/')
 def index():
     Visitor().addVisit('dashboard')
-
+    startTime = datetime.now()
     pnkStaked = Court(id=0).juror_stats()['total']
     tokenSupply =  float(Config().get('token_supply'))
-    activeJurors = Court(id=0).juror_stats()['uniqueJurors']
+    activeJurors = len(Juror.stakedJurors());
     drawnJurors = len(Juror.list())
     retention =  Juror.retention() / drawnJurors
     adoption = len(Juror.adoption())
@@ -30,6 +33,7 @@ def index():
     courtTable = StakesKleros.getCourtInfoTable()
     for c in courtTable.keys():
         courtTable[c]['Min Stake in USD'] = courtTable[c]['Min Stake']*pnkPrice
+    logger.info(f"Load all the data from the DB takes: {(datetime.now()-startTime).seconds} seconds.")
     return render_template('main.html',
                            last_update= Config.get('updated'),
                            disputes= Dispute.query.order_by(Dispute.id.desc()).first().id,

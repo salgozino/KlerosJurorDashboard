@@ -80,60 +80,35 @@ class Court(db.Model):
 
     @property
     def jurors(self):
-        court_ids = [self.id]
-        for c in self.children_ids():court_ids.append(c)
-        juror_data = db.session.query(JurorStake.address, func.max(JurorStake.timestamp)) \
-        .filter(JurorStake.subcourtID.in_(court_ids)) \
-        .group_by(JurorStake.address).all()
-        jurors = []
-        for j in juror_data:
-            jurors.append( Juror(j[0]) )
-        return jurors
+        allStakes = db.session.execute(
+            "SELECT id,address,setStake, subcourtID \
+                FROM juror_stake \
+                WHERE id IN ( \
+                    SELECT MAX(id) \
+                    FROM juror_stake \
+                    GROUP BY address,subcourtID);"
+        )
+        stakedJurors = {}
+        courts_id = self.getAllCourtChilds(self.id)
+        courts_id.append(self.id)
+        for stake in allStakes:
+            if stake.setStake > 0 and stake.subcourtID in courts_id:
+                if stake.address.lower() in stakedJurors.keys():
+                    stakedJurors[stake.address.lower()] += stake.setStake
+                else:
+                    stakedJurors[stake.address.lower()] = stake.setStake
+        return stakedJurors
 
-    def jurors_stakes_query(self):
-        court_ids = [self.id]
-        for c in self.children_ids():
-            court_ids.append(c)
-        return db.session.query(JurorStake.address, func.max(JurorStake.timestamp), JurorStake.setStake) \
-        .filter(JurorStake.subcourtID.in_(court_ids)) \
-        .group_by(JurorStake.address)
-        
-    def jurors_stakings(self):
-        jurors_query = db.session.execute(
-            "SELECT address, setStake, MAX(timestamp) as 'date' \
-            FROM juror_stake \
-            WHERE subcourtID = :court_id \
-            GROUP BY address \
-            ORDER BY setStake DESC", {'court_id': self.id})
-
-        jurors = []
-        for jq in jurors_query:
-            juror = dict(jq.items())
-            if juror['setStake'] != 0:
-                jurors.append(juror)
-        return jurors
 
     def juror_stats(self):
-        amounts = []
-        unique_jurors = []
-        childCourts = self.getAllCourtChilds(self.id)
-        childCourts.append(self.id)
-        for courtID in childCourts:
-            for juror in Court(id=courtID).jurors_stakings():
-                amounts.append(juror['setStake'])
-                if juror['address'] not in unique_jurors:
-                    unique_jurors.append(juror['address']) 
+        jurors = self.jurors
         return {
-            'length': len(amounts),
-            'mean': statistics.mean(amounts),
-            'median': statistics.median(amounts),
-            'max': max(amounts),
-            'total': sum(amounts),
-            'uniqueJurors':len(unique_jurors),
+            'length': len(jurors.values()),
+            'mean': statistics.mean(jurors.values()),
+            'median': statistics.median(jurors.values()),
+            'max': max(jurors.values()),
+            'total': sum(jurors.values())
         }
-    
-
-        
 
 
 class Dispute(db.Model):
@@ -277,6 +252,9 @@ class Juror():
 
     @classmethod
     def list(cls):
+        """
+        List all the jurors drawn at least one time.
+        """
         jurors_query = db.session.execute(
             "SELECT DISTINCT(vote.account), count(vote.id) from vote, round, dispute \
             WHERE vote.round_id = round.id \
@@ -291,10 +269,15 @@ class Juror():
             })
         return jurors
     
+    @staticmethod
     def stakedJurors():
         allStakes = db.session.execute(
-            "SELECT MAX(id), address, subcourtID, setStake FROM juror_stake \
-            group by subcourtID, address"
+            "SELECT id,address,setStake, subcourtID \
+                FROM juror_stake \
+                WHERE id IN ( \
+                    SELECT MAX(id) \
+                    FROM juror_stake \
+                    GROUP BY address,subcourtID);"
         )
         stakedJurors = {}
         for stake in allStakes:
@@ -303,7 +286,7 @@ class Juror():
                     stakedJurors[stake.address.lower()] = [{stake.subcourtID:stake.setStake}]
                 else:
                     stakedJurors[stake.address.lower()].append({stake.subcourtID:stake.setStake})
-            
+
         return stakedJurors
 
 
