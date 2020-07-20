@@ -3,7 +3,7 @@
 
 from flask import Flask, render_template, request
 from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
-from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute
+from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute, Vote
 from bin.Kleros import StakesKleros
 from bin import db
 from datetime import datetime
@@ -95,6 +95,33 @@ def visitorMetrics():
                            support=visitors.support,
                            last_update= Config.get('updated'),
                            )
+
+@application.route('/dispute/<int:id>', methods=['GET'])
+def dispute(id):
+    dispute = Dispute.query.get(id)
+    dispute.rounds = dispute.rounds()
+    vote_count = {'Yes':0, 'No':0, 'Pending':0}
+    for r in dispute.rounds:
+        r.votes = r.votes()
+        for v in r.votes:
+            if v.choice == 1:
+                v.vote_str = 'Yes'
+                vote_count['Yes'] +=1
+            elif v.choice == 2:
+                v.vote_str = 'No'
+                vote_count['No'] +=1
+            else: 
+                v.vote_str = 'Pending'
+                vote_count['Pending'] +=1
+        
+
+    return render_template('case.html',
+                           dispute=dispute,
+                           vote_count=vote_count,
+                           last_update= Config.get('updated'),
+                           )
+
+
 
 @application.errorhandler(404)
 def not_found(e):
