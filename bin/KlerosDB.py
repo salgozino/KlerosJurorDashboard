@@ -214,6 +214,7 @@ class Round(db.Model):
             print("Deleting vote %s" % v.id)
             db.session.delete(v)
         print("Deleting round %s" % self.id)
+        db.session.commit()
         db.session.delete(self)
         db.session.commit()
 
