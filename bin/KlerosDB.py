@@ -206,7 +206,7 @@ class Round(db.Model):
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
 
     def votes(self):
-        return Vote.query.filter_by(round_id = self.id).all()
+        return Vote.query.filter_by(round_id = self.id).order_by(Vote.account.asc()).all()
 
     def delete_recursive(self):
         votes = Vote.query.filter(Vote.round_id == self.id)

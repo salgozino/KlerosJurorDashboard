@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
 from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute, Vote
 from bin.Kleros import StakesKleros
@@ -96,32 +96,34 @@ def visitorMetrics():
                            last_update= Config.get('updated'),
                            )
 
-@application.route('/dispute/<int:id>', methods=['GET'])
-def dispute(id):
+
+@application.route('/dispute/', methods=['POST','GET'])
+def dispute():
+    try:
+        id = request.form['disputeID']
+    except:
+        id = Dispute.query.order_by(Dispute.id.desc()).first().id
+    vote_count = {}
     dispute = Dispute.query.get(id)
     dispute.rounds = dispute.rounds()
-    vote_count = {'Yes':0, 'No':0, 'Pending':0}
     for r in dispute.rounds:
+        vote_count[r.id] = {'Yes':0,'No':0,'Pending':0}
         r.votes = r.votes()
         for v in r.votes:
             if v.choice == 1:
                 v.vote_str = 'Yes'
-                vote_count['Yes'] +=1
+                vote_count[r.id]['Yes'] +=1
             elif v.choice == 2:
                 v.vote_str = 'No'
-                vote_count['No'] +=1
+                vote_count[r.id]['No'] +=1
             else: 
                 v.vote_str = 'Pending'
-                vote_count['Pending'] +=1
-        
-
-    return render_template('case.html',
+                vote_count[r.id]['Pending'] +=1
+    return render_template('dispute.html',
                            dispute=dispute,
                            vote_count=vote_count,
                            last_update= Config.get('updated'),
                            )
-
-
 
 @application.errorhandler(404)
 def not_found(e):
