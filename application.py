@@ -125,6 +125,13 @@ def dispute():
                            last_update= Config.get('updated'),
                            )
 
+
+@application.route('/updateDB/', methods=['POST','GET'])
+def updateDB():
+    from bin.dbModule import fillDB
+    fillDB()
+    return render_template("404.html")
+
 @application.errorhandler(404)
 def not_found(e):
     Visitor().addVisit('unknown')

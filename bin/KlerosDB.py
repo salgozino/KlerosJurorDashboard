@@ -461,3 +461,12 @@ class Visitor(db.Model):
         else:
             currentVisitors.unknown += 1
         db.session.commit()
+        
+    def resetCounters(self):
+        currentVisitors = db.session.query(Visitor).get(1)
+        currentVisitors.dashboard = 0
+        currentVisitors.odds = 0
+        currentVisitors.map = 0
+        currentVisitors.support = 0
+        currentVisitors.unknown = 0
+        db.session.commit()

@@ -248,8 +248,8 @@ class KlerosLiquid(Etherscan):
                 number_of_choices = dispute_eth['number_of_choices']
             )
             # Fix for the case n° 149
-            if dispute.number_of_choices > 100:
-                logger.error(f"Changing the number_of_choices from the dispute {dispute.id} to 2 because is greater than 100")
+            if dispute.number_of_choices > 511:
+                logger.error(f"Changing the number_of_choices from the dispute {dispute.id} to 2 because is greater than 511 and could not be")
                 dispute.number_of_choices = 2
         
             db.session.add(dispute)
