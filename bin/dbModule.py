@@ -71,7 +71,7 @@ def fillDB():
     kl.getDisputes()
     logger.info("Fetching eth and pnk prices")
     updatePrices()
-    updated = datetime.strftime(datetime.now(),"%Y-%m-%d %H:%M:%S")
+    updated = datetime.strftime(datetime.utcnow(),"%Y-%m-%d %H:%M:%S")
     Config.set('updated', updated)
     db.session.commit()
     
