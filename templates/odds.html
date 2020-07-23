@@ -33,8 +33,9 @@
                         <th scope="row" style="word-break: break-all"> {{ c }}</th>
                         {% for col, value in data.items() %}
                             {% if col == 'Odds' %}
-                                <td class="text-right">{{ "{:.2%}".format(value) }}</td>
-                                {% if value > 1 %}<span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="The stake amount is greater than the current amount, that's why you are seeing an odds bigger than 100%." aria-hidden="true"></span>{%endif%}
+                                <td class="text-right">{{ "{:.2%}".format(value) }}
+                                {% if value > 1 %} <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="The stake amount is greater than the current amount, that's why you are seeing an odds bigger than 100%." aria-hidden="true"></span>{%endif%}
+                                </td>
                             {% elif col == 'Chances'%}
                                 <td class="text-right" style="white-space: nowrap">1 in {{ "{:.2f}".format(value) }}</td>
                             {% elif 'USD' in col %}
