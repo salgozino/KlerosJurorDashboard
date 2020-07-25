@@ -196,7 +196,7 @@ class KlerosLiquid(Etherscan):
     def getDisputes(self):
         logger.info("Start of the updating process in the Disputes DB")
         try:
-            fromblock = int(Config.get('dispute_search_block'))+1
+            fromblock = int(Config.get('dispute_search_block'))
         except:
             fromblock = self.initial_block    
         step = 1000
@@ -217,7 +217,7 @@ class KlerosLiquid(Etherscan):
             fromblock = endblock + 1
             endblock = fromblock + step
             allItems += items
-        bn = min(x for x in open_dispute_blockNumbers if x is not None)
+        bn = min(x for x in open_dispute_blockNumbers if x is not None)-1
         Config.set('dispute_search_block',bn)
         db.session.commit()
         return allItems
