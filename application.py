@@ -107,15 +107,19 @@ def dispute():
     dispute = Dispute.query.get(id)
     dispute.rounds = dispute.rounds()
     for r in dispute.rounds:
-        vote_count[r.id] = {'Yes':0,'No':0,'Pending':0}
+        vote_count[r.id] = {'Yes':0,'No':0,'Refuse':0,'Pending':0}
         r.votes = r.votes()
         for v in r.votes:
-            if v.choice == 1:
-                v.vote_str = 'Yes'
-                vote_count[r.id]['Yes'] +=1
-            elif v.choice == 2:
-                v.vote_str = 'No'
-                vote_count[r.id]['No'] +=1
+            if v.vote == 1:
+                if v.choice == 1:
+                    v.vote_str = 'Yes'
+                    vote_count[r.id]['Yes'] +=1
+                elif v.choice == 2:
+                    v.vote_str = 'No'
+                    vote_count[r.id]['No'] +=1
+                elif v.choice == 0:
+                    v.vote_str = 'Refuse'
+                    vote_count[r.id]['Refuse'] +=1
             else: 
                 v.vote_str = 'Pending'
                 vote_count[r.id]['Pending'] +=1

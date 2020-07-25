@@ -24,8 +24,8 @@
         </div>
       </div>
 
-    <div class="row">
-        <table class="table table-bordered table-responsive">
+    <div class="table-responsive">
+        <table class="table table-bordered">
           <tr class="info">
             <td align="center">Dispute Status</td>
             <td align="center">Period</td>
@@ -40,23 +40,25 @@
     </div>
     
     {% for r in dispute.rounds: %}
-    <div class="row">
-        <table class="table table-bordered table-responsive">
+    <div class="table-responsive">
+        <table class="table table-bordered">
           <tr class="text-center info">
-            <td>Yes</td>
-            <td>No</td>
-            <td>Pending</td>
+            <td style="width:25% !important">Yes</td>
+            <td style="width:25% !important">No</td>
+            <td style="width:25% !important">Refuse to arbitrate</td>
+            <td style="width:25% !important">Pending</td>
           </tr>
           <tr class={{"text-center success" if dispute.ruled else "text-center"}}>
-            <td>{{vote_count[r.id]['Yes']}}</td>
-            <td>{{vote_count[r.id]['No']}}</td>
-            <td>{{vote_count[r.id]['Pending']}}</td>
+            <td style="width:25% !important">{{vote_count[r.id]['Yes']}}</td>
+            <td style="width:25% !important">{{vote_count[r.id]['No']}}</td>
+            <td style="width:25% !important">{{vote_count[r.id]['Refuse']}}</td>
+            <td style="width:25% !important">{{vote_count[r.id]['Pending']}}</td>
           </tr>
         </table>
     </div>
 
-    <div class="row mb-5">
-        <table class="table table-bordered table-striped table-responsive">
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
           <tr class={{"success" if r.majority_reached else "warning"}}>
             <td class="">Round {{r.round_num}} - {{ 'Majority reached' if r.majority_reached else 'No majority' }}</td>
             <td align="center">Vote</td>
