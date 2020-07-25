@@ -4,7 +4,9 @@ from sqlalchemy.sql.expression import func
 import statistics
 from datetime import datetime, timedelta
 from bin import db
+import logging
 
+logger = logging.getLogger()
 
 class Config(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -147,7 +149,7 @@ class Dispute(db.Model):
     def delete_recursive(self):
         rounds = Round.query.filter(Round.disputeID == self.id)
         for r in rounds: r.delete_recursive()
-        print("Deleting Dispute %s" % self.id)
+        logger.info("Deleting Dispute %s" % self.id)
         db.session.delete(self)
         db.session.commit()
      
@@ -211,10 +213,10 @@ class Round(db.Model):
     def delete_recursive(self):
         votes = Vote.query.filter(Vote.round_id == self.id)
         for v in votes:
-            print("Deleting vote %s" % v.id)
+            logger.info("Deleting Vote %s" % v.id)
             db.session.delete(v)
-        print("Deleting round %s" % self.id)
         db.session.commit()
+        logger.info("Deleting round %s" % self.id)
         db.session.delete(self)
         db.session.commit()
 
@@ -225,7 +227,7 @@ class Round(db.Model):
 
     @property
     def winning_choice(self):
-        votes = Vote.query.filter(Vote.round_id == self.id).count()
+        # votes = Vote.query.filter(Vote.round_id == self.id).count()
         votes_query = db.session.execute(
             "select choice,count(*) as num_votes from vote \
             where round_id = :round_id and vote=1 \

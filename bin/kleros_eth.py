@@ -202,6 +202,7 @@ class KlerosLiquid(Etherscan):
         step = 1000
         endblock = fromblock + step
         allItems = []
+        open_dispute_blockNumbers = []
         while endblock < self.web3.eth.blockNumber+step-1:
             # print(f"{fromblock} - {endblock}")
             items = self.getEventFromTo(fromblock=fromblock,
@@ -210,23 +211,28 @@ class KlerosLiquid(Etherscan):
                                         endblock=endblock)
             if len(items):
                 for item in items:
-                    self.create_dispute(self.parseDisputeEvent(item))
+                    bn = self.create_dispute(self.parseDisputeEvent(item))
+                    open_dispute_blockNumbers.append(bn)
+
             fromblock = endblock + 1
             endblock = fromblock + step
             allItems += items
+        bn = min(x for x in open_dispute_blockNumbers if x is not None)
+        Config.set('dispute_search_block',bn)
+        db.session.commit()
         return allItems
 
 
     def create_dispute(self, dispute_eth):
-        found_open_dispute = False
         logger.info("Creating dispute %s" % dispute_eth['disputeID'])
         # search if the dispute already exist
         dispute = Dispute.query.get(dispute_eth['disputeID'])
-        logger.info(f"Dispute {dispute}")
+        
         if dispute != None:
+            logger.info(f"Dispute {dispute.id}")
             if dispute.ruled:
                 # if this dispute is already ruled, don't need to do anything
-                return
+                return None
             # delete current dispute, and create the new one with new information
             logger.info(f"Deleting the old Dispute {dispute_eth['disputeID']}")
             dispute.delete_recursive()
@@ -286,19 +292,14 @@ class KlerosLiquid(Etherscan):
                         choice = vote_eth['choice'],
                         vote = vote_eth['vote']
                     )
-        
                     db.session.add(vote)
-                    db.session.commit()
-            if int(dispute_eth['disputeID']) not in (105,107,108): # Broken cases
-                if(not dispute_eth['ruled']):
-                    found_open_dispute = True
-            if not found_open_dispute:
-                Config.set('dispute_search_block', dispute_eth['blockNumber'] - 1)
             db.session.commit()
+            return dispute.blocknumber
         except Exception as e:
             logger.error("Error trying to add a Dispute into the database")
             logger.error(e)
             logger.error(dispute_eth)
+
 
     def courtInfo(self, courtID):
         courtData = self.contract.functions.courts(courtID).call()
