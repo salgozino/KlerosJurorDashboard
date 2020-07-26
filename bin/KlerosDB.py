@@ -222,8 +222,11 @@ class Round(db.Model):
 
     @property
     def majority_reached(self):
-        votes_cast = Vote.query.filter(Vote.round_id == self.id).filter(Vote.vote == 1).count()
-        return votes_cast * 2 >= self.draws_in_round
+        votes_cast = []
+        votes_cast.append(Vote.query.filter(Vote.round_id == self.id).filter(Vote.vote == 1).filter(Vote.choice==1).count())
+        votes_cast.append(Vote.query.filter(Vote.round_id == self.id).filter(Vote.vote == 1).filter(Vote.choice==2).count())
+        votes_cast.append(Vote.query.filter(Vote.round_id == self.id).filter(Vote.vote == 1).filter(Vote.choice==0).count())
+        return any(x >= self.draws_in_round/2 for x in votes_cast )
 
     @property
     def winning_choice(self):
