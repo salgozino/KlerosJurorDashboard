@@ -4,10 +4,10 @@ Created on Thu Jul  9 19:10:44 2020
 
 @author: 60070385
 """
-from bin import db
-from bin.KlerosDB import Court, Config, Visitor, Deposit
-from bin.kleros_eth import KlerosLiquid, logger
-from bin.etherscan import CMC, Etherscan
+from app import db
+from .KlerosDB import Court, Config, Visitor, Deposit
+from .kleros_eth import KlerosLiquid, logger
+from .etherscan import CMC, Etherscan
 from datetime import datetime
 
 def createDB():

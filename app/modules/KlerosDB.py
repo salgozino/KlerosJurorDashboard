@@ -3,10 +3,10 @@
 from sqlalchemy.sql.expression import func
 import statistics
 from datetime import datetime, timedelta
-from bin import db
+from app import db
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 class Config(db.Model):
     id = db.Column(db.Integer, primary_key=True)

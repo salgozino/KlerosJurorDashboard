@@ -4,13 +4,11 @@ import json, urllib, requests
 from eth_abi import decode_abi
 from datetime import datetime
 import logging
-from bin.etherscan import Etherscan
-from bin.KlerosDB import Config, JurorStake, Dispute, Vote, Round
-from bin import db
+from .etherscan import Etherscan
+from .KlerosDB import Config, JurorStake, Dispute, Vote, Round
+from app import db
 
-FORMAT = '%(asctime)-15s - %(message)s'
-logging.basicConfig(format=FORMAT, filename='log.log', level='INFO')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 class KlerosLiquid(Etherscan):
     stakes_event_topic = "0x8f753321c98641397daaca5e8abf8881fff1fd7a7bc229924a012e2cb61763d5"

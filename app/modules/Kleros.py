@@ -3,7 +3,7 @@
 import pandas as pd
 # from datetime import datetime, timedelta
 import logging
-from bin.KlerosDB import db, Court, Juror, Config
+from .KlerosDB import db, Court, Juror, Config
 
 courtNames = {}
 FORMAT = '%(asctime)-15s - %(message)s'

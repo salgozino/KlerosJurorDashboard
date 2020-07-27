@@ -1,18 +1,17 @@
-
 # -*- coding: utf-8 -*-
 
-from flask import Flask, render_template, request, redirect
-from plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
-from bin.KlerosDB import Visitor, Court, Config, Juror, Dispute, Vote
-from bin.Kleros import StakesKleros
-from bin import db
-from datetime import datetime
 import logging
+import os
+from flask import render_template, request
+from app.modules.plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
+from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute, Vote
+from app.modules.Kleros import StakesKleros
+from app import db, create_app
+from datetime import datetime
 
 # Elastic Beanstalk initalization
-application = Flask(__name__)
-application.config.from_object('config')
-application.debug=True
+settings_module = os.environ.get('APP_SETTINGS_MODULE')
+application = create_app(settings_module)
 db.init_app(application)
 logger = logging.getLogger()
 
@@ -129,12 +128,6 @@ def dispute():
                            last_update= Config.get('updated'),
                            )
 
-
-@application.route('/updateDB/', methods=['POST','GET'])
-def updateDB():
-    from bin.dbModule import fillDB
-    fillDB()
-    return render_template("404.html")
 
 @application.errorhandler(404)
 def not_found(e):
