@@ -4,7 +4,7 @@ from plotly.subplots import make_subplots
 import plotly
 from plotly.express import colors as colormap
 
-from bin.Kleros import courtNames
+from .Kleros import courtNames
 
 import json
 

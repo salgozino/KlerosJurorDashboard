@@ -3,9 +3,9 @@
 from sqlalchemy.sql.expression import func
 import statistics
 from datetime import datetime, timedelta
-from app import db
-import logging
+from app.modules import db
 
+import logging
 logger = logging.getLogger(__name__)
 
 class Config(db.Model):

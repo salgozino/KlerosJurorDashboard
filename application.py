@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import os
-from flask import render_template, request
-from app.modules.plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
-from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute, Vote
+from app import create_app
+
+#from app.modules.plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
+from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from app.modules.Kleros import StakesKleros
-from app import db, create_app
 from datetime import datetime
+from flask import render_template, request
+
+import logging
+logger = logging.getLogger(__name__)
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('APP_SETTINGS_MODULE')
 application = create_app(settings_module)
-db.init_app(application)
-logger = logging.getLogger()
 
 @application.route('/')
 def index():

@@ -3,11 +3,11 @@
 import json, urllib, requests
 from eth_abi import decode_abi
 from datetime import datetime
-import logging
 from .etherscan import Etherscan
 from .KlerosDB import Config, JurorStake, Dispute, Vote, Round
 from app import db
 
+import logging
 logger = logging.getLogger(__name__)
 
 class KlerosLiquid(Etherscan):

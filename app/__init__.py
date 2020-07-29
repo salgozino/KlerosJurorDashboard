@@ -1,13 +1,16 @@
 from flask import Flask
-from flask_sqlalchemy  import SQLAlchemy
 import logging
 
-db = SQLAlchemy()
-
 def create_app(settings_module='config.dev'):
+    # create the app
     app = Flask(__name__)
     app.config.from_object(settings_module)
+    # configure the logger
     configure_logging(app)
+    # load the database
+    from app.modules import db
+    db.init_app(app)
+    
     return app
 
 
