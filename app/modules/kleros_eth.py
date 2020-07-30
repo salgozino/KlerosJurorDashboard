@@ -14,7 +14,7 @@ class KlerosLiquid(Etherscan):
     stakes_event_topic = "0x8f753321c98641397daaca5e8abf8881fff1fd7a7bc229924a012e2cb61763d5"
     create_dispute_event_topic = "0x141dfc18aa6a56fc816f44f0e9e2f1ebc92b15ab167770e17db5b084c10ed995"
     address = "0x988b3A538b618C7A603e1c11Ab82Cd16dbE28069"
-    with open('lib/ABI_KlerosLiquid.json','r') as f:
+    with open('app/lib/ABI_KlerosLiquid.json','r') as f:
             abi = json.loads(f.read())['result']
 
     def __init__(self, initial_block = None):

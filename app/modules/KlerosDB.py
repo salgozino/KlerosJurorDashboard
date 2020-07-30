@@ -475,3 +475,5 @@ class Visitor(db.Model):
         currentVisitors.support = 0
         currentVisitors.unknown = 0
         db.session.commit()
+        
+        

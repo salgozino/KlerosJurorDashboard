@@ -5,7 +5,7 @@ Script  clonned from https://github.com/marczeller/Kleros-Monitor-Bot
 import requests
 import urllib
 import json
-from bin.web3Node import web3Node
+from .web3Node import web3Node
 import os
 
 
@@ -15,7 +15,7 @@ class Etherscan(web3Node):
         api_key = os.environ['ETHERSCAN_KEY']
     except:
         print("NO OS ETHERSCAN_KEY VARIABLE FOUND")
-        api_key = json.load(open('lib/etherscan_api_key.json','r'))['api_key']
+        api_key = json.load(open('app/lib/etherscan_api_key.json','r'))['api_key']
 
 
     @classmethod
@@ -98,7 +98,7 @@ class CMC():
             self.api_key = os.environ['CMC_KEY']
         except:
             print("NO OS CMC_KEY VARIABLE FOUND")
-            self.api_key = json.load(open('lib/coinmarketcap.json','r'))['api_key']
+            self.api_key = json.load(open('app/lib/coinmarketcap.json','r'))['api_key']
 
 
     def getCryptoInfo(self, id=3581):

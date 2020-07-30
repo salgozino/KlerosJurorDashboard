@@ -1,7 +1,7 @@
 from flask import Flask
 import logging
 
-def create_app(settings_module='config.dev'):
+def create_app(settings_module='config.development'):
     # create the app
     app = Flask(__name__)
     app.config.from_object(settings_module)

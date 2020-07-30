@@ -4,8 +4,8 @@ Created on Thu Jul  9 19:10:44 2020
 
 @author: 60070385
 """
-from app import db
-from .KlerosDB import Court, Config, Visitor, Deposit
+from app.modules import db
+from .KlerosDB import *
 from .kleros_eth import KlerosLiquid, logger
 from .etherscan import CMC, Etherscan
 from datetime import datetime
@@ -55,7 +55,7 @@ def rebuildDB():
     logger.info("Droping all the tables")
     # For MySQL
     db.engine.execute("SET FOREIGN_KEY_CHECKS = 0;")
-    db.engine.execute("SET sql_mode='NO_AUTO_VALUE_ON_ZERO'")
+    db.engine.execute("SET sql_mode='NO_AUTO_VALUE_ON_ZERO';")
     db.drop_all()
     logger.info("Creating Tables")
     createDB()
@@ -103,7 +103,7 @@ def fillDeposit():
     db.session.commit() 
 
 if __name__ == '__main__':
-    rebuildDB()
+    createDB()
     fillDB()
 
 
