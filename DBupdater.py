@@ -9,3 +9,4 @@ db.init_app(application)
 
 with application.app_context():
     fillDB()
+

@@ -10,12 +10,46 @@ from .kleros_eth import KlerosLiquid, logger
 from .etherscan import CMC, Etherscan
 from datetime import datetime
 
-
+# Smart Contracts of the Courts.
+# TODO! -> need to get automatically this info from somewhere. Help Wanted!
+courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
+              2: '0xebcf3bca271b26ae4b162ba560e243055af0e679',
+              3: '0x916deab80dfbc7030277047cd18b233b3ce5b4ab',
+              4: '0xcb4aae35333193232421e86cd2e9b6c91f3b125f'}
 
 def createDB():
     db.create_all()
     kl = KlerosLiquid()
-    updateCourtInfo()
+    nCourts = 9
+    for courtID in range(0,nCourts+1):
+        try:
+            courtInfo = kl.courtInfo(courtID)
+            courtName = kl.mapCourtNames(courtID)
+            if courtName == 'Unknown':
+                logger.info(f"There is a new court with ID {courtID}! We need his name!")
+        except:
+            # there is no new court to create
+            break
+        try:
+            courtaddress = courtAddresses[courtID]
+        except:
+            courtaddress = None
+        parent = courtInfo['parent']
+        name = courtName,
+        address = courtaddress,
+        voteStake = courtInfo['votesStake'] ,
+        feeForJuror = courtInfo['feeForJuror'],
+        minStake = courtInfo['minStake']
+        db.session.add(Court(id=courtID,
+                             parent=parent,
+                             name=name,
+                             address=address,
+                             voteStake=voteStake,
+                             feeForJuror=feeForJuror,
+                             minStake=minStake))
+        logger.info(f"Court {courtID} added to the Court table")
+        
+    db.session.commit()
     Config.set('dispute_search_block', kl.initial_block)
     Config.set('staking_search_block', kl.initial_block)
     Config.set('token_supply', kl.tokenSupply)
@@ -85,10 +119,7 @@ def updateCourtInfo():
     courts = db.session.query(Court.id).all()
     nCourts = len(courts)
     kl = KlerosLiquid()
-    courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
-                  2: '0xebcf3bca271b26ae4b162ba560e243055af0e679',
-                  3: '0x916deab80dfbc7030277047cd18b233b3ce5b4ab',
-                  4: '0xcb4aae35333193232421e86cd2e9b6c91f3b125f'}
+
     for court in range(0,nCourts+1):
         try:
             courtInfo = kl.courtInfo(court.id)
@@ -109,4 +140,5 @@ def updateCourtInfo():
         court.feeForJuror = courtInfo['feeForJuror'],
         court.minStake = courtInfo['minStake']
         db.session.add(court)
+        logger.info(f"Court {court.id} updated")
     db.session.commit()
