@@ -56,15 +56,19 @@
           </tr>
         </table>
     </div>
-
+    <p>{{'success' if dispute.current_ruling == 1 else 'danger' if dispute.period==4 else 'Ongoing'}}</p>
     <div class="table-responsive">
-        <table class="table table-bordered table-striped">
-          <tr class={{"success" if r.majority_reached else "warning"}}>
+        <table class="table table-bordered">
+          <tr class={{"info" if r.majority_reached else "warning"}}>
             <td class="">Round {{r.round_num}} - {{ 'Majority reached' if r.majority_reached else 'No majority' }}</td>
             <td align="center">Vote</td>
           </tr>
           {% for v in r.votes %}
-            <tr>
+            {% if dispute.period==4 %}
+                <tr class={{'success' if dispute.current_ruling == v.choice else 'danger'}}>
+            {% else %}
+                <tr>
+            {% endif %}
               <td>{{v.account}}</td>
               <td align="right">{{ v.vote_str }}</td>
             </tr>

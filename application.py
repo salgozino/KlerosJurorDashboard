@@ -13,16 +13,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Elastic Beanstalk initalization
-settings_module = os.environ.get('APP_SETTINGS_MODULE')
+settings_module = os.environ.get('CONFIG_MODULE')
 application = create_app(settings_module)
 
 @application.route('/')
 def index():
     Visitor().addVisit('dashboard')
     startTime = datetime.now()
-    pnkStaked = Court(id=0).juror_stats()['total']
     tokenSupply =  float(Config().get('token_supply'))
-    activeJurors = len(Juror.stakedJurors());
     drawnJurors = len(Juror.list())
     retention =  Juror.retention() / drawnJurors
     adoption = len(Juror.adoption())
@@ -31,8 +29,8 @@ def index():
     mostActiveCourt = Court.query.filter(Court.id==list(Dispute.mostActiveCourt().keys())[0]).first().name,
     pnkPrice = float(Config.get('PNKprice'))
     courtTable = StakesKleros.getCourtInfoTable()
-    for c in courtTable.keys():
-        courtTable[c]['Min Stake in USD'] = courtTable[c]['Min Stake']*pnkPrice
+    pnkStaked = courtTable['General']['Total Staked']
+    activeJurors = courtTable['General']['Jurors']
     logger.info(f"Load all the data from the DB takes: {(datetime.now()-startTime).seconds} seconds.")
     return render_template('main.html',
                            last_update= Config.get('updated'),

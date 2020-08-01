@@ -21,15 +21,21 @@ def configure_logging(app):
     handlers = []
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(verbose_formatter())
+    file_handler = logging.FileHandler('flask-log.log')
+    file_handler.setFormatter(verbose_formatter())
     
     if (app.config['APP_ENV'] == app.config['APP_ENV_LOCAL']) or (
             app.config['APP_ENV'] == app.config['APP_ENV_TESTING']) or (
             app.config['APP_ENV'] == app.config['APP_ENV_DEVELOPMENT']):
         console_handler.setLevel(logging.DEBUG)
+        file_handler.setLevel(logging.DEBUG)
         handlers.append(console_handler)
+        handlers.append(file_handler)
     elif app.config['APP_ENV'] == app.config['APP_ENV_PRODUCTION']:
         console_handler.setLevel(logging.INFO)
+        file_handler.setLevel(logging.INFO)
         handlers.append(console_handler)
+        handlers.append(file_handler)
     for l in loggers:
         for handler in handlers:
             l.addHandler(handler)

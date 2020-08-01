@@ -35,6 +35,12 @@ class Court(db.Model):
     minStake = db.Column(db.Float)
     feeForJuror = db.Column(db.Float)
     voteStake = db.Column(db.Integer)
+    meanStaked = db.Column(db.Float)
+    maxStaked = db.Column(db.Float)
+    totalStaked = db.Column(db.Float)
+    activeJurors =  db.Column(db.Integer)
+    disputesLast30days = db.Column(db.Integer)
+    minStakeUSD = db.Column(db.Float)
     
 
     def disputes(self, days=None):
@@ -111,6 +117,23 @@ class Court(db.Model):
             'max': max(jurors.values()),
             'total': sum(jurors.values())
         }
+    
+    @staticmethod
+    def updateStatsAllCourts():
+        courts = db.session.query(Court.id).all()
+        pnkPrice = float(Config.get('PNKprice'))
+        for court in courts:
+            c = Court.query.filter_by(id=court.id).first()
+            stats = c.juror_stats()
+            c.meanStaked = int(stats['mean'])
+            c.maxStaked = int(stats['max'])
+            c.totalStaked = int(stats['total'])
+            c.activeJurors =  stats['length']
+            c.disputesLast30days = len(c.disputes(30))
+            c.minStakeUSD = c.minStake*pnkPrice
+            db.session.add(c)
+        db.session.commit()
+
 
 
 class Dispute(db.Model):

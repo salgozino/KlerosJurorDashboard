@@ -3,7 +3,8 @@
 import pandas as pd
 # from datetime import datetime, timedelta
 import logging
-from .KlerosDB import db, Court, Juror, Config
+from .KlerosDB import Court, Juror, Config
+from app.modules import db
 
 courtNames = {}
 FORMAT = '%(asctime)-15s - %(message)s'
@@ -54,16 +55,17 @@ class StakesKleros():
         courts = Court.query.all()
         courtInfo = {}
         for c in courts:
-            if c.name != "unknown":
-                stats = c.juror_stats()
-                courtInfo[c.name] = {'Jurors':stats['length'],
-                                     'Total Staked':int(stats['total']),
-                                     'Min Stake':int(c.minStake),
-                                     'Mean Staked':int(stats['mean']),
-                                     'Max Staked':int(stats['max']),
-                                     'Disputes in the last 30 days':len(c.disputes(30))
-                                     }
+            courtInfo[c.name] = {'Jurors':c.activeJurors,
+                                 'Total Staked':c.totalStaked,
+                                 'Min Stake':c.minStake,
+                                 'Mean Staked':c.meanStaked,
+                                 'Max Staked':c.maxStaked,
+                                 'Disputes in the last 30 days':c.disputesLast30days,
+                                 'Min Stake in USD':c.minStakeUSD
+                                 }
         return courtInfo
+    
+    
     
     @classmethod
     def getAllCourtChances(cls, pnkStaked):
@@ -72,12 +74,12 @@ class StakesKleros():
         pnkPrice = float(Config.get('PNKprice'))
         ethPrice = float(Config.get('ETHprice'))
         for c in courts:
-            rewardETH = Court.query.filter(Court.id==c.id).first().feeForJuror
+            rewardETH = c.feeForJuror
             rewardUSD = rewardETH * ethPrice
-            voteStakePNK = Court.query.filter(Court.id==c.id).first().voteStake
+            voteStakePNK = c.voteStake
             voteStakeUSD = voteStakePNK * pnkPrice
             stats = c.juror_stats()
-            totalStaked = float(stats['total'])
+            totalStaked = c.totalStaked
             odds = cls.chanceCalculator(pnkStaked,totalStaked)
             courtChances[c.name] = {'Jurors': stats['length'],
                          'Dispues in the last 30 days': len(c.disputes(30)),

@@ -5,7 +5,7 @@ from eth_abi import decode_abi
 from datetime import datetime
 from .etherscan import Etherscan
 from .KlerosDB import Config, JurorStake, Dispute, Vote, Round
-from app import db
+from app.modules import db
 
 import logging
 logger = logging.getLogger(__name__)
@@ -234,7 +234,7 @@ class KlerosLiquid(Etherscan):
             # delete current dispute, and create the new one with new information
             logger.info(f"Deleting the old Dispute {dispute_eth['disputeID']}")
             dispute.delete_recursive()
-        print("Creating dispute %s" % dispute_eth['disputeID'])
+        
         try:
             dispute = Dispute(
                 id = dispute_eth['disputeID'],

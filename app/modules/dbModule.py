@@ -5,44 +5,17 @@ Created on Thu Jul  9 19:10:44 2020
 @author: 60070385
 """
 from app.modules import db
-from .KlerosDB import *
+from .KlerosDB import Court, Config, Visitor, Deposit
 from .kleros_eth import KlerosLiquid, logger
 from .etherscan import CMC, Etherscan
 from datetime import datetime
 
+
+
 def createDB():
     db.create_all()
-    
     kl = KlerosLiquid()
-    nCourts = 9
-    courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
-                      2: '0xebcf3bca271b26ae4b162ba560e243055af0e679',
-                      3: '0x916deab80dfbc7030277047cd18b233b3ce5b4ab',
-                      4: '0xcb4aae35333193232421e86cd2e9b6c91f3b125f'}
-    for courtID in range(0,nCourts+1):
-        try:
-            courtInfo = kl.courtInfo(courtID)
-            courtName = kl.mapCourtNames(courtID)
-            if courtName == 'Unknown':
-                logger.info(f"There is a new court with ID {courtID}! We need his name!")
-        except:
-            # there is no new court to create
-            break
-        try:
-            courtaddress = courtAddresses[courtID]
-        except:
-            courtaddress = None
-            
-        db.session.add(Court(id = courtID,
-                             parent = courtInfo['parent'],
-                             name = courtName,
-                             address = courtaddress,
-                             voteStake = courtInfo['votesStake'] ,
-                             feeForJuror = courtInfo['feeForJuror'],
-                             minStake = courtInfo['minStake']))
-        db.session.commit()
-        logger.info(f"Court {courtID} added to the database")
-    
+    updateCourtInfo()
     Config.set('dispute_search_block', kl.initial_block)
     Config.set('staking_search_block', kl.initial_block)
     Config.set('token_supply', kl.tokenSupply)
@@ -70,7 +43,13 @@ def fillDB():
     logger.info("Fetching all the disputes")
     kl.getDisputes()
     logger.info("Fetching eth and pnk prices")
+    # Update current prices
     updatePrices()
+    
+    # Update Court Statistics
+    updateCourtInfo()
+    Court.updateStatsAllCourts()
+    # Update UpdatedField
     updated = datetime.strftime(datetime.utcnow(),"%Y-%m-%d %H:%M:%S")
     Config.set('updated', updated)
     db.session.commit()
@@ -100,10 +79,34 @@ def fillDeposit():
                 court_id = court.id
             )
             db.session.add(deposit)
-    db.session.commit() 
+    db.session.commit()
 
-if __name__ == '__main__':
-    createDB()
-    fillDB()
-
-
+def updateCourtInfo():
+    courts = db.session.query(Court.id).all()
+    nCourts = len(courts)
+    kl = KlerosLiquid()
+    courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
+                  2: '0xebcf3bca271b26ae4b162ba560e243055af0e679',
+                  3: '0x916deab80dfbc7030277047cd18b233b3ce5b4ab',
+                  4: '0xcb4aae35333193232421e86cd2e9b6c91f3b125f'}
+    for court in range(0,nCourts+1):
+        try:
+            courtInfo = kl.courtInfo(court.id)
+            courtName = kl.mapCourtNames(court.id)
+            if courtName == 'Unknown':
+                logger.info(f"There is a new court with ID {court.id}! We need his name!")
+        except:
+            # there is no new court to create
+            break
+        try:
+            courtaddress = courtAddresses[court.id]
+        except:
+            courtaddress = None
+        court.parent = courtInfo['parent']
+        court.name = courtName,
+        court.address = courtaddress,
+        court.voteStake = courtInfo['votesStake'] ,
+        court.feeForJuror = courtInfo['feeForJuror'],
+        court.minStake = courtInfo['minStake']
+        db.session.add(court)
+    db.session.commit()
