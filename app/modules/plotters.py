@@ -4,7 +4,7 @@ from plotly.subplots import make_subplots
 import plotly
 from plotly.express import colors as colormap
 
-from bin.Kleros import courtNames
+from .Kleros import courtNames
 
 import json
 
@@ -44,8 +44,8 @@ def create_time_series(df, courts, colname=None):
                 marker_color=colors[i]))
     return data
 
-def disputesGraph(dK, pathname="en"):
-    if 'en' == pathname:
+def disputesGraph(dK, language="en"):
+    if 'en' == language:
         ylabels = ['Disputes', 'Jurors Drawn']
         xlabel = 'Dates'
         title = 'Time Evolution of Disputes and Rounds in KLEROS'
@@ -82,8 +82,8 @@ def disputesGraph(dK, pathname="en"):
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-def stakesJurorsGraph(dfStaked, dfJurors, courts=['0','2','8','9'], pathname='en'):
-    if 'en' in pathname:
+def stakesJurorsGraph(dfStaked, dfJurors, courts=['0','2','8','9'], language='en'):
+    if 'en' in language:
         title = 'Time evolution of Stakes in courts'
     else:
         title = 'Evolución de Depósitos por Corte'
@@ -103,7 +103,7 @@ def stakesJurorsGraph(dfStaked, dfJurors, courts=['0','2','8','9'], pathname='en
                          title= title,
                          barmode= 'stack',
                          legend= {'orientation':'h'})
-    if 'en' in pathname:
+    if 'en' in language:
         fig.update_yaxes(title_text="PNK Staked", row=1, col=1)
         fig.update_yaxes(title_text="N° of Active Jurors", row=2, col=1)
         fig.update_xaxes(title_text="Date", row=2, col=1)
@@ -113,8 +113,8 @@ def stakesJurorsGraph(dfStaked, dfJurors, courts=['0','2','8','9'], pathname='en
         fig.update_xaxes(title_text="Fecha", row=2, col=1)
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-def disputesbyCourtGraph(DisputesEvents, courts=['0','2','8','9'], pathname="en"):
-    if 'en' == pathname:
+def disputesbyCourtGraph(DisputesEvents, courts=['0','2','8','9'], language="en"):
+    if 'en' == language:
         title = 'Time evolution: Disputes by Courts'
     else:
         title = 'Evolución tempomral: Disputas por Corte'
