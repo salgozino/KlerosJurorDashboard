@@ -490,7 +490,8 @@ class Visitor(db.Model):
             currentVisitors.unknown += 1
         db.session.commit()
         
-    def resetCounters(self):
+    @staticmethod
+    def resetCounters():
         currentVisitors = db.session.query(Visitor).get(1)
         currentVisitors.dashboard = 0
         currentVisitors.odds = 0
