@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # import os
 import pandas as pd
-# from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 import logging
-from .KlerosDB import Court, Juror, Config
+from .KlerosDB import Court, Juror, Config, JurorStake, StakesEvolution
 from app.modules import db
 
 courtNames = {}
@@ -151,14 +151,14 @@ class StakesKleros():
 #         return df
 
 
-#     @staticmethod
-#     def readHistoric(filename):
-#         filename = os.path.join(DATA_PATH, filename)
-#         df = pd.read_csv(filename, index_col=0)
-#         df.timestamp = pd.to_datetime(df.timestamp)
-#         df.set_index('timestamp', inplace=True)
-#         df.index = pd.to_datetime(df.index)
-#         return df
+    # @staticmethod
+    # def readHistoric(filename):
+    #     filename = os.path.join(DATA_PATH, filename)
+    #     df = pd.read_csv(filename, index_col=0)
+    #     df.timestamp = pd.to_datetime(df.timestamp)
+    #     df.set_index('timestamp', inplace=True)
+    #     df.index = pd.to_datetime(df.index)
+    #     return df
 
 #     @classmethod
 #     def historicStakesInCourts(cls):
@@ -168,27 +168,30 @@ class StakesKleros():
 #     def historicJurorsInCourts(cls):
 #         return cls.readHistoric('historicJurors.csv')
 
-#     def calculateHistoricStakesInCourts(self, freq = 'D'):
-#         if self.data.empty:
-#             self.loadCSV()
-#         df = self.data.copy()
-#         # df.timestamp = pd.to_datetime(df.timestamp)
-#         # df.set_index('timestamp', inplace=True)
-#         start = min(df.index)
-#         end = max(df.index)
-#         # end = datetime(2019, 4, 30)
-#         rango = pd.date_range(start=start, end=end, freq=freq)
-#         data = pd.DataFrame(columns = [i for i in range(len(courtNames))])
-#         for end in rango:
-#             dff = df[(df.index >= start) & (df.index <= end)].copy()
-#             dff = dff[~dff.duplicated(subset=['address', 'subcourtID'], keep='last')]
-#             dff = dff.groupby('subcourtID')['setStake'].sum()
-#             data.loc[end] = dff
-#         data = data.fillna(0)
-#         self.dataToCSV(data,
-#                       os.path.join(DATA_PATH, 'historicStakes.csv'))
-#         return data
+    @staticmethod
+    def calculateHistoricStakesInCourts():
+        try:
+            end = StakesEvolution.query.order_by(StakesEvolution.id.desc()).first().timestamp
+        except:
+            # if couldn't reach the last value, it's because there is no items in 
+            # stakes_evolution table. Start at the begining of the stakes.
+            end = JurorStake.query.order_by(JurorStake.id).first().timestamp
+            logger.debug("Starting with the first stake, because was not found any StakeEvolution item")
+            
+        while end < datetime.today():
+            enddate = datetime.strftime(end, '%Y-%m-%d')
+            logger.debug(f"Calculating the Stakes upto the date {enddate}")
+            stakes = StakesEvolution.getStakes_ByCourt_ForEndDate(enddate)
+            # print(stakes)
+            #logger.debug(f"Adding the values {stakes} to the StakesEvolution table")
+            StakesEvolution.addDateValues(stakes)
+        
+        end+= timedelta(days=1)
 
+
+    
+
+    
 #     def calculateHistoricJurorsInCourts(self, freq = 'D'):
 #         if self.data.empty:
 #             self.loadCSV()
