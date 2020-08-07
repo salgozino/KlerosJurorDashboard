@@ -5,10 +5,10 @@ Created on Thu Jul  9 19:10:44 2020
 @author: 60070385
 """
 from app.modules import db
-from .KlerosDB import Court, Config, Visitor, Deposit
+from .KlerosDB import Court, Config, Visitor, Deposit, StakesEvolution, JurorStake
 from .kleros_eth import KlerosLiquid, logger
 from .etherscan import CMC, Etherscan
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Smart Contracts of the Courts.
 # TODO! -> need to get automatically this info from somewhere. Help Wanted!
@@ -142,3 +142,21 @@ def updateCourtInfo():
         db.session.add(court)
         logger.info(f"Court {court.id} updated")
     db.session.commit()
+
+def updateStakesEvolution():
+    try:
+        end = StakesEvolution.query.order_by(StakesEvolution.id.desc()).first().timestamp
+    except:
+        # if couldn't reach the last value, it's because there is no items in 
+        # stakes_evolution table. Start at the begining of the stakes.
+        end = JurorStake.query.order_by(JurorStake.id).first().timestamp
+        logger.debug("Starting with the first stake, because was not found any StakeEvolution item")
+        
+    while end < datetime.today():
+        enddate = datetime.strftime(end, '%Y-%m-%d')
+        logger.debug(f"Calculating the Stakes upto the date {enddate}")
+        stakes = StakesEvolution.getStakes_ByCourt_ForEndDate(enddate)
+        # print(stakes)
+        logger.debug(f"Adding the values of date {stakes['timestamp']} to the StakesEvolution table")
+        StakesEvolution.addDateValues(stakes)
+        end+= timedelta(days=1)

@@ -85,7 +85,10 @@ class Court(db.Model):
             childs.update(Court(id=child).children_ids())
         return allChilds
 
-
+    @property
+    def ncourts(self):
+        return Court.query.count()
+    
     @property
     def jurors(self):
         allStakes = db.session.execute(
@@ -107,6 +110,12 @@ class Court(db.Model):
                     stakedJurors[stake.address.lower()] = stake.setStake
         return stakedJurors
 
+    @property
+    def map_name(self):
+        if self.name:
+            return self.name
+        else:
+            return self.query.filter(Court.id == self.id).first().name
 
     def juror_stats(self):
         jurors = self.jurors
@@ -134,8 +143,6 @@ class Court(db.Model):
             db.session.add(c)
         db.session.commit()
 
-
-
 class Dispute(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number_of_choices = db.Column(db.Integer)
@@ -157,7 +164,7 @@ class Dispute(db.Model):
     @property
     def court(self):
         return Court.query.get(self.subcourtID)
-
+    
     @property
     def period_name(self):
         period_name = {
@@ -213,6 +220,34 @@ class Dispute(db.Model):
         mostActive = max(counts, key=counts.get)
         return {mostActive:counts[mostActive]}
             
+    @staticmethod
+    def timeEvolution():
+        """
+        Return the timestamp and Dispute amounts
+        """
+        disputes = db.session.query(Dispute.id, Dispute.timestamp).all()
+        allDisputes = []
+        for dispute in disputes:
+            allDisputes.append({'timestamp':dispute.timestamp,
+                                'id':dispute.id})
+        return allDisputes
+
+    @staticmethod
+    def disputesCountByCourt():
+        data = Dispute.query.with_entities(Dispute.subcourtID, func.count(Dispute.id)).group_by(Dispute.subcourtID).all()
+        result = {}
+        for item in data:
+            result[Court(id=item[0]).map_name] = item[1]
+        return result
+    
+    @staticmethod
+    def disputesCountByCreator():
+        data = Dispute.query.with_entities(Dispute.creator, func.count(Dispute.id)).group_by(Dispute.creator).all()
+        result = {}
+        for item in data:
+            result[item[0]] = item[1]
+        return result
+        
 
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -416,9 +451,7 @@ class Juror():
                 if stake[2] >= filter_after:
                     newJuror.append(stake)
         return newJuror
-        
-
-
+      
 class JurorStake(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     address = db.Column(db.String(50))
@@ -431,7 +464,6 @@ class JurorStake(db.Model):
     @staticmethod
     def last_blocknumber():
         return JurorStake.query.order_by(JurorStake.id.desc()).first().blocknumber
-
 
 class Deposit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -500,4 +532,113 @@ class Visitor(db.Model):
         currentVisitors.unknown = 0
         db.session.commit()
         
+class StakesEvolution(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime)
+    court = db.Column(db.Integer)
+    staked = db.Column(db.Float)
+    jurors = db.Column(db.Integer)
+
+
+    @staticmethod
+    def getStakes_ByCourt_ForEndDate(enddate=datetime.strftime(datetime.now(),'%Y-%m-%d')):
+        """
+        Return a Dict with the total staked amount by court, considering the
+        stakes made before the enddate value
+
+        Parameters
+        ----------
+        enddate : string, optional
+            DESCRIPTION. The default is datetime.strftime(datetime.now(),'%Y-%m-%d').
+            Datetime in format %Y-%m-%d to filter the stakes upto this date.
+
+        Returns
+        -------
+        parseStakes : dict
+            DESCRIPTION. Dictionary with the total amount staked in each court.
+            The court are the keys, the values are the total stake amount.
+
+        """
+        allStakes = db.session.execute(
+            f"SELECT id,address,setStake, subcourtID \
+                FROM juror_stake \
+                WHERE id IN ( \
+                    SELECT MAX(id) \
+                    FROM juror_stake \
+                    WHERE timestamp <= '{enddate}' \
+                    GROUP BY address,subcourtID);"
+        )
+        parseStakes = {'timestamp':enddate}
+        jurors_by_court = {}
+        for courtID in range(0,Court().ncourts):
+            jurors_by_court[courtID] = set()
+            parseStakes[courtID] = {'stake':0, 'jurors':0}
         
+        for stake in allStakes:
+            try:
+                # sum the stake in the stake by court
+                parseStakes[stake.subcourtID]['stake'] += stake.setStake
+                if stake.setStake > 0:
+                    # add the address to the set, the duplicated address will not be added
+                    jurors_by_court[stake.subcourtID].add(stake.address.lower())
+            except Exception as e:
+                # this court is not in the dict, add the new key with the value
+                logger.error(f"Error trying to add stake and jurors of the court {stake.subcourtID} to the dict")
+                logger.error(e)
+                parseStakes[stake.subcourtID]['stake'] = stake.setStake
+                if stake.setStake > 0:
+                    jurors_by_court[stake.subcourtID] = set()
+                    jurors_by_court[stake.subcourtID].add(stake.address.lower())
+        # add jurors count in the dict
+        for court in jurors_by_court.keys():
+            parseStakes[court]['jurors'] = len(jurors_by_court[court])
+            
+        # add the childs values into the totals of the parents courts
+        parseStakes_withChilds = {'timestamp':parseStakes['timestamp']}
+        for courtID in range(Court().ncourts-1,-1,-1):
+            childs = Court.getAllCourtChilds(courtID)[::-1]
+            jurors = jurors_by_court[courtID]
+            staked = parseStakes[courtID]['stake']
+            for child in childs:
+                staked += parseStakes[child]['stake']
+                jurors = jurors.union(jurors_by_court[child])
+            parseStakes_withChilds[courtID] = {'stake':staked,
+                                               'jurors':len(jurors)}
+        return parseStakes_withChilds
+    
+    @staticmethod
+    def addDateValues(data_dict):
+        for key in data_dict.keys():
+            if key != 'timestamp':
+                db.session.add(StakesEvolution(timestamp=datetime.strptime(data_dict['timestamp'], '%Y-%m-%d'),
+                                               court=key,
+                                               staked=data_dict[key]['stake'],
+                                               jurors=data_dict[key]['jurors']))
+        db.session.commit()
+
+
+    @staticmethod
+    def getEvolutionByCourt(courtID):
+        data = StakesEvolution.query.filter(StakesEvolution.court == courtID).all()
+        listData = []
+        for item in data:
+            listData.append({'timestamp':item.timestamp,
+                             'staked':item.staked,
+                             'jurors':item.jurors})
+        return listData
+    
+    @staticmethod
+    def getEvolution():
+        data = StakesEvolution.query.all()
+        listData = {}
+        for item in data:
+            if item.court in listData.keys():
+                listData[item.court].append({'timestamp':item.timestamp,
+                                             'staked':item.staked,
+                                             'jurors':item.jurors})
+            else:
+                listData[item.court] = [{'timestamp':item.timestamp,
+                                        'staked':item.staked,
+                                        'jurors':item.jurors}]
+        return listData
+            
