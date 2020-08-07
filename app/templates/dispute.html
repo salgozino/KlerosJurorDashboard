@@ -56,7 +56,6 @@
           </tr>
         </table>
     </div>
-    <p>{{'success' if dispute.current_ruling == 1 else 'danger' if dispute.period==4 else 'Ongoing'}}</p>
     <div class="table-responsive">
         <table class="table table-bordered">
           <tr class={{"info" if r.majority_reached else "warning"}}>

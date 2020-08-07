@@ -3,23 +3,22 @@
 import os
 from app import create_app
 
-#from app.modules.plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph
+from app.modules.plotters import disputesGraph, stakesJurorsGraph, disputesbyCourtGraph, disputesbyCreatorGraph
 from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from app.modules.Kleros import StakesKleros
-from datetime import datetime
 from flask import render_template, request
-
-import logging
-logger = logging.getLogger(__name__)
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
 application = create_app(settings_module)
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 @application.route('/')
 def index():
     Visitor().addVisit('dashboard')
-    startTime = datetime.now()
     tokenSupply =  float(Config().get('token_supply'))
     drawnJurors = len(Juror.list())
     retention =  Juror.retention() / drawnJurors
@@ -31,7 +30,7 @@ def index():
     courtTable = StakesKleros.getCourtInfoTable()
     pnkStaked = courtTable['General']['Total Staked']
     activeJurors = courtTable['General']['Jurors']
-    logger.info(f"Load all the data from the DB takes: {(datetime.now()-startTime).seconds} seconds.")
+    sjGraph = stakesJurorsGraph()
     return render_template('main.html',
                            last_update= Config.get('updated'),
                            disputes= Dispute.query.order_by(Dispute.id.desc()).first().id,
@@ -50,7 +49,11 @@ def index():
                            pnkPctChange = float(Config.get('PNKpctchange24h'))/100,
                            pnkVol24= float(Config.get('PNKvolume24h')),
                            pnkCircSupply= float(Config.get('PNKcirculating_supply')),
-                           courtTable = courtTable
+                           courtTable = courtTable,
+                           stakedPNKgraph = sjGraph,
+                           disputesgraph = disputesGraph(),
+                           disputeCourtgraph = disputesbyCourtGraph(),
+                           disputeCreatorgraph = disputesbyCreatorGraph()
                            )
 
 
