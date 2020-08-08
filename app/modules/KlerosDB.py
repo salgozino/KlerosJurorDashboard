@@ -8,6 +8,7 @@ from app.modules import db
 import logging
 logger = logging.getLogger(__name__)
 
+
 class Config(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     option = db.Column(db.String(50))
@@ -16,16 +17,19 @@ class Config(db.Model):
     @classmethod
     def get(cls, db_key):
         query = cls.query.filter(cls.option == db_key).first()
-        if query == None: return None
+        if query is None:
+            return None
         return query.value
 
     @classmethod
     def set(cls, db_key, db_val):
         query = cls.query.filter(cls.option == db_key)
-        for item in query: db.session.delete(item)
-        new_option = cls(option = db_key, value = db_val)
+        for item in query:
+            db.session.delete(item)
+        new_option = cls(option=db_key, value=db_val)
         db.session.add(new_option)
         db.session.commit()
+
 
 class Court(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -38,14 +42,13 @@ class Court(db.Model):
     meanStaked = db.Column(db.Float)
     maxStaked = db.Column(db.Float)
     totalStaked = db.Column(db.Float)
-    activeJurors =  db.Column(db.Integer)
+    activeJurors = db.Column(db.Integer)
     disputesLast30days = db.Column(db.Integer)
     minStakeUSD = db.Column(db.Float)
-    
 
     def disputes(self, days=None):
         """
-        Return the disputes in the previous days. If days is None, return all 
+        Return the disputes in the previous days. If days is None, return all
         the disputes in that Court
 
         Parameters
@@ -63,7 +66,7 @@ class Court(db.Model):
         if days:
             filter_after = (datetime.now() - timedelta(days=days)).replace(hour=0, minute=0, second=0)
             return Dispute.query \
-                .filter(Dispute.subcourtID == self.id, Dispute.timestamp >= filter_after ) \
+                .filter(Dispute.subcourtID == self.id, Dispute.timestamp >= filter_after) \
                 .order_by(Dispute.id.desc()).all()
         else:
             return Dispute.query.filter(Dispute.subcourtID == self.id).order_by(Dispute.id.desc()).all()
@@ -88,7 +91,7 @@ class Court(db.Model):
     @property
     def ncourts(self):
         return Court.query.count()
-    
+
     @property
     def jurors(self):
         allStakes = db.session.execute(
@@ -126,7 +129,7 @@ class Court(db.Model):
             'max': max(jurors.values()),
             'total': sum(jurors.values())
         }
-    
+
     @staticmethod
     def updateStatsAllCourts():
         courts = db.session.query(Court.id).all()
@@ -137,11 +140,12 @@ class Court(db.Model):
             c.meanStaked = int(stats['mean'])
             c.maxStaked = int(stats['max'])
             c.totalStaked = int(stats['total'])
-            c.activeJurors =  stats['length']
+            c.activeJurors = stats['length']
             c.disputesLast30days = len(c.disputes(30))
             c.minStakeUSD = c.minStake*pnkPrice
             db.session.add(c)
         db.session.commit()
+
 
 class Dispute(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -159,40 +163,41 @@ class Dispute(db.Model):
     blocknumber = db.Column(db.Integer)
 
     def rounds(self):
-        return Round.query.filter_by(disputeID = self.id).all()
+        return Round.query.filter_by(disputeID=self.id).all()
 
     @property
     def court(self):
         return Court.query.get(self.subcourtID)
-    
+
     @property
     def period_name(self):
         period_name = {
-            0 : "Evidence",
-            1 : "Commit",
-            2 : "Vote",
-            3 : "Appeal",
-            4 : "Execution",
+            0: "Evidence",
+            1: "Commit",
+            2: "Vote",
+            3: "Appeal",
+            4: "Execution",
         }
         return period_name[self.period]
 
     def delete_recursive(self):
         rounds = Round.query.filter(Round.disputeID == self.id)
-        for r in rounds: r.delete_recursive()
+        for r in rounds:
+            r.delete_recursive()
         logger.info("Deleting Dispute %s" % self.id)
         db.session.delete(self)
         db.session.commit()
-     
+
     @property
     def openCases(self):
         openCases = self.query.filter(Dispute.ruled == 0).all()
         return len(openCases)
-        
+
     @property
     def ruledCases(self):
         ruledCases = self.query.filter(Dispute.ruled == 1).all()
         return len(ruledCases)
-        
+
     @staticmethod
     def mostActiveCourt(days=7):
         """
@@ -209,17 +214,17 @@ class Dispute(db.Model):
 
         """
         filter_after = datetime.today() - timedelta(days=days)
-        
+
         disputes = Dispute.query.filter(Dispute.timestamp >= filter_after).all()
         counts = {}
         for dispute in disputes:
             try:
                 counts[dispute.subcourtID] += 1
-            except:
+            except KeyError:
                 counts[dispute.subcourtID] = 1
         mostActive = max(counts, key=counts.get)
-        return {mostActive:counts[mostActive]}
-            
+        return {mostActive: counts[mostActive]}
+
     @staticmethod
     def timeEvolution():
         """
@@ -228,26 +233,28 @@ class Dispute(db.Model):
         disputes = db.session.query(Dispute.id, Dispute.timestamp).all()
         allDisputes = []
         for dispute in disputes:
-            allDisputes.append({'timestamp':dispute.timestamp,
-                                'id':dispute.id})
+            allDisputes.append({'timestamp': dispute.timestamp,
+                                'id': dispute.id})
         return allDisputes
 
     @staticmethod
     def disputesCountByCourt():
-        data = Dispute.query.with_entities(Dispute.subcourtID, func.count(Dispute.id)).group_by(Dispute.subcourtID).all()
+        data = Dispute.query.with_entities(Dispute.subcourtID, func.count(Dispute.id)).\
+            group_by(Dispute.subcourtID).all()
         result = {}
         for item in data:
             result[Court(id=item[0]).map_name] = item[1]
         return result
-    
+
     @staticmethod
     def disputesCountByCreator():
-        data = Dispute.query.with_entities(Dispute.creator, func.count(Dispute.id)).group_by(Dispute.creator).all()
+        data = Dispute.query.with_entities(Dispute.creator, func.count(Dispute.id)).\
+            group_by(Dispute.creator).all()
         result = {}
         for item in data:
             result[item[0]] = item[1]
         return result
-        
+
 
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -266,7 +273,7 @@ class Round(db.Model):
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
 
     def votes(self):
-        return Vote.query.filter_by(round_id = self.id).order_by(Vote.account.asc()).all()
+        return Vote.query.filter_by(round_id=self.id).order_by(Vote.account.asc()).all()
 
     def delete_recursive(self):
         votes = Vote.query.filter(Vote.round_id == self.id)
@@ -284,7 +291,7 @@ class Round(db.Model):
         votes_cast.append(Vote.query.filter(Vote.round_id == self.id).filter(Vote.vote == 1).filter(Vote.choice==1).count())
         votes_cast.append(Vote.query.filter(Vote.round_id == self.id).filter(Vote.vote == 1).filter(Vote.choice==2).count())
         votes_cast.append(Vote.query.filter(Vote.round_id == self.id).filter(Vote.vote == 1).filter(Vote.choice==0).count())
-        return any(x >= self.draws_in_round/2 for x in votes_cast )
+        return any(x >= self.draws_in_round/2 for x in votes_cast)
 
     @property
     def winning_choice(self):
@@ -294,6 +301,7 @@ class Round(db.Model):
             where round_id = :round_id and vote=1 \
             group by choice order by num_votes desc", {'round_id': self.id}).first()
         return(votes_query[0])
+
 
 class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -307,8 +315,10 @@ class Vote(db.Model):
     @property
     def is_winner(self):
         round = Round.query.get(self.round_id)
-        if not round.majority_reached: return False
+        if not round.majority_reached:
+            return False
         return self.choice == round.winning_choice
+
 
 class Juror():
     def __init__(self, address):
@@ -328,11 +338,11 @@ class Juror():
         jurors = []
         for jq in jurors_query:
             jurors.append({
-                'address':jq[0],
+                'address': jq[0],
                 'votes': jq[1]
             })
         return jurors
-    
+
     @staticmethod
     def stakedJurors():
         allStakes = db.session.execute(
@@ -347,12 +357,11 @@ class Juror():
         for stake in allStakes:
             if stake.setStake > 0:
                 if stake.address.lower() not in stakedJurors.keys():
-                    stakedJurors[stake.address.lower()] = [{stake.subcourtID:stake.setStake}]
+                    stakedJurors[stake.address.lower()] = [{stake.subcourtID: stake.setStake}]
                 else:
-                    stakedJurors[stake.address.lower()].append({stake.subcourtID:stake.setStake})
+                    stakedJurors[stake.address.lower()].append({stake.subcourtID: stake.setStake})
 
         return stakedJurors
-
 
     def votes_in_court(self, court_id):
         votes_in_court = db.session.execute(
@@ -361,7 +370,7 @@ class Juror():
             AND vote.round_id = round.id \
             AND round.disputeID = dispute.id \
             AND dispute.subcourtID = :subcourtID",
-            {'address': self.address, 'subcourtID' : court_id}
+            {'address': self.address, 'subcourtID': court_id}
         )
 
         return votes_in_court.first()[0]
@@ -373,7 +382,7 @@ class Juror():
         for staking in stakings_query:
             stakings.append(staking)
         return stakings
-    
+
     @property
     def stakings_nonZero(self):
         stakings_query = JurorStake.query.filter(JurorStake.address == self.address).order_by(JurorStake.timestamp.desc())
@@ -382,7 +391,7 @@ class Juror():
             if staking.setStake > 0:
                 stakings.append(staking)
         return stakings
-    
+
     @property
     def totalStaked(self):
         stakings_query = JurorStake.query.filter(JurorStake.address == self.address).order_by(JurorStake.timestamp.desc())
@@ -396,7 +405,7 @@ class Juror():
         stakings_query = db.session.execute(
             "SELECT MAX(id), subcourtID FROM juror_stake \
             WHERE address = :address \
-            group by subcourtID", {'address': self.address }
+            group by subcourtID", {'address': self.address}
         )
         stakings = {}
         for sq in stakings_query:
@@ -421,11 +430,10 @@ class Juror():
             'court_only': court_only_stakings,
             'court_and_children': court_and_children
         }
-    
-    
+
     def retention():
         jurorsDrawn = Juror.list()
-        jurorsDrawn = set(map(lambda x:x['address'].lower(),jurorsDrawn))
+        jurorsDrawn = set(map(lambda x: x['address'].lower(), jurorsDrawn))
         activeJurors = Juror.stakedJurors()
         activeJurors = set(activeJurors.keys())
         jurorsRetained = activeJurors.intersection(jurorsDrawn)
@@ -444,14 +452,15 @@ class Juror():
             order by timestamp desc").fetchall()
         newJuror = []
         for stake in lastStakes:
-            if isinstance(stake[2],str):
+            if isinstance(stake[2], str):
                 if datetime.strptime(stake[2], "%Y-%m-%d %H:%M:%S.%f") >= filter_after:
                     newJuror.append(stake)
             else:
                 if stake[2] >= filter_after:
                     newJuror.append(stake)
         return newJuror
-      
+
+
 class JurorStake(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     address = db.Column(db.String(50))
@@ -460,10 +469,11 @@ class JurorStake(db.Model):
     setStake = db.Column(db.Float)
     txid = db.Column(db.String(100))
     blocknumber = db.Column(db.Integer)
-    
+
     @staticmethod
     def last_blocknumber():
         return JurorStake.query.order_by(JurorStake.id.desc()).first().blocknumber
+
 
 class Deposit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -472,11 +482,12 @@ class Deposit(db.Model):
     amount = db.Column(db.Float)
     txid = db.Column(db.String(50))
     court_id = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
-    token_contract = db.Column(db.String(50)) # FIXME
+    token_contract = db.Column(db.String(50))  # FIXME
 
     @classmethod
     def total(cls):
         return cls.query.with_entities(func.sum(cls.amount)).all()[0][0]
+
 
 class Visitor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -485,8 +496,7 @@ class Visitor(db.Model):
     odds = db.Column(db.Integer)
     support = db.Column(db.Integer)
     unknown = db.Column(db.Integer)
-    
-    
+
     def __init__(self):
         try:
             currentVisitors = db.session.query(Visitor).get(1)
@@ -495,7 +505,7 @@ class Visitor(db.Model):
             self.odds = currentVisitors.odds
             self.support = currentVisitors.support
             self.unknown = currentVisitors.unknown
-        except:
+        except Exception:
             self.dashboard = 0
             self.map = 0
             self.odds = 0
@@ -504,10 +514,9 @@ class Visitor(db.Model):
             db.session.add(self)
             db.session.commit()
 
-
     def __repr__(self):
         return f'Visitor({self.dashboard}, {self.map}, {self.odds}, {self.support}, {self.unknown})'
-    
+
     def addVisit(self, page):
         currentVisitors = db.session.query(Visitor).get(1)
         if page == 'dashboard':
@@ -521,7 +530,7 @@ class Visitor(db.Model):
         else:
             currentVisitors.unknown += 1
         db.session.commit()
-        
+
     @staticmethod
     def resetCounters():
         currentVisitors = db.session.query(Visitor).get(1)
@@ -531,7 +540,8 @@ class Visitor(db.Model):
         currentVisitors.support = 0
         currentVisitors.unknown = 0
         db.session.commit()
-        
+
+
 class StakesEvolution(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime)
@@ -539,9 +549,9 @@ class StakesEvolution(db.Model):
     staked = db.Column(db.Float)
     jurors = db.Column(db.Integer)
 
-
     @staticmethod
-    def getStakes_ByCourt_ForEndDate(enddate=datetime.strftime(datetime.now(),'%Y-%m-%d')):
+    def getStakes_ByCourt_ForEndDate(enddate=datetime.strftime(datetime.now(),
+                                                               '%Y-%m-%d')):
         """
         Return a Dict with the total staked amount by court, considering the
         stakes made before the enddate value
@@ -568,12 +578,13 @@ class StakesEvolution(db.Model):
                     WHERE timestamp <= '{enddate}' \
                     GROUP BY address,subcourtID);"
         )
-        parseStakes = {'timestamp':enddate}
+        parseStakes = {'timestamp': enddate}
         jurors_by_court = {}
-        for courtID in range(0,Court().ncourts):
+        for courtID in range(0, Court().ncourts):
             jurors_by_court[courtID] = set()
-            parseStakes[courtID] = {'stake':0, 'jurors':0}
-        
+            parseStakes[courtID] = {'stake': 0,
+                                    'jurors': 0}
+
         for stake in allStakes:
             try:
                 # sum the stake in the stake by court
@@ -592,53 +603,52 @@ class StakesEvolution(db.Model):
         # add jurors count in the dict
         for court in jurors_by_court.keys():
             parseStakes[court]['jurors'] = len(jurors_by_court[court])
-            
+
         # add the childs values into the totals of the parents courts
-        parseStakes_withChilds = {'timestamp':parseStakes['timestamp']}
-        for courtID in range(Court().ncourts-1,-1,-1):
+        parseStakes_withChilds = {'timestamp': parseStakes['timestamp']}
+        for courtID in range(Court().ncourts-1, -1, -1):
             childs = Court.getAllCourtChilds(courtID)[::-1]
             jurors = jurors_by_court[courtID]
             staked = parseStakes[courtID]['stake']
             for child in childs:
                 staked += parseStakes[child]['stake']
                 jurors = jurors.union(jurors_by_court[child])
-            parseStakes_withChilds[courtID] = {'stake':staked,
-                                               'jurors':len(jurors)}
+            parseStakes_withChilds[courtID] = {'stake': staked,
+                                               'jurors': len(jurors)}
         return parseStakes_withChilds
-    
+
     @staticmethod
     def addDateValues(data_dict):
         for key in data_dict.keys():
             if key != 'timestamp':
-                db.session.add(StakesEvolution(timestamp=datetime.strptime(data_dict['timestamp'], '%Y-%m-%d'),
+                db.session.add(StakesEvolution(timestamp=datetime.strptime(data_dict['timestamp'],
+                                                                           '%Y-%m-%d'),
                                                court=key,
                                                staked=data_dict[key]['stake'],
                                                jurors=data_dict[key]['jurors']))
         db.session.commit()
-
 
     @staticmethod
     def getEvolutionByCourt(courtID):
         data = StakesEvolution.query.filter(StakesEvolution.court == courtID).all()
         listData = []
         for item in data:
-            listData.append({'timestamp':item.timestamp,
-                             'staked':item.staked,
-                             'jurors':item.jurors})
+            listData.append({'timestamp': item.timestamp,
+                             'staked': item.staked,
+                             'jurors': item.jurors})
         return listData
-    
+
     @staticmethod
     def getEvolution():
         data = StakesEvolution.query.all()
         listData = {}
         for item in data:
             if item.court in listData.keys():
-                listData[item.court].append({'timestamp':item.timestamp,
-                                             'staked':item.staked,
-                                             'jurors':item.jurors})
+                listData[item.court].append({'timestamp': item.timestamp,
+                                             'staked': item.staked,
+                                             'jurors': item.jurors})
             else:
-                listData[item.court] = [{'timestamp':item.timestamp,
-                                        'staked':item.staked,
-                                        'jurors':item.jurors}]
+                listData[item.court] = [{'timestamp': item.timestamp,
+                                         'staked': item.staked,
+                                         'jurors': item.jurors}]
         return listData
-            
