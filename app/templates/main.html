@@ -289,7 +289,7 @@
 <!-- Graph of PNK Staked and Active Jurors -->
 <div class="container">
     <div class="row">
-        <div class="col-md-8 col-md-offset-2" id="Disputesgraph-id" style="min-height:150px; max-height:100%">
+        <div class="col-md-12 " id="Disputesgraph-id">
             <script>
                 var graph = {{disputesgraph | safe}};
                 Plotly.plot('Disputesgraph-id',graph,{});
@@ -301,7 +301,7 @@
 <!-- Graph of PNK Staked and Active Jurors -->
 <div class="container">
     <div class="row">
-        <div class="col-md-8 col-md-offset-2" id="StakedPNKgraph-id" style="min-height:150px; max-height:100%">
+        <div class="col-md-12" id="StakedPNKgraph-id" style="min-height:150px; max-height:100%">
             <script>
                 var graph = {{stakedPNKgraph | safe}};
                 Plotly.plot('StakedPNKgraph-id',graph,{});
@@ -312,11 +312,20 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-md-8 col-md-offset-2">
+        <div class="col-md-6">
             <div class="chart" id="disputeCourtsgraph-id" style="min-height:150px; max-height:100%">
                 <script>
                     var fig = {{disputeCourtgraph | safe}};
                     Plotly.plot('disputeCourtsgraph-id', fig.data, fig.layout);
+                </script>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="chart" id="disputeCreatorgraph-id" style="min-height:150px; max-height:100%">
+                <script>
+                    var fig = {{disputeCreatorgraph | safe}};
+                    Plotly.plot('disputeCreatorgraph-id', fig.data, fig.layout);
                 </script>
             </div>
         </div>
