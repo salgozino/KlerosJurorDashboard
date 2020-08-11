@@ -455,7 +455,7 @@ class Juror():
                                                                        minute=0,
                                                                        second=0)
         lastStakes = db.session.execute(
-            "SELECT id,address,setStake, subcourtID \
+            "SELECT id, address, timestamp, setStake, subcourtID \
                 FROM juror_stake \
                 WHERE id IN ( \
                     SELECT MAX(id) \
@@ -465,12 +465,13 @@ class Juror():
 
         newJuror = set()
         for stake in lastStakes:
-            if isinstance(stake[2], str):
-                if datetime.strptime(stake[2], "%Y-%m-%d %H:%M:%S.%f") >= filter_after:
-                    newJuror.add(stake)
-            else:
-                if stake[2] >= filter_after:
-                    newJuror.add(stake)
+            if stake.setStake > 0:
+                if isinstance(stake.timestamp, str):
+                    if datetime.strptime(stake.timestamp, "%Y-%m-%d %H:%M:%S.%f") >= filter_after:
+                        newJuror.add(stake.address)
+                else:
+                    if stake.timestamp >= filter_after:
+                        newJuror.add(stake.address)
         return newJuror
 
 
