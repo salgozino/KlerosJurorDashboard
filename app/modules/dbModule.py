@@ -30,7 +30,7 @@ def createDB():
             if courtName == 'Unknown':
                 logger.info(f"There is a new court with ID {courtID}! \
                             We need his name!")
-        except:
+        except Exception:
             # there is no new court to create
             break
         try:
@@ -135,7 +135,7 @@ def updateCourtInfo():
             if courtName == 'Unknown':
                 logger.info(f"There is a new court with ID {court.id}! \
                             We need his name!")
-        except:
+        except Exception:
             # there is no new court to create
             break
         try:
@@ -156,7 +156,7 @@ def updateCourtInfo():
 def updateStakesEvolution():
     try:
         end = StakesEvolution.query.order_by(StakesEvolution.id.desc()).first().timestamp
-    except:
+    except Exception:
         # if couldn't reach the last value, it's because there is no items in
         # stakes_evolution table. Start at the begining of the stakes.
         end = JurorStake.query.order_by(JurorStake.id).first().timestamp

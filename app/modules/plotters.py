@@ -166,9 +166,9 @@ def disputesbyCourtGraph(language="en"):
 
 def disputesbyCreatorGraph(language="en"):
     if 'en' == language:
-        title = 'Disputes by Creator'
+        title = 'Disputes by dApp'
     else:
-        title = 'Disputas por Creador'
+        title = 'Disputas por dApp'
     fig = go.Figure()
     data = Dispute.disputesCountByCreator()
     fig.add_trace(go.Pie(labels=list(data.keys()),

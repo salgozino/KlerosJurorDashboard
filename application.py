@@ -26,7 +26,11 @@ def index():
     adoption = len(Juror.adoption())
     ruledCases = Dispute().ruledCases
     openCases = Dispute().openCases
-    mostActiveCourt = Court.query.filter(Court.id == list(Dispute.mostActiveCourt().keys())[0]).first().name,
+    mostActiveCourt = Dispute.mostActiveCourt()
+    if mostActiveCourt:
+        mostActiveCourt = Court(id=int(list(mostActiveCourt.keys())[0])).map_name
+    else:
+        mostActiveCourt = "No new cases in the last 7 days"
     pnkPrice = float(Config.get('PNKprice'))
     courtTable = StakesKleros.getCourtInfoTable()
     pnkStaked = courtTable['General']['Total Staked']
@@ -39,7 +43,7 @@ def index():
                            jurorsdrawn=drawnJurors,
                            retention=retention,
                            adoption=adoption,
-                           most_active_court=mostActiveCourt[0],
+                           most_active_court=mostActiveCourt,
                            cases_closed=ruledCases,
                            cases_rulling=openCases,
                            tokenSupply=tokenSupply,
