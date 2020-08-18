@@ -10,5 +10,4 @@ db.init_app(application)
 
 with application.app_context():
     fillDB()
-    if datetime.now().hour == 0:
-        updateStakesEvolution()
+    updateStakesEvolution()

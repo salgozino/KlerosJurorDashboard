@@ -160,13 +160,14 @@ def updateCourtInfo():
 def updateStakesEvolution():
     try:
         end = StakesEvolution.query.order_by(StakesEvolution.id.desc()).first().timestamp
+        end += timedelta(days=1)
     except Exception:
         # if couldn't reach the last value, it's because there is no items in
         # stakes_evolution table. Start at the begining of the stakes.
         end = JurorStake.query.order_by(JurorStake.id).first().timestamp
         logger.debug("Starting with the first stake, because was not found any StakeEvolution item")
 
-    while end < datetime.today():
+    while end.date() < datetime.today().date():
         enddate = datetime.strftime(end, '%Y-%m-%d')
         logger.debug(f"Calculating the Stakes upto the date {enddate}")
         stakes = StakesEvolution.getStakes_ByCourt_ForEndDate(enddate)
