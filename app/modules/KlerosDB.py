@@ -145,6 +145,7 @@ class Court(db.Model):
             c.minStakeUSD = c.minStake*pnkPrice
             db.session.add(c)
         db.session.commit()
+        logger.debug("Stats of Courts updated")
 
 
 class Dispute(db.Model):
@@ -454,7 +455,16 @@ class Juror():
         filter_after = (datetime.today()-timedelta(days=days)).replace(hour=0,
                                                                        minute=0,
                                                                        second=0)
+        # filter_after = datetime.strftime(filter_after, '%Y-%m-%d')
         lastStakes = db.session.execute(
+            "SELECT id, address, timestamp, setStake, subcourtID \
+                FROM juror_stake \
+                WHERE id IN ( \
+                    SELECT MAX(id) \
+                    FROM juror_stake \
+                    GROUP BY address,subcourtID);"
+        ).fetchall()
+        oldStakes = db.session.execute(
             "SELECT id, address, timestamp, setStake, subcourtID \
                 FROM juror_stake \
                 WHERE id IN ( \
@@ -464,15 +474,14 @@ class Juror():
         ).fetchall()
 
         newJuror = set()
+        oldJuror = set()
         for stake in lastStakes:
-            if stake.setStake > 0:
-                if isinstance(stake.timestamp, str):
-                    if datetime.strptime(stake.timestamp, "%Y-%m-%d %H:%M:%S.%f") >= filter_after:
-                        newJuror.add(stake.address)
-                else:
-                    if stake.timestamp >= filter_after:
-                        newJuror.add(stake.address)
-        return newJuror
+            if stake.setStake > 0 and stake.timestamp >= filter_after:
+                newJuror.add(stake.address)
+        for stake in oldStakes:
+            if stake.setStake > 0 and stake.timestamp < filter_after:
+                oldJuror.add(stake.address)
+        return newJuror.difference(oldJuror)
 
 
 class JurorStake(db.Model):
