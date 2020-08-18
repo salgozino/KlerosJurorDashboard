@@ -1,4 +1,4 @@
-from app.modules.dbModule import fillDB, db, updateStakesEvolution
+from app.modules.dbModule import fillDB, db, updateStakesEvolution, updateCourtInfo
 import os
 from app import create_app
 from datetime import datetime

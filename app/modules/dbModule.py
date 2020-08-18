@@ -7,9 +7,12 @@ Created on Thu Jul  9 19:10:44 2020
 from app.modules import db
 from .KlerosDB import Court, Config, Visitor, Deposit, StakesEvolution, \
     JurorStake
-from .kleros_eth import KlerosLiquid, logger
+from .kleros_eth import KlerosLiquid
 from .etherscan import CMC, Etherscan
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Smart Contracts of the Courts.
 # TODO! -> need to get automatically this info from somewhere. Help Wanted!
@@ -124,33 +127,34 @@ def fillDeposit():
 
 
 def updateCourtInfo():
+    logger.debug("Updating court info")
     courts = db.session.query(Court.id).all()
     nCourts = len(courts)
     kl = KlerosLiquid()
 
-    for court in range(0, nCourts+1):
+    for courtID in range(0, nCourts+1):
+
         try:
-            courtInfo = kl.courtInfo(court.id)
-            courtName = kl.mapCourtNames(court.id)
+            courtInfo = kl.courtInfo(courtID)
+            courtName = kl.mapCourtNames(courtID)
             if courtName == 'Unknown':
-                logger.info(f"There is a new court with ID {court.id}! \
+                logger.info(f"There is a new court with ID {courtID}! \
                             We need his name!")
         except Exception:
             # there is no new court to create
             break
         try:
-            courtaddress = courtAddresses[court.id]
+            courtaddress = courtAddresses[courtID]
         except KeyError:
             courtaddress = None
-        court.parent = courtInfo['parent']
-        court.name = courtName,
-        court.address = courtaddress,
-        court.voteStake = courtInfo['votesStake'],
-        court.feeForJuror = courtInfo['feeForJuror'],
-        court.minStake = courtInfo['minStake']
-        db.session.add(court)
-        logger.info(f"Court {court.id} updated")
-    db.session.commit()
+        db.session.query(Court).filter(Court.id == courtID).update({'parent': courtInfo['parent'],
+                                                                    'name': courtName,
+                                                                    'address': courtaddress,
+                                                                    'voteStake': courtInfo['votesStake'],
+                                                                    'feeForJuror': courtInfo['feeForJuror'],
+                                                                    'minStake': courtInfo['minStake']})
+        db.session.commit()
+        logger.info(f"Court {courtID} updated")
 
 
 def updateStakesEvolution():
