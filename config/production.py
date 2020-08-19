@@ -8,9 +8,9 @@ if 'RDS_HOSTNAME' in os.environ:
             'NAME': os.environ['RDS_DB_NAME'],
             'USER': os.environ['RDS_USERNAME'],
             'PASSWORD': os.environ['RDS_PASSWORD'],
-            'HOST': os.environ['RDS_HOSTNAME'],
+            'HOST': os.environ['DB_HOST'],
             'PORT': os.environ['RDS_PORT'],
-            'DB': os.environ['RDS_DB_NAME']
+            'DB': os.environ['DB_NAME']
     }
     SQLALCHEMY_DATABASE_URI = DATABASE['ENGINE']+'://'+DATABASE['USER']+':'+ \
     DATABASE['PASSWORD']+'@'+DATABASE['HOST']+':'+DATABASE['PORT']+'/'+DATABASE['DB']
