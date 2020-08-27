@@ -79,6 +79,8 @@ def fillDB():
     # db.session.rollback()
     # db.session.close_all()
     kl = KlerosLiquid()
+    logger.info("Updating courts")
+    updateCourtInfo()
     logger.info("Fetching all the stakes")
     kl.getStakes()
     logger.info("Fetching all the disputes")
@@ -88,7 +90,6 @@ def fillDB():
     updatePrices()
 
     # Update Court Statistics
-    updateCourtInfo()
     Court.updateStatsAllCourts()
     # Update UpdatedField
     updated = datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S")
@@ -132,29 +133,45 @@ def updateCourtInfo():
     nCourts = len(courts)
     kl = KlerosLiquid()
 
-    for courtID in range(0, nCourts+1):
+    courtID = 0
+    while True:
+    # for courtID in range(0, nCourts+2):
+        # increase the court id number and check if can be updated or created
+        courtID += 1
 
         try:
             courtInfo = kl.courtInfo(courtID)
-            courtName = kl.mapCourtNames(courtID)
-            if courtName == 'Unknown':
-                logger.info(f"There is a new court with ID {courtID}! \
-                            We need his name!")
         except Exception:
             # there is no new court to create
             break
+        courtName = kl.mapCourtNames(courtID)
+        if courtName == 'Unknown':
+            logger.info(f"There is a new court with ID {courtID}! \
+                        We need his name!")
         try:
             courtaddress = courtAddresses[courtID]
         except KeyError:
             courtaddress = None
-        db.session.query(Court).filter(Court.id == courtID).update({'parent': courtInfo['parent'],
-                                                                    'name': courtName,
-                                                                    'address': courtaddress,
-                                                                    'voteStake': courtInfo['votesStake'],
-                                                                    'feeForJuror': courtInfo['feeForJuror'],
-                                                                    'minStake': courtInfo['minStake']})
+        if db.session.query(Court).filter(Court.id == courtID).first():
+            db.session.query(Court).filter(Court.id == courtID).update({'parent': courtInfo['parent'],
+                                                                        'name': courtName,
+                                                                        'address': courtaddress,
+                                                                        'voteStake': courtInfo['votesStake'],
+                                                                        'feeForJuror': courtInfo['feeForJuror'],
+                                                                        'minStake': courtInfo['minStake']})
+            logger.info(f"Court {courtID} updated")
+        else:
+            # is a new court
+            db.session.add(Court(id=courtID,
+                                 parent= courtInfo['parent'],
+                                 name= courtName,
+                                 address= courtaddress,
+                                 voteStake= courtInfo['votesStake'],
+                                 feeForJuror= courtInfo['feeForJuror'],
+                                 minStake= courtInfo['minStake']))
+            logger.info(f"Court {courtID} created")
         db.session.commit()
-        logger.info(f"Court {courtID} updated")
+        
 
 
 def updateStakesEvolution():

@@ -5,7 +5,6 @@ import os
 if 'RDS_HOSTNAME' in os.environ:
     DATABASE = {
             'ENGINE': 'mysql+pymysql',
-            'NAME': os.environ['RDS_DB_NAME'],
             'USER': os.environ['RDS_USERNAME'],
             'PASSWORD': os.environ['RDS_PASSWORD'],
             'HOST': os.environ['DB_HOST'],

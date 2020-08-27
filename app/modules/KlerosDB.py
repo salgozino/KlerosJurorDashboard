@@ -122,11 +122,30 @@ class Court(db.Model):
 
     def juror_stats(self):
         jurors = self.jurors
+        try:
+            court_mean = statistics.mean(jurors.values())
+        except Exception as e:
+            court_mean = 0
+            logger.info(f"Could not get the mean value of the court {self.id}")
+            logger.error(e)
+        try:
+            court_median = statistics.median(jurors.values())
+        except Exception as e:
+            court_median = 0
+            logger.info(f"Could not get the median value of the court {self.id}")
+            logger.error(e)
+        try:
+            court_max = max(jurors.values())
+        except Exception as e:
+            court_max = 0
+            logger.info(f"Could not get the max value of the court {self.id}")
+            logger.error(e)
+
         return {
             'length': len(jurors.values()),
-            'mean': statistics.mean(jurors.values()),
-            'median': statistics.median(jurors.values()),
-            'max': max(jurors.values()),
+            'mean': court_mean,
+            'median': court_median,
+            'max': court_max,
             'total': sum(jurors.values())
         }
 
@@ -476,11 +495,20 @@ class Juror():
         newJuror = set()
         oldJuror = set()
         for stake in lastStakes:
-            if stake.setStake > 0 and stake.timestamp >= filter_after:
-                newJuror.add(stake.address)
+            if isinstance(stake.timestamp, datetime):
+                if stake.setStake > 0 and stake.timestamp >= filter_after:
+                    newJuror.add(stake.address)
+            else:
+                if stake.setStake > 0 and datetime.strptime(stake.timestamp,'%Y-%m-%d %H:%M:%S.%f') >= filter_after:
+                    newJuror.add(stake.address)
+
         for stake in oldStakes:
-            if stake.setStake > 0 and stake.timestamp < filter_after:
-                oldJuror.add(stake.address)
+            if isinstance(stake.timestamp, datetime):
+                if stake.setStake > 0 and stake.timestamp < filter_after:
+                    oldJuror.add(stake.address)
+            else:
+                if stake.setStake > 0 and datetime.strptime(stake.timestamp,'%Y-%m-%d %H:%M:%S.%f') < filter_after:
+                    oldJuror.add(stake.address)
         return newJuror.difference(oldJuror)
 
 

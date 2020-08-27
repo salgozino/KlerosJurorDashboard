@@ -32,7 +32,7 @@ def multiBar(df, columns=['0', '2', '8', '9']):
 
 def create_time_series(df, courts, colname=None):
     data = []
-    colors = colormap.diverging.Picnic
+    colors = colormap.qualitative.Alphabet
     allCourts = df.columns.to_list()
     for i, court in enumerate(allCourts):
         if not colname:
@@ -96,23 +96,24 @@ def stakesJurorsGraph(courts=['0', '2', '8', '9'], language='en'):
     logger.debug(f"StakesEvolution.getEvolution takes {time.time()-t0} seconds")
     t0 = time.time()
     for courtID in range(Court().ncourts):
-        courtdf = pd.DataFrame(dataEvolution[courtID])
-        courtdf.timestamp = pd.to_datetime(courtdf.timestamp)
-        dfStaked = pd.concat([dfStaked,
-                              courtdf[['timestamp', 'staked']].set_index('timestamp').rename(
-                                           columns={'staked': str(courtID)}
-                                           )
-                              ],
-                             axis=1,
-                             ignore_index=False)
-        dfJurors = pd.concat([dfJurors,
-                              courtdf[['timestamp',
-                                       'jurors']].set_index('timestamp').rename(
-                                           columns={'jurors': str(courtID)}
-                                           )
-                              ],
-                             axis=1,
-                             ignore_index=False)
+        if courtID in dataEvolution.keys():
+            courtdf = pd.DataFrame(dataEvolution[courtID])
+            courtdf.timestamp = pd.to_datetime(courtdf.timestamp)
+            dfStaked = pd.concat([dfStaked,
+                                  courtdf[['timestamp', 'staked']].set_index('timestamp').rename(
+                                               columns={'staked': str(courtID)}
+                                               )
+                                  ],
+                                 axis=1,
+                                 ignore_index=False)
+            dfJurors = pd.concat([dfJurors,
+                                  courtdf[['timestamp',
+                                           'jurors']].set_index('timestamp').rename(
+                                               columns={'jurors': str(courtID)}
+                                               )
+                                  ],
+                                 axis=1,
+                                 ignore_index=False)
     logger.debug(f"Build the dataframes takes {time.time()-t0} seconds")
     traces = create_time_series(dfStaked, courts)
     for trace in traces:

@@ -305,9 +305,14 @@ class KlerosLiquid(Etherscan):
                       6: 'English Language',
                       7: 'Video Production',
                       8: 'Onboarding',
-                      9: 'Curation'}
+                      9: 'Curation',
+                      10: 'Data Analysis',
+                      11: 'Statistical Modeling',
+                      12: 'Curation (Medium)'}
         try:
             return courtNames[courtID]
-        except Exception:
-            logger.error(f"Could not found the Court ID {courtID}")
+        except KeyError:
+            logger.error(f"I don't have the name of the court with id {courtID}")
             return "Unknown"
+        except Exception as e:
+            logger.error(e)

@@ -78,11 +78,15 @@ class StakesKleros():
             stats = c.juror_stats()
             totalStaked = c.totalStaked
             odds = cls.chanceCalculator(pnkStaked, totalStaked)
+            if odds == 0:
+                chances = float('nan')
+            else:
+                chances = 1/odds
             courtChances[c.name] = {
                         'Jurors': stats['length'],
                         'Dispues in the last 30 days': len(c.disputes(30)),
                         'Odds': odds,
-                        'Chances': 1/odds,
+                        'Chances': chances,
                         'Reward (ETH)': rewardETH,
                         'Reward (USD)': rewardUSD,
                         'Vote Stake (PNK)': voteStakePNK,
