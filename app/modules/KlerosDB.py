@@ -504,10 +504,10 @@ class Juror():
 
         for stake in oldStakes:
             if isinstance(stake.timestamp, datetime):
-                if stake.setStake > 0 and stake.timestamp < filter_after:
+                if stake.timestamp < filter_after:
                     oldJuror.add(stake.address)
             else:
-                if stake.setStake > 0 and datetime.strptime(stake.timestamp,'%Y-%m-%d %H:%M:%S.%f') < filter_after:
+                if datetime.strptime(stake.timestamp,'%Y-%m-%d %H:%M:%S.%f') < filter_after:
                     oldJuror.add(stake.address)
         return newJuror.difference(oldJuror)
 
