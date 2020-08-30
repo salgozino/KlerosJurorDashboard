@@ -64,6 +64,7 @@ def graphsMaker():
     courtTable = StakesKleros.getCourtInfoTable()
     sjGraph = stakesJurorsGraph()
     return render_template('graphs.html',
+                           last_update=Config.get('updated')
                            stakedPNKgraph=sjGraph,
                            disputesgraph=disputesGraph(),
                            disputeCourtgraph=disputesbyCourtGraph(),
@@ -152,7 +153,8 @@ def dispute():
 @application.errorhandler(404)
 def not_found(e):
     Visitor().addVisit('unknown')
-    return render_template("404.html")
+    return render_template("404.html",
+                           last_update=Config.get('updated'))
 
 
 if __name__ == "__main__":
