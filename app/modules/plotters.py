@@ -183,3 +183,27 @@ def disputesbyCreatorGraph(language="en"):
                          legend={'orientation': 'h'})
     # fig.update_yaxes(title_text='N°')
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+
+def treeMapGraph(courtTable, key="Jurors"):
+
+    labels = list(courtTable.keys())
+    parents_id = [Court.query.filter(Court.name == court_name).first().parent for court_name in labels]
+    parents = [Court(id=courtID).map_name if courtID is not None else "" for courtID in parents_id]
+
+    values = [courtTable[court_name][key] for court_name in labels]
+    fig = go.Figure(
+        go.Treemap(
+            # ids=labels,
+            labels=labels,
+            parents=parents,
+            values=values,
+            branchvalues="total",
+            hovertemplate='<b>%{label}</b><br>'+key+': %{value}<br>Percentage of Parent Court: %{percentParent:.2%}<br>Percentage of General Court: %{percentRoot:.2%}<br>'
+        )
+    )
+    fig['layout'].update(title=key,
+                         height=300,
+                         margin={'l': 10, 'b': 80, 't': 30, 'r': 30},
+                         legend={'orientation': 'h'})
+    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)

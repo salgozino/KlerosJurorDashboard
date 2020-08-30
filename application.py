@@ -4,7 +4,7 @@ import os
 from app import create_app
 
 from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
-    disputesbyCourtGraph, disputesbyCreatorGraph
+    disputesbyCourtGraph, disputesbyCreatorGraph, treeMapGraph
 from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from app.modules.Kleros import StakesKleros
 from flask import render_template, request
@@ -58,7 +58,9 @@ def index():
                            stakedPNKgraph=sjGraph,
                            disputesgraph=disputesGraph(),
                            disputeCourtgraph=disputesbyCourtGraph(),
-                           disputeCreatorgraph=disputesbyCreatorGraph()
+                           disputeCreatorgraph=disputesbyCreatorGraph(),
+                           treemapJurorsGraph=treeMapGraph(courtTable),
+                           treemapStakedGraph=treeMapGraph(courtTable, 'Total Staked')
                            )
 
 
