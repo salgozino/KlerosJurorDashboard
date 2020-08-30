@@ -546,6 +546,7 @@ class Visitor(db.Model):
     map = db.Column(db.Integer)
     odds = db.Column(db.Integer)
     support = db.Column(db.Integer)
+    graphs = db.Column(db.Integer)
     unknown = db.Column(db.Integer)
 
     def __init__(self):
@@ -555,12 +556,14 @@ class Visitor(db.Model):
             self.map = currentVisitors.map
             self.odds = currentVisitors.odds
             self.support = currentVisitors.support
+            self.graphs = currentVisitors.graphs
             self.unknown = currentVisitors.unknown
         except Exception:
             self.dashboard = 0
             self.map = 0
             self.odds = 0
             self.support = 0
+            self.graphs = 0
             self.unknown = 0
             db.session.add(self)
             db.session.commit()
@@ -578,6 +581,8 @@ class Visitor(db.Model):
             currentVisitors.map += 1
         elif page == 'support':
             currentVisitors.support += 1
+        elif page == 'graphs':
+            currentVisitors.graphs += 1
         else:
             currentVisitors.unknown += 1
         db.session.commit()

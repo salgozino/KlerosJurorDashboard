@@ -35,7 +35,7 @@ def index():
     courtTable = StakesKleros.getCourtInfoTable()
     pnkStaked = courtTable['General']['Total Staked']
     activeJurors = courtTable['General']['Jurors']
-    sjGraph = stakesJurorsGraph()
+
     return render_template('main.html',
                            last_update=Config.get('updated'),
                            disputes=Dispute.query.order_by(Dispute.id.desc()).first().id,
@@ -54,14 +54,22 @@ def index():
                            pnkPctChange=float(Config.get('PNKpctchange24h'))/100,
                            pnkVol24=float(Config.get('PNKvolume24h')),
                            pnkCircSupply=float(Config.get('PNKcirculating_supply')),
-                           courtTable=courtTable,
+                           courtTable=courtTable
+                           )
+
+
+@application.route('/graphs/')
+def graphsMaker():
+    Visitor().addVisit('graphs')
+    courtTable = StakesKleros.getCourtInfoTable()
+    sjGraph = stakesJurorsGraph()
+    return render_template('graphs.html',
                            stakedPNKgraph=sjGraph,
                            disputesgraph=disputesGraph(),
                            disputeCourtgraph=disputesbyCourtGraph(),
                            disputeCreatorgraph=disputesbyCreatorGraph(),
                            treemapJurorsGraph=treeMapGraph(courtTable),
-                           treemapStakedGraph=treeMapGraph(courtTable, 'Total Staked')
-                           )
+                           treemapStakedGraph=treeMapGraph(courtTable, 'Total Staked'))
 
 
 @application.route('/support/')
