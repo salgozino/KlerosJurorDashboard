@@ -39,8 +39,26 @@
         </table>
     </div>
     
+       <div class="table-responsive">
+        <h4>Unique Votes in all the rounds</h4>
+        <table class="table table-bordered">
+          <tr class="text-center info">
+            <td style="width:25% !important">Yes</td>
+            <td style="width:25% !important">No</td>
+            <td style="width:25% !important">Refuse to arbitrate</td>
+            <td style="width:25% !important">Pending</td>
+          </tr>
+          <tr class={{"text-center success" if dispute.ruled else "text-center"}}>
+            <td style="width:25% !important">{{unique_vote_count['Yes']}}</td>
+            <td style="width:25% !important">{{unique_vote_count['No']}}</td>
+            <td style="width:25% !important">{{unique_vote_count['Refuse']}}</td>
+            <td style="width:25% !important">{{unique_vote_count['Pending']}}</td>
+          </tr>
+        </table>
+    </div>
     {% for r in dispute.rounds: %}
     <div class="table-responsive">
+        <h4>Round {{r.round_num}}</H4>
         <table class="table table-bordered">
           <tr class="text-center info">
             <td style="width:25% !important">Yes</td>

@@ -64,7 +64,7 @@ def graphsMaker():
     courtTable = StakesKleros.getCourtInfoTable()
     sjGraph = stakesJurorsGraph()
     return render_template('graphs.html',
-                           last_update=Config.get('updated')
+                           last_update=Config.get('updated'),
                            stakedPNKgraph=sjGraph,
                            disputesgraph=disputesGraph(),
                            disputeCourtgraph=disputesbyCourtGraph(),
@@ -126,6 +126,8 @@ def dispute():
     vote_count = {}
     dispute = Dispute.query.get(id)
     dispute.rounds = dispute.rounds()
+    unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
+    unique_jurors = set()
     for r in dispute.rounds:
         vote_count[r.id] = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
         r.votes = r.votes()
@@ -134,20 +136,43 @@ def dispute():
                 if v.choice == 1:
                     v.vote_str = 'Yes'
                     vote_count[r.id]['Yes'] += 1
+                    if v.account.lower() not in unique_jurors:
+                        unique_vote_count['Yes'] += 1
+                        unique_jurors.add(v.account.lower())
                 elif v.choice == 2:
                     v.vote_str = 'No'
                     vote_count[r.id]['No'] += 1
+                    if v.account.lower() not in unique_jurors:
+                        unique_vote_count['No'] += 1
+                        unique_jurors.add(v.account.lower())
                 elif v.choice == 0:
                     v.vote_str = 'Refuse'
                     vote_count[r.id]['Refuse'] += 1
+                    if v.account.lower() not in unique_jurors:
+                        unique_vote_count['Refuse'] += 1
+                        unique_jurors.add(v.account.lower())
             else:
                 v.vote_str = 'Pending'
                 vote_count[r.id]['Pending'] += 1
+                if v.account.lower() not in unique_jurors:
+                    unique_vote_count['Pending'] += 1
+                    unique_jurors.add(v.account.lower())
     return render_template('dispute.html',
                            dispute=dispute,
                            vote_count=vote_count,
+                           unique_vote_count=unique_vote_count,
                            last_update=Config.get('updated'),
                            )
+
+
+@application.route('/test/<int:id>')
+def testPage(id):
+    print(id)
+    courtTable = StakesKleros.getCourtInfoTable()
+    return render_template('graphs.html',
+                           last_update=Config.get('updated'),
+                           treemapJurorsGraph=treeMapGraph(courtTable),
+                           treemapStakedGraph=treeGraph())
 
 
 @application.errorhandler(404)
