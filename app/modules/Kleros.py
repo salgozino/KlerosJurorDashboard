@@ -91,7 +91,7 @@ class StakesKleros():
                         'Reward (USD)': rewardUSD,
                         'Vote Stake (PNK)': voteStakePNK,
                         'Vote Stake (USD)': voteStakeUSD,
-                        'Risk/Reward': rewardUSD/voteStakeUSD
+                        'Reward/Risk': rewardUSD/voteStakeUSD
                         }
         return courtChances
 

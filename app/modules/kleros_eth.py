@@ -313,6 +313,6 @@ class KlerosLiquid(Etherscan):
             return courtNames[courtID]
         except KeyError:
             logger.error(f"I don't have the name of the court with id {courtID}")
-            return "Unknown"
+            return f"Court {courtID}"
         except Exception as e:
             logger.error(e)
