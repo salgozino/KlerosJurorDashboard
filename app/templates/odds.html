@@ -39,7 +39,7 @@
                             {% elif col == 'Chances'%}
                                 <td class="text-right" style="white-space: nowrap">1 in {{ "{:.2f}".format(value) }}</td>
                             {% elif 'USD' in col %}
-                                <td class="text-right">{{ "{:.2f}".format(value) }}$</td>
+                                <td class="text-right">${{ "{:.2f}".format(value) }}</td>
                             {% elif 'Reward' in col %}
                                 <td class="text-right">{{ "{:.2f}".format(value) }}</td>
                             {% elif 'Risk' in col %}
