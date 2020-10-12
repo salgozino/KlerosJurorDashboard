@@ -2,13 +2,12 @@
 
 {% block body%}
     {% block header %}
-
      <!-- Dispute Selector -->
         <div class="row">
-            <form class="form-inline text-center" action="{{ url_for('dispute') }}" method="post">
+            <form class="form-inline text-center" action="{{ url_for('dispute') }}" method="get">
               <div class="form-group">
                 <label for="disputeIDInput">Dispute </label>
-                <input class="form-control box-shadow" id="disputeIDInput" name="disputeID" type="text" value={{ dispute.id }}>
+                <input class="form-control box-shadow" id="id" name="id" type="int" value={{ dispute.id }}>
               </div>
               <button type="submit" class="btn btn-default">Refresh</button>
             </form>
@@ -17,6 +16,9 @@
     {% endblock %}
 
 {% block content %}
+{% if error %}
+    <p>{{error}}</p>
+{% endif %}
 {% if dispute.id %}
       <div class="row">
         <div class="col">

@@ -117,15 +117,25 @@ def visitorMetrics():
                            )
 
 
-@application.route('/dispute/', methods=['POST', 'GET'])
+@application.route('/dispute/', methods=['GET'])
 def dispute():
-    try:
-        id = request.form['disputeID']
-    except Exception:
+    id = request.args.get('id', type=int)
+    if id is None:
         id = Dispute.query.order_by(Dispute.id.desc()).first().id
+
     vote_count = {}
     dispute = Dispute.query.get(id)
-    dispute.rounds = dispute.rounds()
+    try:
+        dispute.rounds = dispute.rounds()
+    except Exception:
+        print(dispute)
+        return render_template('dispute.html',
+                               error="Error trying to reach the dispute data. This Dispute exist?",
+                               dispute=dispute,
+                               vote_count=None,
+                               unique_vote_count=None,
+                               last_update=Config.get('updated'),
+                               )
     unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
     unique_jurors = set()
     for r in dispute.rounds:
@@ -159,6 +169,7 @@ def dispute():
                     unique_jurors.add(v.account.lower())
     return render_template('dispute.html',
                            dispute=dispute,
+                           error=None,
                            vote_count=vote_count,
                            unique_vote_count=unique_vote_count,
                            last_update=Config.get('updated'),
