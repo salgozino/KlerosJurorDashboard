@@ -132,7 +132,7 @@ class KlerosLiquid(Etherscan):
     def parseDisputeEvent(self, item):
         dataWanted = {}
         dataWanted['disputeID'] = self.web3.toInt(hexstr=item['topics'][1])
-        dataWanted['creator'] = self.topic_to_address(item['topics'][2])
+        dataWanted['creator'] = self.web3.eth.getTransaction(transaction_hash=item['transactionHash'])['from']
         dataWanted['blockNumber'] = self.web3.toInt(hexstr=item['blockNumber'])
         dataWanted['timestamp'] = datetime.utcfromtimestamp(self.web3.toInt(hexstr=item['timeStamp']))
         dataWanted['txid'] = item['transactionHash']
