@@ -176,14 +176,27 @@ def dispute():
                            )
 
 
-@application.route('/test/<int:id>')
-def testPage(id):
-    print(id)
-    courtTable = StakesKleros.getCourtInfoTable()
-    return render_template('graphs.html',
+@application.route('/court/', methods=['GET'])
+def court():
+    id = request.args.get('id', type=int)
+    if id is None:
+        # if it's not specified, go to the general court
+        id = 0
+    court = Court(id=id)
+    disputes = court.disputes()
+    childs = court.children_ids()
+    court_childs = []
+    for child in childs:
+        court_childs.append(Court(id=child))
+    top_jurors = court.jurors
+    return render_template('court.html',
+                           court=court,
+                           childs=court_childs,
+                           disputes=disputes,
+                           error=None,
+                           top_jurors=top_jurors,
                            last_update=Config.get('updated'),
-                           treemapJurorsGraph=treeMapGraph(courtTable),
-                           treemapStakedGraph=treeGraph())
+                           )
 
 
 @application.errorhandler(404)

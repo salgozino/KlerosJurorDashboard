@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+
+{% block body%}
+    {% block header %}
+     <!-- Court Selector -->
+        <div class="row">
+            <form class="form-inline text-center" action="{{ url_for('court') }}" method="get">
+              <div class="form-group">
+                <label for="disputeIDInput">Court </label>
+                <input class="form-control box-shadow" id="id" name="id" type="int" value={{ court.id }}>
+              </div>
+              <button type="submit" class="btn btn-default">Refresh</button>
+            </form>
+        </div>
+        <br></br>
+    {% endblock %}
+
+{% block content %}
+{% if error %}
+    <p>{{error}}</p>
+{% endif %}
+
+{% if court.id is not none %}
+      <div class="row">
+        <div class="col">
+          <h4>{% block title %}Court #{{court.id}}: {{ court.map_name}}{% endblock %}</h4>
+          {% if childs %}
+          <h4>Court childs</h6>
+          <ul>
+          {% for child in childs%}
+            <li><a href={{url_for('court', id=child.id)}}>{{ child.map_name }}</a></li>
+          {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    <div class="table-responsive">
+        <h4>Top Jurors</h4>
+        <table class="table table-bordered">
+          <tr class="info">
+            <td align="center">Juror</td>
+            <td align="center">Stake</td>
+          </tr>
+         {% for juror in top_jurors: %}
+          <tr>
+            <td class="text-center"><a href={{url_for('juror', account=juror.account)}}>{{juror.account}}</a></td>
+            <td class="text-center">{{juror.current_amount_in_court(court.id)}}</td>
+          </tr>
+          {% endfor %}
+    </div>
+    <div class="table-responsive">
+        <h4>Court Disputes</h4>
+        <div style="max-height:400px">
+        <table class="table table-bordered">
+          <tr class="info">
+            <td align="center">Dispute N°</td>
+            <td align="center">Status</td>
+            <td align="center">Last Period Change</td>
+          </tr>
+          {% for dispute in disputes: %}
+          <tr class={{'success' if dispute.ruled else 'warning'}}>
+            <td class="text-center"><a href={{url_for('dispute', id=dispute.id)}}>{{dispute.id}}</a></td>
+            <td class="text-center">{{dispute.period_name}}</td>
+            <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
+          </tr>
+          {% endfor %}
+        </table>
+        </div>
+    </div>
+    
+{% endif %}
+{% endblock %}
+{% endblock %}
