@@ -29,7 +29,7 @@
                     <h4>Parent Court</h4>
                 </div>
                 <div class="panel-body text-center">
-                  {% if parent %}<h5> Parent Court: <a href={{url_for('court', id=parent.id)}}>{{parent.map_name}}</a></h5>{% endif %}
+                  {% if parent %}<h5><a href={{url_for('court', id=parent.id)}}>{{parent.map_name}}</a></h5>{% endif %}
                   
                 </div>
             </div>
@@ -38,7 +38,7 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h4>Parent "Childs"</h4>
+                    <h4>Court "Childs"</h4>
                 </div>
                 <div class="panel-body text-center">
                     {% if childs %}

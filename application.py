@@ -186,7 +186,6 @@ def court():
     parent = court.getParent(court.id)
     if parent is not None:
         parent = Court(id=parent)
-    print(parent)
     disputes = court.disputes()
     childs = court.children_ids()
     court_childs = []

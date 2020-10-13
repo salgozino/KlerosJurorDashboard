@@ -60,7 +60,8 @@ class StakesKleros():
                                  'Mean Staked': c.meanStaked,
                                  'Max Staked': c.maxStaked,
                                  'Disputes in the last 30 days': c.disputesLast30days,
-                                 'Min Stake in USD': c.minStakeUSD
+                                 'Min Stake in USD': c.minStakeUSD,
+                                 'id': c.id
                                  }
         return courtInfo
 

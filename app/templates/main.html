@@ -254,7 +254,7 @@
                         <tr class="active">
                             <th scope="col">Court</th>
                             {% for col in courtTable['General'].keys() %}
-                            <th scope="col">{{ col }}</th>
+                            {% if col != 'id'%}<th scope="col">{{ col }}</th>{%endif%}
                             {% endfor %}
                         </tr>
                     </thead>
@@ -268,14 +268,14 @@
                     
                     {% for c, data in courtTable.items() %}
                     {% if c == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
-                            <th scope="row"> {{ c }}</th>
-                            {% for col, value in data.items() %}
+                        <th scope="row"> <a href={{url_for('court', id=data['id'])}}>{{ c }}</a></th>
+                        {% for col, value in data.items() %}
                             {% if col == 'Min Stake in USD' %}
                             <td class="text-right">${{ "{:,.2f}".format(value) }}</td>
-                            {%else%}
+                            {%elif col != 'id'%}
                             <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
                             {%endif%}
-                            {% endfor %}
+                        {% endfor %}
                         </tr>
                     {% endfor %}
                     </tbody>
