@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block body%}
+    {% block header %}
+     <!-- Court Selector -->
+        <div class="row">
+            <form class="form-inline text-center" action="{{ url_for('court') }}" method="get">
+              <div class="form-group">
+                <label for="disputeIDInput">Court </label>
+                <input class="form-control box-shadow" id="id" name="id" type="int" value={{ court.id }}>
+              </div>
+              <button type="submit" class="btn btn-default">Refresh</button>
+            </form>
+        </div>
+        <br></br>
+    {% endblock %}
+
+{% block content %}
+
+{% if court.id is not none %}
+<h3>Court #{{court.id}}: {{ court.map_name}}</h3>
+
+<!-- Court Numbers -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Parent Court</h4>
+                </div>
+                <div class="panel-body text-center">
+                  {% if parent %}<h5><a href={{url_for('court', id=parent.id)}}>{{parent.map_name}}</a></h5>{% endif %}
+                  
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Court "Childs"</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {% if childs %}
+                        <ul class="list-group">
+                        {% for child in childs%}
+                            <li class="list-group-item"><a href={{url_for('court', id=child.id)}}>{{ child.map_name }}</a></li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Ongoing Cases</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ court.openCases }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Ruled Cases</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ court.ruledCases }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+<!-- Jurors -->
+    <h4>Jurors: {{jurors|count}}</h4>
+    <div class="table-responsive" style="max-height:250px">
+        <table class="table table-bordered">
+          <tr class="info">
+            <td align="center">Juror</td>
+            <td align="center">Stake</td>
+          </tr>
+         {% for juror, stake in jurors.items(): %}
+          <tr>
+            <td class="text-center">{{juror}}</td>
+            <td class="text-center">{{ "{:,.1f}".format(stake) }}</td>
+          </tr>
+         {% endfor %}
+        </table>
+    </div>
+    </br>
+    <!-- Disputes -->
+    
+    <h4>Court Disputes</h4>
+    <div class="table-responsive" style="max-height:400px">
+        <table class="table table-bordered">
+          <tr class="info">
+            <td align="center">Dispute N°</td>
+            <td align="center">Status</td>
+            <td align="center">Last Period Change</td>
+          </tr>
+          {% for dispute in disputes: %}
+          <tr class={{'success' if dispute.ruled else 'warning'}}>
+            <td class="text-center"><a href={{url_for('dispute', id=dispute.id)}}>{{dispute.id}}</a></td>
+            <td class="text-center">{{dispute.period_name}}</td>
+            <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
+          </tr>
+          {% endfor %}
+        </table>
+    </div>
+    
+</div>
+{% endif %}
+{% endblock %}
+{% endblock %}

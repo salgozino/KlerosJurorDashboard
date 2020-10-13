@@ -71,6 +71,16 @@ class Court(db.Model):
         else:
             return Dispute.query.filter(Dispute.subcourtID == self.id).order_by(Dispute.id.desc()).all()
 
+    @property
+    def openCases(self):
+        openCases = Dispute.query.filter(Dispute.ruled == 0).filter(Dispute.subcourtID == self.id).all()
+        return len(openCases)
+    
+    @property
+    def ruledCases(self):
+        openCases = Dispute.query.filter(Dispute.ruled == 1).filter(Dispute.subcourtID == self.id).all()
+        return len(openCases)
+
     def children_ids(self):
         children_ids = []
         children = Court.query.filter(Court.parent == self.id)
@@ -88,8 +98,12 @@ class Court(db.Model):
             childs.update(Court(id=child).children_ids())
         return allChilds
 
+    @staticmethod
+    def getParent(courtID):
+        return Court.query.filter_by(id=courtID).first().parent
+
     @property
-    def ncourts(self):
+    def ncourts():
         return Court.query.count()
 
     @property
@@ -282,6 +296,23 @@ class Dispute(db.Model):
                 result[name] = item[1]
         return result
 
+    @staticmethod
+    def disputesByCreator(address):
+        disputes = Dispute.query.filter(func.lower(Dispute.creator) == address.lower()).order_by(Dispute.id.desc()).all()
+        return list(disputes)
+
+    @property
+    def winning_choice(self):
+        max_round_id = self.rounds()[-1].id
+        if Dispute.query.filter_by(id=self.id).first().ruled:
+            votes_query = db.session.execute(
+                "select choice,count(*) as num_votes from vote \
+                where round_id = :round_id and vote=1 \
+                group by choice order by num_votes desc", {'round_id': max_round_id}).first()
+            return(votes_query[0])
+        else:
+            return None
+
 
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -341,6 +372,9 @@ class Vote(db.Model):
 
     @property
     def is_winner(self):
+        """
+        Check if the vote is winner in its round
+        """
         round = Round.query.get(self.round_id)
         if not round.majority_reached:
             return False
@@ -399,8 +433,17 @@ class Juror():
             AND dispute.subcourtID = :subcourtID",
             {'address': self.address, 'subcourtID': court_id}
         )
-
         return votes_in_court.first()[0]
+
+    def all_votes(self):
+        votes = (db.session.query(Vote, Round, Dispute)
+                 .filter(func.lower(Vote.account) == self.address)
+                 .filter(Vote.round_id == Round.id)
+                 .filter(Dispute.id == Round.disputeID)
+                 .order_by(Vote.round_id.desc())
+                 .all()
+                )
+        return votes
 
     @property
     def stakings(self):
