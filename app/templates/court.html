@@ -16,41 +16,89 @@
     {% endblock %}
 
 {% block content %}
-{% if error %}
-    <p>{{error}}</p>
-{% endif %}
 
 {% if court.id is not none %}
-      <div class="row">
-        <div class="col">
-          <h4>{% block title %}Court #{{court.id}}: {{ court.map_name}}{% endblock %}</h4>
-          {% if childs %}
-          <h4>Court childs</h6>
-          <ul>
-          {% for child in childs%}
-            <li><a href={{url_for('court', id=child.id)}}>{{ child.map_name }}</a></li>
-          {% endfor %}
-          </ul>
-          {% endif %}
+<h3>Court #{{court.id}}: {{ court.map_name}}</h3>
+
+<!-- Court Numbers -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Parent Court</h4>
+                </div>
+                <div class="panel-body text-center">
+                  {% if parent %}<h5> Parent Court: <a href={{url_for('court', id=parent.id)}}>{{parent.map_name}}</a></h5>{% endif %}
+                  
+                </div>
+            </div>
         </div>
-      </div>
-    <div class="table-responsive">
-        <h4>Top Jurors</h4>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Parent "Childs"</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {% if childs %}
+                        <ul class="list-group">
+                        {% for child in childs%}
+                            <li class="list-group-item"><a href={{url_for('court', id=child.id)}}>{{ child.map_name }}</a></li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Ongoing Cases</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ court.openCases }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Ruled Cases</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ court.ruledCases }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+<!-- Jurors -->
+    <h4>Jurors: {{jurors|count}}</h4>
+    <div class="table-responsive" style="max-height:250px">
         <table class="table table-bordered">
           <tr class="info">
             <td align="center">Juror</td>
             <td align="center">Stake</td>
           </tr>
-         {% for juror in top_jurors: %}
+         {% for juror, stake in jurors.items(): %}
           <tr>
-            <td class="text-center"><a href={{url_for('juror', account=juror.account)}}>{{juror.account}}</a></td>
-            <td class="text-center">{{juror.current_amount_in_court(court.id)}}</td>
+            <td class="text-center">{{juror}}</td>
+            <td class="text-center">{{ "{:,.1f}".format(stake) }}</td>
           </tr>
-          {% endfor %}
+         {% endfor %}
+        </table>
     </div>
-    <div class="table-responsive">
-        <h4>Court Disputes</h4>
-        <div style="max-height:400px">
+    </br>
+    <!-- Disputes -->
+    
+    <h4>Court Disputes</h4>
+    <div class="table-responsive" style="max-height:400px">
         <table class="table table-bordered">
           <tr class="info">
             <td align="center">Dispute N°</td>
@@ -65,9 +113,9 @@
           </tr>
           {% endfor %}
         </table>
-        </div>
     </div>
     
+</div>
 {% endif %}
 {% endblock %}
 {% endblock %}
