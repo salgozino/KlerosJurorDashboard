@@ -103,7 +103,7 @@ class Court(db.Model):
         return Court.query.filter_by(id=courtID).first().parent
 
     @property
-    def ncourts():
+    def ncourts(self):
         return Court.query.count()
 
     @property
