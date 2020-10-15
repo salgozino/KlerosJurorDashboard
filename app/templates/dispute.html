@@ -90,7 +90,7 @@
             {% else %}
                 <tr>
             {% endif %}
-              <td>{{v.account}}</td>
+              <td><a href={{url_for('juror', address=v.account)}}>{{v.account}}</a></td>
               <td align="right">{{ v.vote_str }}</td>
             </tr>
           {% endfor %}

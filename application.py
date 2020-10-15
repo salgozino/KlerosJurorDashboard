@@ -200,6 +200,24 @@ def court():
                            )
 
 
+@application.route('/juror/<string:address>')
+def juror(address):
+    juror = Juror(address)
+    disputes = Dispute.disputesByCreator(address)
+    votes = juror.all_votes()
+    juror_stakes = juror.current_stakings_per_court
+    stakes = []
+    for court, stake in juror_stakes.items():
+        stakes.append((Court(id=court).map_name, stake))
+    return render_template('juror.html',
+                           address=address,
+                           disputes=disputes,
+                           stakes=stakes,
+                           votes=votes,
+                           last_update=Config.get('updated'),
+                           )
+
+
 @application.errorhandler(404)
 def not_found(e):
     Visitor().addVisit('unknown')
