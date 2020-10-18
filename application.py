@@ -126,9 +126,8 @@ def dispute():
     vote_count = {}
     dispute = Dispute.query.get(id)
     try:
-        dispute.rounds = dispute.rounds()
+        rounds = dispute.rounds()
     except Exception:
-        print(dispute)
         return render_template('dispute.html',
                                error="Error trying to reach the dispute data. This Dispute exist?",
                                dispute=dispute,
@@ -138,10 +137,10 @@ def dispute():
                                )
     unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
     unique_jurors = set()
-    for r in dispute.rounds:
+    for r in rounds:
         vote_count[r.id] = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
-        r.votes = r.votes()
-        for v in r.votes:
+        votes = r.votes()
+        for v in votes:
             if v.vote == 1:
                 if v.choice == 1:
                     v.vote_str = 'Yes'

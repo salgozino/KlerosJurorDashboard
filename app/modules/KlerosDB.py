@@ -373,7 +373,8 @@ class Dispute(db.Model):
         if Dispute.query.filter_by(id=self.id).first().ruled:
             coherent_votes = 0
             no_coherent_votes = 0
-            for r in self.rounds():
+            rounds = self.rounds()
+            for r in rounds:
                 for vote in r.votes():
                     if self.winning_choice != 3:
                         # if it's not a tie
