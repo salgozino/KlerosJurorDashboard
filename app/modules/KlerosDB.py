@@ -75,7 +75,7 @@ class Court(db.Model):
     def openCases(self):
         openCases = Dispute.query.filter(Dispute.ruled == 0).filter(Dispute.subcourtID == self.id).all()
         return len(openCases)
-    
+
     @property
     def ruledCases(self):
         openCases = Dispute.query.filter(Dispute.ruled == 1).filter(Dispute.subcourtID == self.id).all()
@@ -87,6 +87,18 @@ class Court(db.Model):
         for child in children:
             children_ids.append(child.id)
         return children_ids
+
+    def fees_paid(self):
+        disputes = Dispute.query.filter_by(subcourtID=self.id)
+        eth_fees_paid = 0
+        pnk_distributed = 0
+        for dispute in disputes:
+            rounds = dispute.rounds()
+            for r in rounds:
+                eth_fees_paid += r.total_fees_for_jurors
+                pnk_distributed += r.penalties_in_each_round
+        return {'eth': eth_fees_paid,
+                'pnk': pnk_distributed}
 
     @staticmethod
     def getAllCourtChilds(courtID):
@@ -133,6 +145,26 @@ class Court(db.Model):
             return self.name
         else:
             return self.query.filter(Court.id == self.id).first().name
+
+    def yes_no_coherency(self):
+        coherency = {'Refuse': 0, 'Yes': 0, 'No': 0}
+        incoherents = {'Refuse': 0, 'Yes': 0, 'No': 0, 'Pending': 0}
+        for d in self.disputes():
+            data = d.yes_no_coherency()
+            if data:
+                for key, value in data['coherents'].items():
+                    coherency[key] += value
+                for key, value in data['incoherents'].items():
+                    incoherents[key] += value
+        totals = {'coherents': sum([value for value in coherency.values()])}
+        totals['incoherents'] = sum([value for value in incoherents.values()])
+        totals['percentage_coherents'] = totals['coherents'] / (totals['coherents'] + totals['incoherents'])
+        if all([value == 0 for value in coherency.values()]):
+            return None
+        else:
+            return {'coherents': coherency,
+                    'incoherents': incoherents,
+                    'totals': totals}
 
     def juror_stats(self):
         jurors = self.jurors
@@ -213,6 +245,19 @@ class Dispute(db.Model):
             4: "Execution",
         }
         return period_name[self.period]
+
+    @property
+    def winner_choice_str(self):
+        choice_name = {
+            0: 'Refuse to Arbitrate',
+            1: 'Yes',
+            2: 'No',
+            3: 'Tie',
+            4: 'Not Ruled yet'}
+        if self.winning_choice is not None:
+            return choice_name[self.winning_choice]
+        else:
+            return choice_name[4]
 
     def delete_recursive(self):
         rounds = Round.query.filter(Round.disputeID == self.id)
@@ -308,8 +353,77 @@ class Dispute(db.Model):
             votes_query = db.session.execute(
                 "select choice,count(*) as num_votes from vote \
                 where round_id = :round_id and vote=1 \
-                group by choice order by num_votes desc", {'round_id': max_round_id}).first()
-            return(votes_query[0])
+                group by choice order by num_votes desc", {'round_id': max_round_id}).fetchall()
+            num_of_votes = [count[1] for count in votes_query]
+            if len(num_of_votes) == 0:
+                # all the votes are still pending
+                return None
+            if (len(num_of_votes) > 1) and (all(count == num_of_votes[0] for count in num_of_votes)):
+                # it's a tie
+                return 3
+            else:
+                return votes_query[0].items()[0][1]
+        else:
+            return None
+
+    def coherency(self):
+        """
+        Percentage of coherent votes with the final result
+        """
+        if Dispute.query.filter_by(id=self.id).first().ruled:
+            coherent_votes = 0
+            no_coherent_votes = 0
+            for r in self.rounds():
+                for vote in r.votes():
+                    if self.winning_choice != 3:
+                        # if it's not a tie
+                        if (vote.vote) and (vote.choice == self.winning_choice):
+                            coherent_votes += 1
+                        elif not vote.vote:
+                            # if didn't vote, don't count it
+                            # TODO! review if this is fine
+                            pass
+                        else:
+                            no_coherent_votes += 1
+                    else:
+
+                        # if it's a tie, if voted it's coherent, if not, isn't
+                        if vote.vote:
+                            coherent_votes += 1
+                        else:
+                            no_coherent_votes += 1
+            if coherent_votes + no_coherent_votes:
+                return coherent_votes / (coherent_votes + no_coherent_votes)
+            else:
+                return None
+        else:
+            return None
+
+    def yes_no_coherency(self):
+        """
+        Number of votes for yes or no that are coherent with the final result
+        """
+        coherency = {'Refuse': 0, 'Yes': 0, 'No': 0}
+        incoherents = {'Refuse': 0, 'Yes': 0, 'No': 0, 'Pending': 0}
+        mapper = {0: 'Refuse', 1: 'Yes', 2: 'No'}
+        if Dispute.query.filter_by(id=self.id).first().ruled:
+            for r in self.rounds():
+                for vote in r.votes():
+                    if self.winning_choice != 3:
+                        # if it's not a tie
+                        if (vote.vote) and (vote.choice == self.winning_choice):
+                            coherency[mapper[vote.choice]] += 1
+                        elif not vote.vote:
+                            incoherents['Pending'] += 1
+                        else:
+                            incoherents[mapper[vote.choice]] += 1
+                    else:
+                        # if it's a tie, if voted it's coherent, if not, isn't
+                        if vote.vote:
+                            coherency[mapper[vote.choice]] += 1
+                        else:
+                            incoherents['Pending'] += 1
+            return {'coherents': coherency, 'incoherents': incoherents}
         else:
             return None
 

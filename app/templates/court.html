@@ -18,104 +18,193 @@
 {% block content %}
 
 {% if court.id is not none %}
+{% set fees = court.fees_paid() %}
+{% set yes_no_coherency = court.yes_no_coherency() %}
+
 <h3>Court #{{court.id}}: {{ court.map_name}}</h3>
 
 <!-- Court Numbers -->
-<div class="container">
-    <div class="row">
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>Parent Court</h4>
-                </div>
-                <div class="panel-body text-center">
-                  {% if parent %}<h5><a href={{url_for('court', id=parent.id)}}>{{parent.map_name}}</a></h5>{% endif %}
-                  
-                </div>
+<div class="row">
+    <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading text-center">
+                <h4>Parent Court</h4>
             </div>
+            {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=parent.id)}}>{{parent.map_name}}</a></li></ul>{% endif %}
         </div>
+    </div>
 
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>Court "Childs"</h4>
-                </div>
-                <div class="panel-body text-center">
-                    {% if childs %}
-                        <ul class="list-group">
-                        {% for child in childs%}
-                            <li class="list-group-item"><a href={{url_for('court', id=child.id)}}>{{ child.map_name }}</a></li>
-                        {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
+    <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading text-center">
+                <h4>Court "Childs"</h4>
+            </div>
+            {% if childs %}
+                <ul class="list-group">
+                {% for child in childs%}
+                    <li class="list-group-item"><a href={{url_for('court', id=child.id)}}>{{ child.map_name }}</a></li>
+                {% endfor %}
+                </ul>
+            {% else%}
+            <ul class="list-group"><li class="list-group-item">No Childs</li></ul>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading text-center">
+                <h4>ETH fees paid</h4>
+            </div>
+            <div class="panel-body text-center">
+                {{ "%.3f ETH"|format(fees['eth']) }}
             </div>
         </div>
-        
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>Ongoing Cases</h4>
-                </div>
-                <div class="panel-body text-center">
-                    {{ court.openCases }}
-                </div>
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading text-center">
+                <h4>PNK redistributed</h4>
             </div>
-        </div>
-        
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>Ruled Cases</h4>
-                </div>
-                <div class="panel-body text-center">
-                    {{ court.ruledCases }}
-                </div>
+            <div class="panel-body text-center">
+            
+                {{"{:,.2f} PNK".format(fees['pnk'])}}
             </div>
         </div>
     </div>
 
+</div>
+    
+<div class="row">
+    <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Ongoing Cases</h4>
+            </div>
+            <div class="panel-body text-center">
+                {{ court.openCases }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Ruled Cases</h4>
+            </div>
+            <div class="panel-body text-center">
+                {{ court.ruledCases }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Votes per option</h4>
+            </div>
+            <table class="table">
+            {% if yes_no_coherency is not none %}
+                {% for key, value in yes_no_coherency.items() %}
+                    {% if key != "totals"%}
+                        {% for key2, value2 in yes_no_coherency[key].items() %}
+                        <tr>
+                        <td class="text-left">{{ key2+"-"+key }}</td><td class="text-right">{{ value2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endif%}
+                {% endfor %}
+            
+            <tr>
+            <td class="text-left">% of coherents</td><td class="text-right">{{"{:.2%}".format(yes_no_coherency['totals']['percentage_coherents']) }}</td>
+            </tr>
+            {% endif%}
+            </table>
+            
+        </div>
+    </div>
+    
+        <div class="col-lg-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Choice Winnner</h4>
+            </div>
+             <table class="table">
+            
+            {% for key, value in winner_choice.items() %}
+            <tr>
+            <td class="text-left">{{ key }}</td><td class="text-right">{{ value }}</td>
+            </tr>
+            {% endfor %}
 
+            </table>
+            <div class="panel-footer">
+                Amount of cases won by each option
+            </div>
+        </div>
+    </div>
 
+</div>
 
 <!-- Jurors -->
-    <h4>Jurors: {{jurors|count}}</h4>
-    <div class="table-responsive" style="max-height:250px">
-        <table class="table table-bordered">
+
+<h4>Total Jurors: {{jurors|count}}</h4>
+<div class="table-responsive" style="max-height:250px; overflow-y:auto">
+    <table class="table table-bordered ">
+        <thead>
           <tr class="info">
-            <td align="center">Juror</td>
-            <td align="center">Stake</td>
+            <th align="center">Juror</td>
+            <th align="center">Stake</td>
           </tr>
-         {% for juror, stake in jurors.items(): %}
-          <tr>
-            <td class="text-center">{{juror}}</td>
-            <td class="text-center">{{ "{:,.1f}".format(stake) }}</td>
-          </tr>
-         {% endfor %}
-        </table>
-    </div>
-    </br>
-    <!-- Disputes -->
-    
-    <h4>Court Disputes</h4>
-    <div class="table-responsive" style="max-height:400px">
-        <table class="table table-bordered">
-          <tr class="info">
-            <td align="center">Dispute N°</td>
-            <td align="center">Status</td>
-            <td align="center">Last Period Change</td>
-          </tr>
-          {% for dispute in disputes: %}
-          <tr class={{'success' if dispute.ruled else 'warning'}}>
-            <td class="text-center"><a href={{url_for('dispute', id=dispute.id)}}>{{dispute.id}}</a></td>
-            <td class="text-center">{{dispute.period_name}}</td>
-            <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
-          </tr>
-          {% endfor %}
-        </table>
-    </div>
-    
+        </thead>
+        <tbody>
+            {% for juror, stake in jurors.items(): %}
+            <tr>
+                <td class="text-center">{{juror}}</td>
+                <td class="text-center">{{ "{:,.1f}".format(stake) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+
+<!-- Histogram -->
+<div class="row">
+    <div class="col-md-12 " id="juror_hist-id">
+        <script>
+            var graph = {{juror_hist | safe}};
+            Plotly.plot('juror_hist-id',graph,{});
+        </script>
+    </div>
+</div>
+
+</br>
+<!-- Disputes -->
+
+<h4>Court Disputes</h4>
+<div class="table-responsive" style="max-height: 400px; overflow-y: auto">
+    <table class="table table-bordered">
+      <tr class="info">
+        <td align="center">Dispute N°</td>
+        <td align="center">Status</td>
+        <td align="center">Last Period Change</td>
+        <td align="center">Winner Choice</td>
+        <td align="center">% of Coherent Votes</td>
+      </tr>
+      {% for dispute in disputes: %}
+      <tr class={{'success' if dispute.ruled else 'warning'}}>
+        <td class="text-center"><a href={{url_for('dispute', id=dispute.id)}}>{{dispute.id}}</a></td>
+        <td class="text-center">{{dispute.period_name}}</td>
+        <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
+        <td class="text-center">{{dispute.winner_choice_str}}</td>
+        <td class="text-center">{% if dispute.ruled and dispute.coherency() %}{{"{:,.2%}".format(dispute.coherency())}}{% else %} -  {% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+</div>
+    
+
 {% endif %}
 {% endblock %}
 {% endblock %}

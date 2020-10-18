@@ -4,8 +4,8 @@ import os
 from app import create_app
 
 from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
-    disputesbyCourtGraph, disputesbyCreatorGraph, treeMapGraph
-from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute, Vote
+    disputesbyCourtGraph, disputesbyCreatorGraph, treeMapGraph, jurorHistogram
+from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from app.modules.Kleros import StakesKleros
 from flask import render_template, request
 import logging
@@ -187,6 +187,14 @@ def court():
     if parent is not None:
         parent = Court(id=parent)
     disputes = court.disputes()
+    winner_choice = {
+            'Refuse to Arbitrate': 0,
+            'Yes': 0,
+            'No': 0,
+            'Tie': 0,
+            'Not Ruled yet': 0}
+    for dispute in disputes:
+        winner_choice[dispute.winner_choice_str] += 1
     childs = court.children_ids()
     court_childs = []
     for child in childs:
@@ -195,12 +203,16 @@ def court():
     jurors = {k: v for k, v in sorted(jurors.items(),
                                       key=lambda item: item[1],
                                       reverse=True)}
+    juror_hist = jurorHistogram(list(jurors.values()))
+
     return render_template('court.html',
                            court=court,
                            parent=parent,
                            childs=court_childs,
                            disputes=disputes,
+                           winner_choice=winner_choice,
                            jurors=jurors,
+                           juror_hist=juror_hist,
                            last_update=Config.get('updated'),
                            )
 
