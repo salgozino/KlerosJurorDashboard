@@ -104,6 +104,14 @@ def updatePrices():
     Config.set('PNKcirculating_supply', pnkInfo['circulating_supply'])
     Config.set('PNKprice', CMC().getPNKprice())
     Config.set('ETHprice', CMC().getETHprice())
+    eth_fees = 0
+    pnk_redistributed = 0
+    for court in range(Court().ncourts):
+        fees = Court(id=court).fees_paid()
+        eth_fees += fees['eth']
+        pnk_redistributed += fees['pnk']
+    Config.set('fees_ETH', eth_fees)
+    Config.set('PNK_redistributed', pnk_redistributed)
     db.session.commit()
 
 

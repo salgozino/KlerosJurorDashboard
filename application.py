@@ -54,6 +54,8 @@ def index():
                            pnkPctChange=float(Config.get('PNKpctchange24h'))/100,
                            pnkVol24=float(Config.get('PNKvolume24h')),
                            pnkCircSupply=float(Config.get('PNKcirculating_supply')),
+                           fees_paid={'eth': float(Config.get('fees_ETH')),
+                                      'pnk': float(Config.get('PNK_redistributed'))},
                            courtTable=courtTable
                            )
 
