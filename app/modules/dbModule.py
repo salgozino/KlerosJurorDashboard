@@ -8,7 +8,7 @@ from app.modules import db
 from .KlerosDB import Court, Config, Visitor, Deposit, StakesEvolution, \
     JurorStake
 from .kleros_eth import KlerosLiquid
-from .etherscan import CMC, Etherscan
+from .etherscan import CoinGecko, Etherscan
 from datetime import datetime, timedelta
 import logging
 
@@ -98,12 +98,12 @@ def fillDB():
 
 
 def updatePrices():
-    pnkInfo = CMC().getCryptoInfo()
-    Config.set('PNKvolume24h', pnkInfo['quote']['USD']['volume_24h'])
-    Config.set('PNKpctchange24h', pnkInfo['quote']['USD']['percent_change_24h'])
-    Config.set('PNKcirculating_supply', pnkInfo['circulating_supply'])
-    Config.set('PNKprice', CMC().getPNKprice())
-    Config.set('ETHprice', CMC().getETHprice())
+    pnkInfo = CoinGecko().getCryptoInfo()
+    Config.set('PNKvolume24h', pnkInfo['market_data']['total_volume']['usd'])
+    Config.set('PNKpctchange24h', pnkInfo['market_data']['price_change_24h_in_currency']['usd']*100)
+    Config.set('PNKcirculating_supply', pnkInfo['market_data']['circulating_supply'])
+    Config.set('PNKprice', CoinGecko().getPNKprice())
+    Config.set('ETHprice', CoinGecko().getETHprice())
     eth_fees = 0
     pnk_redistributed = 0
     for court in range(Court().ncourts):
