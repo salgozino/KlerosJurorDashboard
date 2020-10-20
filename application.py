@@ -181,8 +181,8 @@ def court():
     if id is None:
         # if it's not specified, go to the general court
         id = 0
-    court = Court(id=id)
-    parent = court.getParent(court.id)
+    court = Court.query.get(id)
+    parent = court.parent
     if parent is not None:
         parent = Court(id=parent)
     disputes = court.disputes()
