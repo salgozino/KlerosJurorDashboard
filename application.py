@@ -4,8 +4,8 @@ import os
 from app import create_app
 
 from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
-    disputesbyCourtGraph, disputesbyCreatorGraph, treeMapGraph
-from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute, Vote
+    disputesbyCourtGraph, disputesbyCreatorGraph, treeMapGraph, jurorHistogram
+from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from app.modules.Kleros import StakesKleros
 from flask import render_template, request
 import logging
@@ -54,6 +54,8 @@ def index():
                            pnkPctChange=float(Config.get('PNKpctchange24h'))/100,
                            pnkVol24=float(Config.get('PNKvolume24h')),
                            pnkCircSupply=float(Config.get('PNKcirculating_supply')),
+                           fees_paid={'eth': float(Config.get('fees_ETH')),
+                                      'pnk': float(Config.get('PNK_redistributed'))},
                            courtTable=courtTable
                            )
 
@@ -126,9 +128,8 @@ def dispute():
     vote_count = {}
     dispute = Dispute.query.get(id)
     try:
-        dispute.rounds = dispute.rounds()
+        rounds = dispute.rounds()
     except Exception:
-        print(dispute)
         return render_template('dispute.html',
                                error="Error trying to reach the dispute data. This Dispute exist?",
                                dispute=dispute,
@@ -138,10 +139,10 @@ def dispute():
                                )
     unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
     unique_jurors = set()
-    for r in dispute.rounds:
+    for r in rounds:
         vote_count[r.id] = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
-        r.votes = r.votes()
-        for v in r.votes:
+        votes = r.votes()
+        for v in votes:
             if v.vote == 1:
                 if v.choice == 1:
                     v.vote_str = 'Yes'
@@ -182,11 +183,19 @@ def court():
     if id is None:
         # if it's not specified, go to the general court
         id = 0
-    court = Court(id=id)
-    parent = court.getParent(court.id)
+    court = Court.query.get(id)
+    parent = court.parent
     if parent is not None:
         parent = Court(id=parent)
     disputes = court.disputes()
+    winner_choice = {
+            'Refuse to Arbitrate': 0,
+            'Yes': 0,
+            'No': 0,
+            'Tie': 0,
+            'Not Ruled yet': 0}
+    for dispute in disputes:
+        winner_choice[dispute.winner_choice_str] += 1
     childs = court.children_ids()
     court_childs = []
     for child in childs:
@@ -195,12 +204,16 @@ def court():
     jurors = {k: v for k, v in sorted(jurors.items(),
                                       key=lambda item: item[1],
                                       reverse=True)}
+    juror_hist = jurorHistogram(list(jurors.values()))
+
     return render_template('court.html',
                            court=court,
                            parent=parent,
                            childs=court_childs,
                            disputes=disputes,
+                           winner_choice=winner_choice,
                            jurors=jurors,
+                           juror_hist=juror_hist,
                            last_update=Config.get('updated'),
                            )
 

@@ -33,12 +33,14 @@
             <td align="center">Dispute Status</td>
             <td align="center">Period</td>
             <td align="center">Last Period Change</td>
+            <td align="center">% of coherent votes</td>
           </tr>
           <tr class={{'success' if dispute.ruled}}>
             <td class="text-center"><a href={{url_for('court', id=dispute.subcourtID)}}>{{dispute.subcourtID}}</a></td>
             <td class="text-center">{{'Case Closed' if dispute.ruled else 'Ongoing'}}</td>
             <td class="text-center">{{dispute.period_name}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
+            <td class="text-center">{% if dispute.coherency() %}{{ "{:.2%}".format(dispute.coherency()) }}{% else %} - {% endif %}</td>
           </tr>
         </table>
     </div>
@@ -60,7 +62,7 @@
           </tr>
         </table>
     </div>
-    {% for r in dispute.rounds: %}
+    {% for r in dispute.rounds(): %}
     <div class="table-responsive">
         <h4>Round {{r.round_num}}</H4>
         <table class="table table-bordered">
@@ -84,7 +86,7 @@
             <td class="">Round {{r.round_num}} - {{ 'Majority reached' if r.majority_reached else 'No majority' }}</td>
             <td align="center">Vote</td>
           </tr>
-          {% for v in r.votes %}
+          {% for v in r.votes() %}
             {% if dispute.period==4 %}
                 <tr class={{'success' if dispute.current_ruling == v.choice else 'danger'}}>
             {% else %}

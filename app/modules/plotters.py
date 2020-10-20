@@ -207,3 +207,13 @@ def treeMapGraph(courtTable, key="Jurors"):
                          margin={'l': 10, 'b': 80, 't': 30, 'r': 30},
                          legend={'orientation': 'h'})
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+
+def jurorHistogram(jurorStakes):
+    fig = go.Figure(data=[go.Histogram(x=jurorStakes,
+                                       nbinsx=50)])
+    fig['layout'].update(height=300,
+                         margin={'l': 10, 'b': 80, 't': 30, 'r': 30})
+    fig.update_yaxes(title_text='N° of Jurors')
+    fig.update_xaxes(title_text='PNK Staked')
+    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
