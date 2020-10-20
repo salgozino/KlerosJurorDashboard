@@ -130,3 +130,36 @@ class CMC():
         url = self.api_url + 'map'
         response = requests.get(url, headers=headers)
         return response.json()
+
+
+class CoinGecko():
+    """
+    Class for interaction with CoinGecko API and get the ETH and PNK prices.
+    """
+
+    def __init__(self):
+        self.api_url = "https://api.coingecko.com/api/v3/"
+
+    def getCryptoInfo(self, id="kleros"):
+        parameters = {'localization': False,
+                      'tickers': False,
+                      'market_data': True,
+                      'community_data': False,
+                      'developer_data': False,
+                      'sparkline': False}
+        headers = {
+          'Accepts': 'application/json',
+        }
+        url = self.api_url + 'coins/{}?'.format(id) + urllib.parse.urlencode(parameters)
+        response = requests.get(url, headers=headers)
+        return response.json()
+
+    def getPNKprice(self):
+        pnkId = "kleros"
+        response = self.getCryptoInfo(id=pnkId)
+        return response['market_data']['current_price']['usd']
+
+    def getETHprice(self):
+        ethId = "ethereum"
+        response = self.getCryptoInfo(id=ethId)
+        return response['market_data']['current_price']['usd']
