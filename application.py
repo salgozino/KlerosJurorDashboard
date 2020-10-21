@@ -194,8 +194,8 @@ def court():
             'No': 0,
             'Tie': 0,
             'Not Ruled yet': 0}
-    for dispute in disputes:
-        winner_choice[dispute.winner_choice_str] += 1
+    # for dispute in disputes:
+        # winner_choice[dispute.winner_choice_str] += 1
     childs = court.children_ids()
     court_childs = []
     for child in childs:
