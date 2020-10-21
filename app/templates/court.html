@@ -164,14 +164,12 @@
             <td align="center">Dispute N°</td>
             <td align="center">Status</td>
             <td align="center">Last Period Change</td>
-            <td align="center">Winner Choice</td>
           </tr>
           {% for dispute in disputes: %}
           <tr class={{'success' if dispute.ruled else 'warning'}}>
             <td class="text-center"><a href={{url_for('dispute', id=dispute.id)}}>{{dispute.id}}</a></td>
             <td class="text-center">{{dispute.period_name}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
-            <td class="text-center">{{dispute.winner_choice_str}}</td>
           </tr>
           {% endfor %}
         </table>

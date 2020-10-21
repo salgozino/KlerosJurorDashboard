@@ -33,14 +33,12 @@
             <td align="center">Dispute Status</td>
             <td align="center">Period</td>
             <td align="center">Last Period Change</td>
-            <td align="center">% of coherent votes</td>
           </tr>
           <tr class={{'success' if dispute.ruled}}>
             <td class="text-center"><a href={{url_for('court', id=dispute.subcourtID)}}>{{dispute.subcourtID}}</a></td>
             <td class="text-center">{{'Case Closed' if dispute.ruled else 'Ongoing'}}</td>
             <td class="text-center">{{dispute.period_name}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
-            <td class="text-center">{% if dispute.coherency() %}{{ "{:.2%}".format(dispute.coherency()) }}{% else %} - {% endif %}</td>
           </tr>
         </table>
     </div>
