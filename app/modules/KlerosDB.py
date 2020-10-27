@@ -448,6 +448,12 @@ class Round(db.Model):
     def votes(self):
         return Vote.query.filter_by(round_id=self.id).order_by(Vote.account.asc()).all()
 
+    def vote_count(self):
+        count = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
+        for v in self.votes():
+            count[v.vote_str] += 1
+        return count
+
     def delete_recursive(self):
         votes = Vote.query.filter(Vote.round_id == self.id)
         for v in votes:
@@ -494,6 +500,22 @@ class Vote(db.Model):
         if not round.majority_reached:
             return False
         return self.choice == round.winning_choice
+
+    @property
+    def vote_str(self):
+        map_votes = {0: 'Refuse to Arbitrate',
+                     1: 'Yes',
+                     2: 'No',
+                     3: 'Pending'}
+        try:
+            if self.vote == 1:
+                return map_votes[self.choice]
+            else:
+                return map_votes[3]
+        except KeyError:
+            logger.error("Key error not found when mapping the vote string")
+            logger.error("The vote has the properties: ID:{}, Vote:{}, Choice{}".format(self.id, self.vote, self.choice))
+            return ''
 
 
 class Juror():
