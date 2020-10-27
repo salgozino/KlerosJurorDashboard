@@ -143,33 +143,15 @@ def dispute():
         vote_count[r.id] = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
         votes = r.votes()
         for v in votes:
-            if v.vote == 1:
-                if v.choice == 1:
-                    v.vote_str = 'Yes'
-                    vote_count[r.id]['Yes'] += 1
-                    if v.account.lower() not in unique_jurors:
-                        unique_vote_count['Yes'] += 1
-                        unique_jurors.add(v.account.lower())
-                elif v.choice == 2:
-                    v.vote_str = 'No'
-                    vote_count[r.id]['No'] += 1
-                    if v.account.lower() not in unique_jurors:
-                        unique_vote_count['No'] += 1
-                        unique_jurors.add(v.account.lower())
-                elif v.choice == 0:
-                    v.vote_str = 'Refuse'
-                    vote_count[r.id]['Refuse'] += 1
-                    if v.account.lower() not in unique_jurors:
-                        unique_vote_count['Refuse'] += 1
-                        unique_jurors.add(v.account.lower())
-            else:
-                v.vote_str = 'Pending'
-                vote_count[r.id]['Pending'] += 1
-                if v.account.lower() not in unique_jurors:
-                    unique_vote_count['Pending'] += 1
-                    unique_jurors.add(v.account.lower())
+            vote_str = v.vote_str
+            vote_count[r.id][vote_str] += 1
+            if v.account.lower() not in unique_jurors:
+                unique_vote_count[vote_str] += 1
+                unique_jurors.add(v.account.lower())
+
     return render_template('dispute.html',
                            dispute=dispute,
+                           rounds=rounds,
                            error=None,
                            vote_count=vote_count,
                            unique_vote_count=unique_vote_count,
