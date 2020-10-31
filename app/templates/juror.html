@@ -31,7 +31,7 @@
             {% for stake in stakes: %}
               <tr>
                 <td>{{stake[0]}}</td>
-                <td>{{stake[1].setStake}}</td>
+                <td>{{"{:0.2f}".format(stake[1].setStake)}}</td>
                 <td><a href="https://etherscan.io/tx/{{ stake[1].txid }}">{{stake[1].txid}}</a></td>
               </tr>
             {% endfor %}
