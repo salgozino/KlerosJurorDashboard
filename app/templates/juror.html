@@ -4,7 +4,7 @@
     {% block header %}
       <div class="row">
         <div class="col">
-          <h4>{% block title %}<a href="https://etherscan.io/address/{{ address }}">Juror {{ address }}</a>{% endblock %}</h4>
+          <h3>{% block title %}Juror {{ address }}</h3><h6><a href="https://etherscan.io/address/{{ address }}">view on etherscan</a></h6>{% endblock %}
         </div>
       </div>
     {% endblock %}
@@ -53,7 +53,7 @@
                 <td><a href="{{ url_for('dispute',id=v[2].id) }}">Dispute {{ v[2].id}}</a></td>
                 <td>{{v[1].round_num}}</td>
                 <td>{{ "Voted" if v[0].vote else "Pending"}}</td>
-                <td>{{ v[0].choice }}</td>
+                <td>{{ v[0].vote_str }}</td>
               </tr>
             {% endfor %}
           </table>
