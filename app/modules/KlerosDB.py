@@ -438,11 +438,11 @@ class Round(db.Model):
     appeal_start = db.Column(db.Integer)
     appeal_end = db.Column(db.Integer)
     vote_lengths = db.Column(db.Integer)
-    tokens_at_stake_per_juror = db.Column(db.Integer)
-    total_fees_for_jurors = db.Column(db.Integer)
+    tokens_at_stake_per_juror = db.Column(db.Float)
+    total_fees_for_jurors = db.Column(db.Float)
     votes_in_each_round = db.Column(db.Integer)
-    repartitions_in_each_round = db.Column(db.Integer)
-    penalties_in_each_round = db.Column(db.Integer)
+    repartitions_in_each_round = db.Column(db.Float)
+    penalties_in_each_round = db.Column(db.Float)
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
 
     def votes(self):
