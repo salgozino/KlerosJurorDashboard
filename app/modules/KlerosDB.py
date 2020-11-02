@@ -579,7 +579,7 @@ class Juror():
                  .filter(Dispute.id == Round.disputeID)
                  .order_by(Vote.round_id.desc())
                  .all()
-                )
+                 )
         return votes
 
     @property

@@ -79,7 +79,7 @@
         </table>
     </div>
     <div class="table-responsive">
-        <table class="table table-bordered">
+        <table class="table table-bordered table-condensed">
           <tr class={{"info" if r.majority_reached else "warning"}}>
             <td class="">Round {{r.round_num}} - {{ 'Majority reached' if r.majority_reached else 'No majority' }}</td>
             <td align="center">Vote</td>
@@ -90,7 +90,7 @@
             {% else %}
                 <tr>
             {% endif %}
-              <td>{{v.account}}</td>
+              <td><a href={{url_for('juror', address=v.account)}}>{{v.account}}</a></td>
               <td align="right">{{ v.vote_str }}</td>
             </tr>
           {% endfor %}
