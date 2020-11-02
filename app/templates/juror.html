@@ -30,7 +30,7 @@
             <tr class="info"><td>Court</td><td>Amount</td><td>TxID</td></tr>
             {% for stake in stakes: %}
               <tr>
-                <td>{{stake[0]}}</td>
+                <td><a href={{url_for('court', id=stake[1].subcourtID)}}>{{stake[0]}}</td>
                 <td>{{"{:0.2f}".format(stake[1].setStake)}}</td>
                 <td><a href="https://etherscan.io/tx/{{ stake[1].txid }}">{{stake[1].txid}}</a></td>
               </tr>
