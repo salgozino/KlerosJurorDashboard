@@ -117,7 +117,7 @@
             <tbody>
                 {% for juror, stake in jurors.items(): %}
                 <tr>
-                    <td class="text-center">{{juror}}</td>
+                    <td class="text-center"><a href={{url_for('juror', address=juror)}}>{{juror}}</a></td>
                     <td class="text-center">{{ "{:,.1f}".format(stake) }}</td>
                 </tr>
                 {% endfor %}
@@ -139,7 +139,7 @@
     <!-- Disputes -->
     <h4>Court Disputes</h4>
     <div class="table-responsive" style="max-height: 400px; overflow-y: auto">
-        <table class="table table-bordered">
+        <table class="table table-bordered table-condensed">
           <tr class="info">
             <td align="center">Dispute N°</td>
             <td align="center">Status</td>
