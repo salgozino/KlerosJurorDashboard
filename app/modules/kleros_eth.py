@@ -298,9 +298,9 @@ class KlerosLiquid(Etherscan):
     def mapCourtNames(self, courtID):
         courtNames = {0: 'General',
                       1: 'Blockchain',
-                      2: 'Blockchain>NonTechnical',
-                      3: 'Blockchain>NonTechnical>TokenListing',
-                      4: 'Blockchain>Technical',
+                      2: 'NonTechnical',
+                      3: 'TokenListing',
+                      4: 'Technical',
                       5: 'Marketing Services',
                       6: 'English Language',
                       7: 'Video Production',
@@ -308,7 +308,17 @@ class KlerosLiquid(Etherscan):
                       9: 'Curation',
                       10: 'Data Analysis',
                       11: 'Statistical Modeling',
-                      12: 'Curation (Medium)'}
+                      12: 'Curation (Medium)',
+                      13: 'Spanish-English Translation',
+                      14: 'French-English Translation',
+                      15: 'Portuguese-English Translation',
+                      16: 'German-English Translation',
+                      17: 'Russian-English Translation',
+                      18: 'Korean-English Translation',
+                      19: 'Japanese-English Translation',
+                      20: 'Turkish-English Translation',
+                      21: 'Chinese-English Translation'
+                      }
         try:
             return courtNames[courtID]
         except KeyError:
