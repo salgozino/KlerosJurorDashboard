@@ -137,25 +137,15 @@ def fillDeposit():
 
 def updateCourtInfo():
     logger.debug("Updating court info")
-    courts = db.session.query(Court.id).all()
-    nCourts = len(courts)
     kl = KlerosLiquid()
-
     courtID = 0
     while True:
-    # for courtID in range(0, nCourts+2):
-        # increase the court id number and check if can be updated or created
-        courtID += 1
-
         try:
             courtInfo = kl.courtInfo(courtID)
         except Exception:
             # there is no new court to create
             break
         courtName = kl.mapCourtNames(courtID)
-        if courtName == 'Unknown':
-            logger.info(f"There is a new court with ID {courtID}! \
-                        We need his name!")
         try:
             courtaddress = courtAddresses[courtID]
         except KeyError:
@@ -171,15 +161,16 @@ def updateCourtInfo():
         else:
             # is a new court
             db.session.add(Court(id=courtID,
-                                 parent= courtInfo['parent'],
-                                 name= courtName,
-                                 address= courtaddress,
-                                 voteStake= courtInfo['votesStake'],
-                                 feeForJuror= courtInfo['feeForJuror'],
-                                 minStake= courtInfo['minStake']))
+                                 parent=courtInfo['parent'],
+                                 name=courtName,
+                                 address=courtaddress,
+                                 voteStake=courtInfo['votesStake'],
+                                 feeForJuror=courtInfo['feeForJuror'],
+                                 minStake=courtInfo['minStake']))
             logger.info(f"Court {courtID} created")
         db.session.commit()
-        
+        # increase the court id number and check if can be updated or created
+        courtID += 1
 
 
 def updateStakesEvolution():
