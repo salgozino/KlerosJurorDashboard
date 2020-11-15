@@ -165,13 +165,13 @@ def disputesbyCourtGraph(language="en"):
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-def disputesbyCreatorGraph(language="en"):
+def disputesbyArbitratedGraph(language="en"):
     if 'en' == language:
         title = 'Disputes by dApp'
     else:
         title = 'Disputas por dApp'
     fig = go.Figure()
-    data = Dispute.disputesCountByCreator()
+    data = Dispute.disputesCountByArbitrated()
     fig.add_trace(go.Pie(labels=list(data.keys()),
                          values=list(data.values()),
                          showlegend=False)

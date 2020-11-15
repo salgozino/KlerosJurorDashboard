@@ -288,13 +288,13 @@
                     <thead>
                         <tr class="active">
                             <th scope="col">Court</th>
-                            {% for col in courtTable['General'].keys() %}
+                            {% for col in courtTable['General Court'].keys() %}
                             {% if col != 'id'%}<th scope="col">{{ col }}</th>{%endif%}
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
-                    {% set ns = namespace(mostActive='General') %} 
+                    {% set ns = namespace(mostActive='General Court') %} 
                     {% for c, data in courtTable.items() %}
                         {% if data['Disputes in the last 30 days'] > courtTable[ns.mostActive]['Disputes in the last 30 days']%}
                             {% set ns.mostActive = c%}

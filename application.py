@@ -4,7 +4,7 @@ import os
 from app import create_app
 
 from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
-    disputesbyCourtGraph, disputesbyCreatorGraph, treeMapGraph, jurorHistogram
+    disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
 from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute
 from app.modules.Kleros import StakesKleros
 from flask import render_template, request
@@ -33,8 +33,8 @@ def index():
         mostActiveCourt = "No new cases in the last 7 days"
     pnkPrice = float(Config.get('PNKprice'))
     courtTable = StakesKleros.getCourtInfoTable()
-    pnkStaked = courtTable['General']['Total Staked']
-    activeJurors = courtTable['General']['Jurors']
+    pnkStaked = courtTable['General Court']['Total Staked']
+    activeJurors = courtTable['General Court']['Jurors']
 
     return render_template('main.html',
                            last_update=Config.get('updated'),
@@ -70,9 +70,10 @@ def graphsMaker():
                            stakedPNKgraph=sjGraph,
                            disputesgraph=disputesGraph(),
                            disputeCourtgraph=disputesbyCourtGraph(),
-                           disputeCreatorgraph=disputesbyCreatorGraph(),
+                           disputeCreatorgraph=disputesbyArbitratedGraph(),
                            treemapJurorsGraph=treeMapGraph(courtTable),
-                           treemapStakedGraph=treeMapGraph(courtTable, 'Total Staked'))
+                           treemapStakedGraph=treeMapGraph(courtTable, 'Total Staked')
+                           )
 
 
 @application.route('/support/')

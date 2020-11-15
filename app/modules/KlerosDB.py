@@ -329,9 +329,9 @@ class Dispute(db.Model):
         return result
 
     @staticmethod
-    def disputesCountByCreator():
-        data = Dispute.query.with_entities(Dispute.creator, func.count(Dispute.id)).\
-            group_by(Dispute.creator).all()
+    def disputesCountByArbitrated():
+        data = Dispute.query.with_entities(Dispute.arbitrated, func.count(Dispute.id)).\
+            group_by(Dispute.arbitrated).all()
         result = {}
         for item in data:
             name = ContractMapper.searchName(item[0])
@@ -342,8 +342,8 @@ class Dispute(db.Model):
         return result
 
     @staticmethod
-    def disputesByCreator(address):
-        disputes = Dispute.query.filter(func.lower(Dispute.creator) == address.lower()).order_by(Dispute.id.desc()).all()
+    def disputesByArbitrated(address):
+        disputes = Dispute.query.filter(func.lower(Dispute.arbitrated) == address.lower()).order_by(Dispute.id.desc()).all()
         return list(disputes)
 
     @property
