@@ -6,6 +6,7 @@ import requests
 from eth_abi import decode_abi
 from datetime import datetime
 from .etherscan import Etherscan
+from .web3Node import SmartContract
 from .KlerosDB import Config, JurorStake, Dispute, Vote, Round
 from app.modules import db
 
@@ -296,33 +297,45 @@ class KlerosLiquid(Etherscan):
                 'votesStake': (courtData[2]/10**18) * (courtData[3]/10**4)}
 
     def mapCourtNames(self, courtID):
-        courtNames = {0: 'General',
-                      1: 'Blockchain',
-                      2: 'NonTechnical',
-                      3: 'TokenListing',
-                      4: 'Technical',
-                      5: 'Marketing Services',
-                      6: 'English Language',
-                      7: 'Video Production',
-                      8: 'Onboarding',
-                      9: 'Curation',
-                      10: 'Data Analysis',
-                      11: 'Statistical Modeling',
-                      12: 'Curation (Medium)',
-                      13: 'Spanish-English Translation',
-                      14: 'French-English Translation',
-                      15: 'Portuguese-English Translation',
-                      16: 'German-English Translation',
-                      17: 'Russian-English Translation',
-                      18: 'Korean-English Translation',
-                      19: 'Japanese-English Translation',
-                      20: 'Turkish-English Translation',
-                      21: 'Chinese-English Translation'
-                      }
-        try:
-            return courtNames[courtID]
-        except KeyError:
-            logger.error(f"I don't have the name of the court with id {courtID}")
-            return f"Court {courtID}"
-        except Exception as e:
-            logger.error(e)
+        courtInfo = PolicyRegistry().getSubcourtInfo(courtID)
+        if courtInfo:
+            try:
+                return courtInfo['name']
+            except KeyError:
+                logger.exception('Error trying to return the Court name')
+                return 'Court ' + courtID
+        else:
+            # this should never happend, but is just in case.
+            return 'Court ' + courtID
+
+
+class PolicyRegistry(SmartContract):
+
+    def __init__(self, address='0xCf1f07713d5193FaE5c1653C9f61953D048BECe4'):
+        self.address = address
+        with open('app/lib/ABI_PolicyRegistry.json', 'r') as f:
+            self.abi = json.loads(f.read())['result']
+
+        self.contract = self.web3.eth.contract(abi=self.abi,
+                                               address=self.address)
+
+    def getSubcourtInfo(self, id):
+        """
+        Get the subcourt details.
+        With the subcourt id, read the PolicyRegistry to get the ipfs route,
+        then request the info to the ipfs.
+
+        policy_is the return of the smart contract call to the policy function.
+        for example: '/ipfs/QmYMdCkb7WULmiK6aQrgsayGG3VYisQwsHSLC3TLkzEHCm'
+        which is the ipfs route to the General Court information. Then, a
+        request to the ipfs.kleros.io proxy is made to get the info of the
+        court.
+        """
+        policy_id = self.contract.functions.policies(int(id)).call()
+        if len(policy_id) > 0:
+            host = 'https://ipfs.kleros.io'
+            # polocy_id should be '/ipfs/xxxxxxxxxxxxx'
+            response = requests.get(host + policy_id)
+            return response.json()
+        else:
+            return None
