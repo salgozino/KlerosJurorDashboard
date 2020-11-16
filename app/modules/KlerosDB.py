@@ -346,6 +346,11 @@ class Dispute(db.Model):
         disputes = Dispute.query.filter(func.lower(Dispute.arbitrated) == address.lower()).order_by(Dispute.id.desc()).all()
         return list(disputes)
 
+    @staticmethod
+    def disputesByCreator(address):
+        disputes = Dispute.query.filter(func.lower(Dispute.creator) == address.lower()).order_by(Dispute.id.desc()).all()
+        return list(disputes)
+
     @property
     def winning_choice(self):
         max_round_id = self.rounds()[-1].id
