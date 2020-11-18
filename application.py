@@ -138,10 +138,10 @@ def dispute():
                                unique_vote_count=None,
                                last_update=Config.get('updated'),
                                )
-    unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
+    unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse to Arbitrate': 0, 'Pending': 0}
     unique_jurors = set()
     for r in rounds:
-        vote_count[r.id] = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
+        vote_count[r.id] = {'Yes': 0, 'No': 0, 'Refuse to Arbitrate': 0, 'Pending': 0}
         votes = r.votes()
         for v in votes:
             vote_str = v.vote_str
