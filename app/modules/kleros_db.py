@@ -7,6 +7,7 @@ Some functions are not exposed in the website or api.
 """
 
 import statistics
+from copy import deepcopy
 from datetime import datetime, timedelta
 import logging
 
@@ -237,6 +238,18 @@ class Dispute(db.Model):
     timestamp = db.Column(db.DateTime)
     blocknumber = db.Column(db.Integer)
 
+    def __eq__(self, other):
+        classes_match = isinstance(other, self.__class__)
+        a, b = deepcopy(self.__dict__), deepcopy(other.__dict__)
+        # compare based on equality our attributes, ignoring SQLAlchemy internal stuff
+        a.pop('_sa_instance_state', None)
+        b.pop('_sa_instance_state', None)
+        attrs_match = (a == b)
+        return classes_match and attrs_match
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def rounds(self):
         return Round.query.filter_by(disputeID=self.id).all()
 
@@ -459,6 +472,18 @@ class Round(db.Model):
     penalties_in_each_round = db.Column(db.Float)
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
 
+    def __eq__(self, other):
+        classes_match = isinstance(other, self.__class__)
+        a, b = deepcopy(self.__dict__), deepcopy(other.__dict__)
+        # compare based on equality our attributes, ignoring SQLAlchemy internal stuff
+        a.pop('_sa_instance_state', None)
+        b.pop('_sa_instance_state', None)
+        attrs_match = (a == b)
+        return classes_match and attrs_match
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def votes(self):
         return Vote.query.filter_by(round_id=self.id).order_by(Vote.account.asc()).all()
 
@@ -504,6 +529,18 @@ class Vote(db.Model):
     choice = db.Column(db.Integer)
     vote = db.Column(db.Integer)
     date = db.Column(db.DateTime)
+
+    def __eq__(self, other):
+        classes_match = isinstance(other, self.__class__)
+        a, b = deepcopy(self.__dict__), deepcopy(other.__dict__)
+        # compare based on equality our attributes, ignoring SQLAlchemy internal stuff
+        a.pop('_sa_instance_state', None)
+        b.pop('_sa_instance_state', None)
+        attrs_match = (a == b)
+        return classes_match and attrs_match
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     @property
     def is_winner(self):
