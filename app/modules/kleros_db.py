@@ -247,6 +247,9 @@ class Dispute(db.Model):
         attrs_match = (a == b)
         return classes_match and attrs_match
 
+    def __str__(self):
+        return f'Dispute(id={self.id}, court={self.subcourtID}, period={self.period}, ruled={self.ruled}, current_ruling={self.current_ruling})'
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -472,12 +475,19 @@ class Round(db.Model):
     penalties_in_each_round = db.Column(db.Float)
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
 
+    def __str__(self):
+        return f'Round(court={self.subcourtID}, dispute_id={self.disputeID}, number={self.round_num}, drawns={self.draws_in_round}, commits={self.commits_in_round})'
+
     def __eq__(self, other):
         classes_match = isinstance(other, self.__class__)
         a, b = deepcopy(self.__dict__), deepcopy(other.__dict__)
         # compare based on equality our attributes, ignoring SQLAlchemy internal stuff
-        a.pop('_sa_instance_state', None)
-        b.pop('_sa_instance_state', None)
+        avoid_fields = ['_sa_instance_state', 'id', 'appeal_start', 'appeal_end',
+                        'vote_lengths', 'votes_in_each_round']
+        for field in avoid_fields:
+            a.pop(field, None)
+            b.pop(field, None)
+        
         attrs_match = (a == b)
         return classes_match and attrs_match
 
@@ -530,14 +540,19 @@ class Vote(db.Model):
     vote = db.Column(db.Integer)
     date = db.Column(db.DateTime)
 
+    def __str__(self):
+        return f'Vote(juror={self.account}, choice={self.choice}, vote={self.vote}, commit={self.commit})'
+
     def __eq__(self, other):
-        classes_match = isinstance(other, self.__class__)
-        a, b = deepcopy(self.__dict__), deepcopy(other.__dict__)
-        # compare based on equality our attributes, ignoring SQLAlchemy internal stuff
-        a.pop('_sa_instance_state', None)
-        b.pop('_sa_instance_state', None)
-        attrs_match = (a == b)
-        return classes_match and attrs_match
+        if isinstance(other, self.__class__):
+            attrs_match = ((self.account == other.account) and
+                           (self.commit == other.commit) and
+                           (self.choice == other.choice) and
+                           (self.vote == other.vote)
+                           )
+            return attrs_match
+        else:
+            return False
 
     def __ne__(self, other):
         return not self.__eq__(other)
