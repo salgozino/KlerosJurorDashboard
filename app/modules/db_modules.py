@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
+"""In this module you can found different functions to create and update the
+database. The scrapper (in the root folder) runs functions from this module to
+update the database for example
 """
-Created on Thu Jul  9 19:10:44 2020
-
-@author: 60070385
-"""
+from datetime import datetime, timedelta
+import logging
 from app.modules import db
-from .KlerosDB import Court, Config, Visitor, Deposit, StakesEvolution, \
+from .kleros_db import Court, Config, Visitor, Deposit, StakesEvolution, \
     JurorStake
 from .kleros_eth import KlerosLiquid
 from .etherscan import CoinGecko, Etherscan
-from datetime import datetime, timedelta
-import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ def createDB():
     nCourts = 9
     for courtID in range(0, nCourts+1):
         try:
-            courtInfo = kl.courtInfo(courtID)
-            courtName = kl.mapCourtNames(courtID)
+            courtInfo = kl.court_info(courtID)
+            courtName = kl.map_court_names(courtID)
             if courtName == 'Unknown':
                 logger.info(f"There is a new court with ID {courtID}! \
                             We need his name!")
@@ -58,7 +58,7 @@ def createDB():
     db.session.commit()
     Config.set('dispute_search_block', kl.initial_block)
     Config.set('staking_search_block', kl.initial_block)
-    Config.set('token_supply', kl.tokenSupply)
+    Config.set('token_supply', kl.token_supply)
 
     db.session.add(Visitor())
     db.session.commit()
@@ -82,9 +82,9 @@ def fillDB():
     logger.info("Updating courts")
     updateCourtInfo()
     logger.info("Fetching all the stakes")
-    kl.getStakes()
+    kl.get_stakes()
     logger.info("Fetching all the disputes")
-    kl.getDisputes()
+    kl.get_disputes()
     logger.info("Fetching eth and pnk prices")
     # Update current prices
     updatePrices()
@@ -141,11 +141,11 @@ def updateCourtInfo():
     courtID = 0
     while True:
         try:
-            courtInfo = kl.courtInfo(courtID)
+            courtInfo = kl.court_info(courtID)
         except Exception:
             # there is no new court to create
             break
-        courtName = kl.mapCourtNames(courtID)
+        courtName = kl.map_court_names(courtID)
         try:
             courtaddress = courtAddresses[courtID]
         except KeyError:

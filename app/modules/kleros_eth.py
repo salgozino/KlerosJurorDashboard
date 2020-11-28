@@ -1,16 +1,25 @@
 # -*- coding: utf-8 -*-
+"""
+En este modulo se define la Clase KlerosLiquid la cual genera la conexió con el
+contrato inteligente KlerosLiquid de Kleros, donde se concentra toda la
+información de las distintas cortes y stakes de los jurados.
+Tambien se define PolicyRegistry para poder obtener la metadata de las cortes.
+"""
 
 import json
 import urllib
 import requests
-from eth_abi import decode_abi
 from datetime import datetime
-from .etherscan import Etherscan
-from .web3Node import SmartContract
-from .KlerosDB import Config, JurorStake, Dispute, Vote, Round
-from app.modules import db
-
 import logging
+
+from eth_abi import decode_abi
+
+from app.modules import db
+from .etherscan import Etherscan
+from .web3_node import SmartContract
+from .kleros_db import Config, JurorStake, Dispute, Vote, Round
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +34,7 @@ class KlerosLiquid(Etherscan):
         self.contract = self.web3.eth.contract(abi=self.abi,
                                                address=self.address)
         try:
-            self.tokenSupply = self.getTokenSupply()
+            self.tokenSupply = self.get_token_supply()
         except Exception as e:
             logger.error('Error getting the Token Supply at %s', 'division', exc_info=e)
             self.tokenSupply = 0
@@ -36,11 +45,11 @@ class KlerosLiquid(Etherscan):
             self.initial_block = 7315700
 
     @classmethod
-    def getTokenSupply(cls):
+    def get_token_supply(cls):
         api_options = {
                 'module': 'stats',
                 'action': 'tokensupply',
-                'contractaddress': '0x93ed3fbe21207ec2e8f2d3c3de6e058cb73bc04d',
+                'contractaddress': '0x93ed3fbe21207ec2e8f2d3c3de6e058cb73bc04d',  # pinakion contract
                 'apikey': cls.api_key
                 }
         url = cls.api_url + urllib.parse.urlencode(api_options)
@@ -76,7 +85,7 @@ class KlerosLiquid(Etherscan):
             raise Exception("Error in the address")
 
     @classmethod
-    def parseStakesEvent(cls, item):
+    def parse_stakes_event(cls, item):
         decodedData = decode_abi(('uint96', 'uint128', 'int256'),
                                  cls.web3.toBytes(hexstr=item['data']))
         dataWanted = {}
@@ -88,7 +97,7 @@ class KlerosLiquid(Etherscan):
         dataWanted['timestamp'] = datetime.utcfromtimestamp(cls.web3.toInt(hexstr=item['timeStamp']))
         return dataWanted
 
-    def getStakes(self):
+    def get_stakes(self):
         logger.info("Start of the updating process in the Stakes DB")
         try:
             fromblock = int(Config.get('staking_search_block'))
@@ -107,7 +116,7 @@ class KlerosLiquid(Etherscan):
             if len(items) > 0:
                 for item in items:
                     try:
-                        stake = self.parseStakesEvent(item)
+                        stake = self.parse_stakes_event(item)
                         staking = JurorStake(address=stake['address'],
                                              subcourtID=stake['subcourtID'],
                                              timestamp=stake['timestamp'],
@@ -130,7 +139,7 @@ class KlerosLiquid(Etherscan):
         logger.info('The Stakes Database was updated')
         return allItems
 
-    def parseDisputeEvent(self, item):
+    def parse_dispute_event(self, item):
         dataWanted = {}
         dataWanted['disputeID'] = self.web3.toInt(hexstr=item['topics'][1])
         dataWanted['creator'] = self.web3.eth.getTransaction(transaction_hash=item['transactionHash'])['from']
@@ -190,7 +199,7 @@ class KlerosLiquid(Etherscan):
             })
         return rounds
 
-    def getDisputes(self):
+    def get_disputes(self):
         logger.info("Start of the updating process in the Disputes DB")
         try:
             fromblock = int(Config.get('dispute_search_block'))
@@ -208,7 +217,7 @@ class KlerosLiquid(Etherscan):
                                         endblock=endblock)
             if len(items):
                 for item in items:
-                    bn = self.create_dispute(self.parseDisputeEvent(item))
+                    bn = self.create_dispute(self.parse_dispute_event(item))
                     open_dispute_blockNumbers.append(bn)
 
             fromblock = endblock + 1
@@ -286,7 +295,7 @@ class KlerosLiquid(Etherscan):
             logger.error(e)
             logger.error(dispute_eth)
 
-    def courtInfo(self, courtID):
+    def court_info(self, courtID):
         courtData = self.contract.functions.courts(courtID).call()
         return {'parent': None if courtData[0] == courtID else courtData[0],
                 'hiddenVotes': courtData[1],
@@ -296,8 +305,8 @@ class KlerosLiquid(Etherscan):
                 'jurorsForCourtJump': courtData[5],
                 'votesStake': (courtData[2]/10**18) * (courtData[3]/10**4)}
 
-    def mapCourtNames(self, courtID):
-        courtInfo = PolicyRegistry().getSubcourtInfo(courtID)
+    def map_court_names(self, courtID):
+        courtInfo = PolicyRegistry().get_subcourt_info(courtID)
         if courtInfo:
             try:
                 return courtInfo['name']
@@ -319,7 +328,7 @@ class PolicyRegistry(SmartContract):
         self.contract = self.web3.eth.contract(abi=self.abi,
                                                address=self.address)
 
-    def getSubcourtInfo(self, id):
+    def get_subcourt_info(self, id):
         """
         Get the subcourt details.
         With the subcourt id, read the PolicyRegistry to get the ipfs route,

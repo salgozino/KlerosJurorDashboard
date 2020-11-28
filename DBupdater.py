@@ -1,7 +1,8 @@
-from app.modules.dbModule import fillDB, db, updateStakesEvolution, updateCourtInfo
 import os
+
+from app.modules.db_modules import db, fillDB, updateStakesEvolution
 from app import create_app
-from datetime import datetime
+
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')

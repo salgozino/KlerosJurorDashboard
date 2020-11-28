@@ -5,7 +5,7 @@ Script  clonned from https://github.com/marczeller/Kleros-Monitor-Bot
 import requests
 import urllib
 import json
-from .web3Node import web3Node
+from .web3_node import web3Node
 import os
 
 

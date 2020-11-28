@@ -1,11 +1,20 @@
 #!/usr/bin/python3
+"""kleros_db
+This module it's used to define all the tables and objects of the database.
+In addition different methods are created to return the information from the
+datbase.
+Some functions are not exposed in the website or api.
+"""
 
-from sqlalchemy.sql.expression import func
 import statistics
 from datetime import datetime, timedelta
+import logging
+
+from sqlalchemy.sql.expression import func
+
 from app.modules import db
 from .etherscan import Etherscan
-import logging
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+"""web3_node
+Module to create the web3 connection with the Node.
+It's tested with infura node, I've no performed any other connection, but should
+work with other node types, I guess.
 """
-"""
-from web3 import Web3
 import json
 import os
+
+from web3 import Web3
 
 
 class web3Node():
