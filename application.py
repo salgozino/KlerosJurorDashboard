@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
-
+"""application
+Flask Application which runs the web server!.
+Here all the website is created.
+"""
 import os
-from app import create_app
+import logging
 
+from flask import render_template, request
+
+from app import create_app
 from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
-from app.modules.KlerosDB import Visitor, Court, Config, Juror, Dispute
-from app.modules.Kleros import StakesKleros
-from flask import render_template, request
-import logging
+from app.modules.kleros_db import Visitor, Court, Config, Juror, Dispute
+from app.modules.kleros import get_court_info_table, get_all_court_chances
+
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -32,7 +37,7 @@ def index():
     else:
         mostActiveCourt = "No new cases in the last 7 days"
     pnkPrice = float(Config.get('PNKprice'))
-    courtTable = StakesKleros.getCourtInfoTable()
+    courtTable = get_court_info_table()
     pnkStaked = courtTable['General Court']['Total Staked']
     activeJurors = courtTable['General Court']['Jurors']
 
@@ -63,7 +68,7 @@ def index():
 @application.route('/graphs/')
 def graphsMaker():
     Visitor().addVisit('graphs')
-    courtTable = StakesKleros.getCourtInfoTable()
+    courtTable = get_court_info_table()
     sjGraph = stakesJurorsGraph()
     return render_template('graphs.html',
                            last_update=Config.get('updated'),
@@ -97,7 +102,7 @@ def odds():
     return render_template('odds.html',
                            last_update=Config.get('updated'),
                            pnkStaked=pnkStaked,
-                           courtChances=StakesKleros.getAllCourtChances(pnkStaked))
+                           courtChances=get_all_court_chances(pnkStaked))
 
 
 @application.route('/kleros-map/')

@@ -1,11 +1,21 @@
 #!/usr/bin/python3
+"""kleros_db
+This module it's used to define all the tables and objects of the database.
+In addition different methods are created to return the information from the
+datbase.
+Some functions are not exposed in the website or api.
+"""
+
+import statistics
+from copy import deepcopy
+from datetime import datetime, timedelta
+import logging
 
 from sqlalchemy.sql.expression import func
-import statistics
-from datetime import datetime, timedelta
+
 from app.modules import db
 from .etherscan import Etherscan
-import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -227,6 +237,21 @@ class Dispute(db.Model):
     txid = db.Column(db.String(100))
     timestamp = db.Column(db.DateTime)
     blocknumber = db.Column(db.Integer)
+
+    def __eq__(self, other):
+        classes_match = isinstance(other, self.__class__)
+        a, b = deepcopy(self.__dict__), deepcopy(other.__dict__)
+        # compare based on equality our attributes, ignoring SQLAlchemy internal stuff
+        a.pop('_sa_instance_state', None)
+        b.pop('_sa_instance_state', None)
+        attrs_match = (a == b)
+        return classes_match and attrs_match
+
+    def __str__(self):
+        return f'Dispute(id={self.id}, court={self.subcourtID}, period={self.period}, ruled={self.ruled}, current_ruling={self.current_ruling})'
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def rounds(self):
         return Round.query.filter_by(disputeID=self.id).all()
@@ -450,6 +475,25 @@ class Round(db.Model):
     penalties_in_each_round = db.Column(db.Float)
     subcourtID = db.Column(db.Integer, db.ForeignKey("court.id"), nullable=False)
 
+    def __str__(self):
+        return f'Round(court={self.subcourtID}, dispute_id={self.disputeID}, number={self.round_num}, drawns={self.draws_in_round}, commits={self.commits_in_round})'
+
+    def __eq__(self, other):
+        classes_match = isinstance(other, self.__class__)
+        a, b = deepcopy(self.__dict__), deepcopy(other.__dict__)
+        # compare based on equality our attributes, ignoring SQLAlchemy internal stuff
+        avoid_fields = ['_sa_instance_state', 'id', 'appeal_start', 'appeal_end',
+                        'vote_lengths', 'votes_in_each_round']
+        for field in avoid_fields:
+            a.pop(field, None)
+            b.pop(field, None)
+        
+        attrs_match = (a == b)
+        return classes_match and attrs_match
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def votes(self):
         return Vote.query.filter_by(round_id=self.id).order_by(Vote.account.asc()).all()
 
@@ -495,6 +539,23 @@ class Vote(db.Model):
     choice = db.Column(db.Integer)
     vote = db.Column(db.Integer)
     date = db.Column(db.DateTime)
+
+    def __str__(self):
+        return f'Vote(juror={self.account}, choice={self.choice}, vote={self.vote}, commit={self.commit})'
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            attrs_match = ((self.account == other.account) and
+                           (self.commit == other.commit) and
+                           (self.choice == other.choice) and
+                           (self.vote == other.vote)
+                           )
+            return attrs_match
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     @property
     def is_winner(self):

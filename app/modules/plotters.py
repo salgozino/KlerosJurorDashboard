@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
-import plotly
-from plotly.express import colors as colormap
+"""plotters
+Functions to create the graphs for the website.
+"""
 import json
-import pandas as pd
-from .KlerosDB import Court, StakesEvolution, Dispute
 import time
 import logging
+
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+from plotly.utils import PlotlyJSONEncoder
+from plotly.express import colors as colormap
+import pandas as pd
+
+from .kleros_db import Court, StakesEvolution, Dispute
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +33,7 @@ def multiBar(df, columns=['0', '2', '8', '9']):
                       legend={'orientation': 'h'}
                       )
 
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.dumps(fig, cls=PlotlyJSONEncoder)
 
 
 def create_time_series(df, courts, colname=None):
@@ -76,7 +82,7 @@ def disputesGraph(language="en"):
                          showlegend=False)
     fig.update_yaxes(title_text="N° "+ylabels[0])
     fig.update_xaxes(title_text=xlabel)
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.dumps(fig, cls=PlotlyJSONEncoder)
 
 
 def stakesJurorsGraph(courts=['0', '2', '8', '9'], language='en'):
@@ -142,7 +148,7 @@ def stakesJurorsGraph(courts=['0', '2', '8', '9'], language='en'):
         fig.update_yaxes(title_text="PNK Depositados", row=1, col=1)
         fig.update_yaxes(title_text="N° de Jurados Activos", row=2, col=1)
         fig.update_xaxes(title_text="Fecha", row=2, col=1)
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.dumps(fig, cls=PlotlyJSONEncoder)
 
 
 def disputesbyCourtGraph(language="en"):
@@ -162,7 +168,7 @@ def disputesbyCourtGraph(language="en"):
                          margin={'l': 10, 'b': 80, 't': 30, 'r': 30},
                          legend={'orientation': 'h'})
     # fig.update_yaxes(title_text='N°')
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.dumps(fig, cls=PlotlyJSONEncoder)
 
 
 def disputesbyArbitratedGraph(language="en"):
@@ -182,7 +188,7 @@ def disputesbyArbitratedGraph(language="en"):
                          margin={'l': 10, 'b': 80, 't': 30, 'r': 30},
                          legend={'orientation': 'h'})
     # fig.update_yaxes(title_text='N°')
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.dumps(fig, cls=PlotlyJSONEncoder)
 
 
 def treeMapGraph(courtTable, key="Jurors"):
@@ -206,7 +212,7 @@ def treeMapGraph(courtTable, key="Jurors"):
                          height=300,
                          margin={'l': 10, 'b': 80, 't': 30, 'r': 30},
                          legend={'orientation': 'h'})
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.dumps(fig, cls=PlotlyJSONEncoder)
 
 
 def jurorHistogram(jurorStakes):
@@ -216,4 +222,4 @@ def jurorHistogram(jurorStakes):
                          margin={'l': 10, 'b': 80, 't': 30, 'r': 30})
     fig.update_yaxes(title_text='N° of Jurors')
     fig.update_xaxes(title_text='PNK Staked')
-    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return json.dumps(fig, cls=PlotlyJSONEncoder)
