@@ -346,7 +346,7 @@ class KlerosLiquid(Etherscan):
                             db.session.commit()
 
                         # update votes in round, if needed
-                        votes_in_db = Vote.query.filter_by(round_id=round_in_db.id).all()
+                        votes_in_db = round_in_db.votes_drawn_order()
                         for v, vote in enumerate(round['jurors']):
                             new_vote = Vote(account=vote['address'],
                                             commit=vote['commit'],
@@ -358,7 +358,8 @@ class KlerosLiquid(Etherscan):
                                 logger.info(f'Updating the vote #{v} from the round {r} of the dispute {new_dispute.id}')
                                 (db.session.query(Vote)
                                  .filter(Vote.id == vote_db.id)
-                                 .update({'commit': new_vote.commit,
+                                 .update({'account': new_vote.account,
+                                          'commit': new_vote.commit,
                                           'choice': new_vote.choice,
                                           'vote': new_vote.vote})
                                  )
@@ -395,10 +396,10 @@ class KlerosLiquid(Etherscan):
 
             db.session.add(dispute)
             db.session.commit()
-            rounds = dispute.rounds()
+            rounds = self.dispute_rounds(dispute.id)
             for i, round_eth in enumerate(rounds):
-                self.create_round(dispute, i, round)
-                self.create_votes_from_round(dispute.id, i, Round(round_eth))
+                round = self.create_round(dispute, i, round_eth)
+                self.create_votes_from_round(dispute.id, i, round)
             return dispute.blocknumber
         except Exception as e:
             logger.exception("Error trying to add a Dispute into the database",
@@ -423,6 +424,7 @@ class KlerosLiquid(Etherscan):
         the Round object created.
 
         """
+        logger.debug(f'Creating Round {round_num}')
         round = Round(disputeID=dispute.id,
                       round_num=round_num,
                       draws_in_round=round_eth['jury_size'],
@@ -456,6 +458,7 @@ class KlerosLiquid(Etherscan):
 
         """
         for vote_num in range(0, round.draws_in_round):
+            logger.debug(f'Creating Vote {vote_num}')
             vote_eth = self.vote(dispute_id, round_num, vote_num)
             vote = Vote(
                         round_id=round.id,

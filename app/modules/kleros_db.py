@@ -496,6 +496,9 @@ class Round(db.Model):
 
     def votes(self):
         return Vote.query.filter_by(round_id=self.id).order_by(Vote.account.asc()).all()
+    
+    def votes_drawn_order(self):
+        return Vote.query.filter_by(round_id=self.id).order_by(Vote.id.asc()).all()
 
     def vote_count(self):
         count = {'Yes': 0, 'No': 0, 'Refuse': 0, 'Pending': 0}
@@ -545,7 +548,7 @@ class Vote(db.Model):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            attrs_match = ((self.account == other.account) and
+            attrs_match = ((self.account.lower() == other.account.lower()) and
                            (self.commit == other.commit) and
                            (self.choice == other.choice) and
                            (self.vote == other.vote)
@@ -996,7 +999,10 @@ class ContractMapper(db.Model):
             '0x799cb978dea5d6ca00ccb1794d3c3d4c89e40cd1'.lower(): 'Dispute Resolver',
             '0xd8bf5114796ed28aa52cff61e1b9ef4ec1f69a54'.lower(): 'Dispute Resolver',
             '0xf65c7560d6ce320cc3a16a07f1f65aab66396b9e'.lower(): 'Dispute Resolver',
-            '0xc7e49251807780dFBbCA72778890B80bd946590B'.lower(): 'Onboarding Tester'
+            '0xc7e49251807780dFBbCA72778890B80bd946590B'.lower(): 'Onboarding Tester',
+            '0xF339047C85d0dd2645F2bD802a1e8a5e7AF61053'.lower(): 'Curate',
+            '0x2E3B10aBf091cdc53cC892A50daBDb432e220398'.lower(): 'Curate',
+            '0xD8F8019c025C2Ba6745543D9a3C338DE1b98C103'.lower(): 'Linguo'
             }
 
         contract = ContractMapper().query.filter(ContractMapper.address == address.lower()).first()
