@@ -326,8 +326,8 @@ class KlerosLiquid(Etherscan):
                                           )
                         # check changes with the DB
                         if round_in_db is None:
-                            # I don't think this ever happend...
-                            logger.debug('Creating round with dispute already in the DB :-?')
+                            # New round in a dispute!
+                            logger.debug(f'Creating new round in the dispute {new_dispute.id}')
                             self.create_round(new_dispute, r, round)
                             self.create_votes_from_round(new_dispute.id, r, new_round)
                             # don't need to check if votes has changed
@@ -352,7 +352,13 @@ class KlerosLiquid(Etherscan):
                                             commit=vote['commit'],
                                             choice=vote['choice'],
                                             vote=vote['voted'])
-                            vote_db = votes_in_db[v]
+                            try:
+                                vote_db = votes_in_db[v]
+                            except IndexError:
+                                new_vote.round_id = round_in_db.id
+                                db.session.add(new_vote)
+                                db.session.commit()
+                                vote_db = new_vote
                             if new_vote != vote_db:
                                 # the vote need update
                                 logger.info(f'Updating the vote #{v} from the round {r} of the dispute {new_dispute.id}')
@@ -363,7 +369,8 @@ class KlerosLiquid(Etherscan):
                                           'choice': new_vote.choice,
                                           'vote': new_vote.vote})
                                  )
-                                db.session.commit()
+                            db.session.commit()
+
             fromblock = endblock + 1
             endblock = fromblock + step
             allItems += items
