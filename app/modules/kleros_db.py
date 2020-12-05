@@ -1014,8 +1014,8 @@ class ContractMapper(db.Model):
                 return contract.contract_name
         else:
             logger.debug("Searching in HardCoded / Etherscan and adding to the database")
-            if address in list(DappsMapper.keys()):
-                dappName = DappsMapper[address]
+            if address.lower() in list(DappsMapper.keys()):
+                dappName = DappsMapper[address.lower()]
             else:
                 dappName = "Unknown"
             name = Etherscan.getContractName(address)

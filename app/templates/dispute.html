@@ -55,7 +55,7 @@
           <tr class={{"text-center success" if dispute.ruled else "text-center"}}>
             <td style="width:25% !important">{{unique_vote_count['Yes']}}</td>
             <td style="width:25% !important">{{unique_vote_count['No']}}</td>
-            <td style="width:25% !important">{{unique_vote_count['Refuse']}}</td>
+            <td style="width:25% !important">{{unique_vote_count['Refuse to Arbitrate']}}</td>
             <td style="width:25% !important">{{unique_vote_count['Pending']}}</td>
           </tr>
         </table>
@@ -73,7 +73,7 @@
           <tr class={{"text-center success" if dispute.ruled else "text-center"}}>
             <td style="width:25% !important">{{vote_count[r.id]['Yes']}}</td>
             <td style="width:25% !important">{{vote_count[r.id]['No']}}</td>
-            <td style="width:25% !important">{{vote_count[r.id]['Refuse']}}</td>
+            <td style="width:25% !important">{{vote_count[r.id]['Refuse to Arbitrate']}}</td>
             <td style="width:25% !important">{{vote_count[r.id]['Pending']}}</td>
           </tr>
         </table>
