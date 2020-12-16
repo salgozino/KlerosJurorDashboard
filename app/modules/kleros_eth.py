@@ -328,8 +328,8 @@ class KlerosLiquid(Etherscan):
                         if round_in_db is None:
                             # New round in a dispute!
                             logger.debug(f'Creating new round in the dispute {new_dispute.id}')
-                            self.create_round(new_dispute, r, round)
-                            self.create_votes_from_round(new_dispute.id, r, new_round)
+                            round_in_db = self.create_round(new_dispute, r, round)
+                            self.create_votes_from_round(new_dispute.id, r, round_in_db)
                             # don't need to check if votes has changed
                             continue
                         elif round_in_db != new_round:
