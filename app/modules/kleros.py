@@ -77,7 +77,7 @@ def get_all_court_chances(pnkStaked):
             chances = 1/odds
         courtChances[c.name] = {
                     'Jurors': stats['length'],
-                    'Dispues in the last 30 days': len(c.disputes(30)),
+                    'Disputes in the last 30 days': len(c.disputes(30)),
                     'Odds': odds,
                     'Chances': chances,
                     'Reward (ETH)': rewardETH,
