@@ -168,30 +168,26 @@ def dispute():
 @application.route('/court/', methods=['GET'])
 def court():
     id = request.args.get('id', type=int)
+    dispute_page = request.args.get('dispute_page', type=int)
     if id is None:
         # if it's not specified, go to the general court
         id = 0
+
     court = Court.query.get(id)
     parent = court.parent
     if parent is not None:
-        parent = Court(id=parent)
-    disputes = court.disputes()
-    winner_choice = {
-            'Refuse to Arbitrate': 0,
-            'Yes': 0,
-            'No': 0,
-            'Tie': 0,
-            'Not Ruled yet': 0}
-    # for dispute in disputes:
-        # winner_choice[dispute.winner_choice_str] += 1
-    childs = court.children_ids()
-    court_childs = []
-    for child in childs:
-        court_childs.append(Court(id=child))
-    jurors = court.jurors
+        parent = Court.query.get(parent)
+    disputes = court.disputes_paginated(dispute_page)
+
+    court_childs = court.childrens()
+
+    # if court.id != 2:
+    jurors = court.jurors()
     jurors = {k: v for k, v in sorted(jurors.items(),
                                       key=lambda item: item[1],
                                       reverse=True)}
+    # else:
+    # jurors = {}
     juror_hist = jurorHistogram(list(jurors.values()))
 
     return render_template('court.html',
@@ -199,18 +195,22 @@ def court():
                            parent=parent,
                            childs=court_childs,
                            disputes=disputes,
-                           winner_choice=winner_choice,
                            jurors=jurors,
                            juror_hist=juror_hist,
+                           open_cases=court.openCases,
+                           ruled_cases=court.ruledCases,
+                           fees = court.fees_paid,
                            last_update=Config.get('updated'),
                            )
 
 
-@application.route('/juror/<string:address>')
+@application.route('/juror/<string:address>', methods=['GET'])
 def juror(address):
     juror = Juror(address)
-    disputes = Dispute.disputesByCreator(address)
-    votes = juror.all_votes()
+    page_disputes = request.args.get('page_disputes', type=int)
+    page_votes = request.args.get('page_votes', type=int)
+    disputes = Dispute.disputesByCreator_paginated(address, page_disputes)
+    votes = juror.all_votes_paginated(page_votes)
     juror_stakes = juror.current_stakings_per_court
     stakes = []
     for court, stake in juror_stakes.items():
