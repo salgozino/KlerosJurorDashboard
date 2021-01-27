@@ -25,7 +25,7 @@ courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
 def createDB():
     db.create_all()
     kl = KlerosLiquid()
-    nCourts = 9
+    nCourts = 23
     for courtID in range(0, nCourts+1):
         try:
             courtInfo = kl.court_info(courtID)
