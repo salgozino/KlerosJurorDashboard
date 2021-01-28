@@ -46,7 +46,58 @@
                 {% endif %}
             </div>
         </div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Ongoing Cases</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ open_cases }}
+                </div>
+            </div>
+        </div>
         
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Ruled Cases</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ ruled_cases }}
+                </div>
+            </div>
+        </div>
+    </div>
+        
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Min. Stake</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{"{:,.2f} PNK".format(min_stake)}}
+                </div>
+                <div class="panel-footer">
+                    Minimum amount of PNK required for staking in the court
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Vote Stake</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{"{:,.2f} PNK".format(vote_stake)}}
+                </div>
+                <div class="panel-footer">
+                    PNK locked per vote. (What you can lose per vote)
+                </div>
+            </div>
+        </div>
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
@@ -75,36 +126,31 @@
                 </div>
             </div>
         </div>
-
-    </div>
         
-    <div class="row">
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>Ongoing Cases</h4>
-                </div>
-                <div class="panel-body text-center">
-                    {{ open_cases }}
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4>Ruled Cases</h4>
-                </div>
-                <div class="panel-body text-center">
-                    {{ ruled_cases }}
-                </div>
-            </div>
-        </div>
 
     </div>
 
     <!-- Jurors -->
-    <h4>Total Jurors: {{jurors|count}}</h4>
+    <h4>Total Jurors: {{n_jurors}}</h4>
+
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if current_juror_page != 0 %}
+              <li class="page-item"> <a class="page-link" href="{{ url_for('court', jurors_page=current_juror_page-1, id=court.id) }}">Previous</a></li>
+            {% else %}
+              <li class="page-item"><a class="page-link btn disabled" href="#">Previous</a></li>
+            {% endif %}
+
+
+            {% if current_juror_page <= n_jurors/10 %}
+              <li class="page-item"> <a class="page-link" href="{{ url_for('court', jurors_page=current_juror_page+1, id=court.id) }}">Next</a></li>
+            {% else %}
+              <li class="page-item"><a class="page-link btn disabled" href="#">Next</a></li>
+            {% endif %}
+
+        </ul>
+    </nav>
+
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered ">
             <thead>

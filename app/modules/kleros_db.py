@@ -157,12 +157,12 @@ class Court(db.Model):
 
     @staticmethod
     def getAllCourtChilds(courtID):
-        childs = set(Court(id=courtID).children_ids())
+        childs = set(Court(id=courtID).children_ids)
         allChilds = []
         while childs:
             child = childs.pop()
             allChilds.append(child)
-            childs.update(Court(id=child).children_ids())
+            childs.update(Court(id=child).children_ids)
         return allChilds
 
     @staticmethod
@@ -170,13 +170,17 @@ class Court(db.Model):
         return Court.query.filter_by(id=courtID).first().parent
 
     @property
-    def ncourts():
+    def ncourts(self):
         return Court.query.count()
 
     @property
     def jurors(self):
-        courts_childs = self.get_recursive_childs(self.id)
-        courts_id = tuple([child['id'] for child in courts_childs])
+        courts_childs = Court.getAllCourtChilds(self.id)
+        courts_childs.append(self.id)
+        if len(courts_childs) > 1:
+            courts_id = tuple(courts_childs)
+        else:
+            courts_id = f'({courts_childs[0]})'
 
         query = f"""
             WITH Jurors as(
