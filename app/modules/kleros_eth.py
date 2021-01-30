@@ -285,7 +285,8 @@ class KlerosLiquid(Etherscan):
                         # this is a new dispute
                         bn = self.create_dispute(new_dispute)
                         # There is no need to check the round and votes info
-                        open_dispute_blockNumbers.append(bn)
+                        if not new_dispute.ruled:
+                            open_dispute_blockNumbers.append(bn)
                         continue
                     elif dispute_in_db.ruled:
                         # The dispute is ruled, no need to update it
