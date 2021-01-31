@@ -192,7 +192,7 @@ class Court(db.Model):
                     WHERE subcourtID in {courts_id}
                     GROUP BY address, subcourtID
                     )
-            )
+            ) as Jurors
             WHERE setStake > 0
             GROUP BY address
             ORDER BY setStake DESC
