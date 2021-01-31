@@ -181,23 +181,22 @@ class Court(db.Model):
             courts_id = tuple(courts_childs)
         else:
             courts_id = f'({courts_childs[0]})'
-
         query = f"""
-            WITH Jurors as(
-                SELECT address, setStake, subcourtID
+            SELECT address, SUM(setStake) as staked
+            FROM (
+                SELECT address, setStake
                 FROM juror_stake
                 WHERE id IN (
                     SELECT MAX(id)
                     FROM juror_stake
-                    WHERE subcourtID in {courts_id}
+                    WHERE subcourtID in {courts_id})
                     GROUP BY address, subcourtID
                     )
-                )
-            SELECT address, SUM(setStake) as setStake
-            FROM Jurors
+            )
             WHERE setStake > 0
             GROUP BY address
-            ORDER BY setStake DESC;"""
+            ORDER BY setStake DESC
+            """
         execute = db.session.execute(query).fetchall()
         jurors = {}
         for juror in execute:
