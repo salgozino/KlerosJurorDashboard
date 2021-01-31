@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from app import create_app
-from app.modules.dbModule import fillDB, rebuildDB, db
+from app.modules.db_modules import fillDB, rebuildDB, db
 import os
 
 config = os.environ.get('CONFIG_MODULE')

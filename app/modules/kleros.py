@@ -9,37 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_all_jurors():
-    allJurors = pd.DataFrame()
-    nCourts = len(db.session.query(Court).all())
-    for court in range(nCourts):
-        query = Court(id=court).jurors_stakes_query()
-        jurors = pd.read_sql_query(query.statement, query.session.bind)
-        jurors = jurors[['address', 'setStake']].set_index('address')
-        jurors.rename(columns={'setStake': court}, inplace=True)
-        allJurors = pd.concat([allJurors, jurors], axis=1)
-    allJurors['Total'] = allJurors.sum(axis=1)
-    return allJurors.fillna(0)
-
-
 def get_staked_by_address(address):
     return Juror(address=address).current_stakings_per_court
-
-
-# def getChanceByCourt(courtID, pnkstaked):
-#     if int(pnkstaked) > 0:
-#         total = Court.getstakedInCourts().loc[courtID].totalstaked
-#         chance = chanceCalculator(pnkstaked, total)
-#     else:
-#         chance = 0
-#     return chance
-
-
-# def getChancesInAllCourts(pnkStaked):
-#     chances = {}
-#     for court in courtNames.keys():
-#         chances[court] = getChanceByCourt(int(court), float(pnkStaked))
-#     return chances
 
 
 def get_court_info_table():
@@ -49,9 +20,11 @@ def get_court_info_table():
         courtInfo[c.name] = {'Jurors': c.activeJurors,
                              'Total Staked': c.totalStaked,
                              'Min Stake': c.minStake,
+                             'Vote Stake': c.voteStake,
                              'Mean Staked': c.meanStaked,
                              'Max Staked': c.maxStaked,
                              'Disputes in the last 30 days': c.disputesLast30days,
+                             'Open Disputes': c.openCases,
                              'Min Stake in USD': c.minStakeUSD,
                              'id': c.id
                              }

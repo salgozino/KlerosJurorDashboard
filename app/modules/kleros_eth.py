@@ -34,11 +34,11 @@ class KlerosLiquid(Etherscan):
         self.contract = self.web3.eth.contract(abi=self.abi,
                                                address=self.address)
         try:
-            self.tokenSupply = self.get_token_supply()
+            self.token_supply = self.get_token_supply()
         except Exception as e:
             logger.error('Error getting the Token Supply at %s', 'division',
                          exc_info=e)
-            self.tokenSupply = 0
+            self.token_supply = 0
 
         if initial_block:
             self.initial_block = initial_block
@@ -192,6 +192,7 @@ class KlerosLiquid(Etherscan):
         raw_dispute = self.contract.functions.disputes(dispute_id).call()
         ruling = self.contract.functions.currentRuling(dispute_id).call()
         current_status = self.contract.functions.disputeStatus(dispute_id).call()
+        broken_disputes = [105, 107, 108, 250] # Disputes with ruled = 0, but already closed.
         return {
             'subcourtID': int(raw_dispute[0]),
             'arbitrated': raw_dispute[1],
@@ -200,7 +201,7 @@ class KlerosLiquid(Etherscan):
             'last_period_change': datetime.utcfromtimestamp(int(raw_dispute[4])),
             'draws_in_round': int(raw_dispute[5]),
             'commits_in_round': int(raw_dispute[6]),
-            'ruled': bool(raw_dispute[7]),
+            'ruled': bool(raw_dispute[7]) if dispute_id not in broken_disputes else True,
             'ruling': ruling,
             'current_status': current_status,
         }
@@ -397,11 +398,6 @@ class KlerosLiquid(Etherscan):
         """
         logger.debug(f'Creating dispute {dispute.id}')
         try:
-            # Fix for the case n° 149
-            if dispute.number_of_choices > 511:
-                logger.error(f"Changing the number_of_choices from the dispute {dispute.id} to 2 because is greater than 511 and could not be")
-                dispute.number_of_choices = 2
-
             db.session.add(dispute)
             db.session.commit()
             rounds = self.dispute_rounds(dispute.id)
@@ -524,10 +520,10 @@ class KlerosLiquid(Etherscan):
                 return courtInfo['name']
             except KeyError:
                 logger.exception('Error trying to return the Court name')
-                return 'Court ' + courtID
+                return f'Court {courtID}'
         else:
             # this should never happend, but is just in case.
-            return 'Court ' + courtID
+            return f'Court {courtID}'
 
 
 class PolicyRegistry(SmartContract):
@@ -554,9 +550,12 @@ class PolicyRegistry(SmartContract):
         """
         policy_id = self.contract.functions.policies(int(id)).call()
         if len(policy_id) > 0:
-            host = 'https://ipfs.kleros.io'
-            # polocy_id should be '/ipfs/xxxxxxxxxxxxx'
-            response = requests.get(host + policy_id)
-            return response.json()
+            try:
+                host = 'https://ipfs.kleros.io'
+                # polocy_id should be '/ipfs/xxxxxxxxxxxxx'
+                response = requests.get(host + policy_id)
+                return response.json()
+            except:
+                None
         else:
             return None

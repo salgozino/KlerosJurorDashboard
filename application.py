@@ -40,7 +40,6 @@ def index():
     courtTable = get_court_info_table()
     pnkStaked = courtTable['General Court']['Total Staked']
     activeJurors = courtTable['General Court']['Jurors']
-
     return render_template('main.html',
                            last_update=Config.get('updated'),
                            disputes=Dispute.query.order_by(Dispute.id.desc()).first().id,
@@ -168,30 +167,31 @@ def dispute():
 @application.route('/court/', methods=['GET'])
 def court():
     id = request.args.get('id', type=int)
+    dispute_page = request.args.get('dispute_page', type=int)
+    jurors_page = request.args.get('jurors_page', type=int)
+    if jurors_page is None:
+        jurors_page = 0
     if id is None:
         # if it's not specified, go to the general court
         id = 0
+    if dispute_page is None:
+        dispute_page = 0
+
     court = Court.query.get(id)
     parent = court.parent
     if parent is not None:
-        parent = Court(id=parent)
-    disputes = court.disputes()
-    winner_choice = {
-            'Refuse to Arbitrate': 0,
-            'Yes': 0,
-            'No': 0,
-            'Tie': 0,
-            'Not Ruled yet': 0}
-    # for dispute in disputes:
-        # winner_choice[dispute.winner_choice_str] += 1
-    childs = court.children_ids()
-    court_childs = []
-    for child in childs:
-        court_childs.append(Court(id=child))
+        parent = Court.query.get(parent)
+    disputes = court.disputes_paginated(dispute_page)
+
+    court_childs = court.childrens
+
     jurors = court.jurors
-    jurors = {k: v for k, v in sorted(jurors.items(),
-                                      key=lambda item: item[1],
-                                      reverse=True)}
+    sorted_jurors = sorted(jurors.items(),
+                           key=lambda item: item[1],
+                           reverse=True)
+    start = (jurors_page)*10
+    end = (jurors_page+1)*10
+    filt_jurors = {k: v for k, v in sorted_jurors[start:end]}
     juror_hist = jurorHistogram(list(jurors.values()))
 
     return render_template('court.html',
@@ -199,18 +199,26 @@ def court():
                            parent=parent,
                            childs=court_childs,
                            disputes=disputes,
-                           winner_choice=winner_choice,
-                           jurors=jurors,
+                           n_jurors=len(sorted_jurors),
+                           jurors=filt_jurors,
                            juror_hist=juror_hist,
+                           open_cases=court.openCases,
+                           ruled_cases=court.ruledCases,
+                           fees=court.fees_paid,
+                           min_stake=court.minStake,
+                           vote_stake=court.voteStake,
                            last_update=Config.get('updated'),
+                           current_juror_page=jurors_page
                            )
 
 
-@application.route('/juror/<string:address>')
+@application.route('/juror/<string:address>', methods=['GET'])
 def juror(address):
     juror = Juror(address)
-    disputes = Dispute.disputesByCreator(address)
-    votes = juror.all_votes()
+    page_disputes = request.args.get('page_disputes', type=int)
+    page_votes = request.args.get('page_votes', type=int)
+    disputes = Dispute.disputesByCreator_paginated(address, page_disputes)
+    votes = juror.all_votes_paginated(page_votes)
     juror_stakes = juror.current_stakings_per_court
     stakes = []
     for court, stake in juror_stakes.items():

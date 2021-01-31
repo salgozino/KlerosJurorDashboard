@@ -25,7 +25,7 @@ courtAddresses = {0: '0x0d67440946949fe293b45c52efd8a9b3d51e2522',
 def createDB():
     db.create_all()
     kl = KlerosLiquid()
-    nCourts = 9
+    nCourts = 23
     for courtID in range(0, nCourts+1):
         try:
             courtInfo = kl.court_info(courtID)
@@ -107,7 +107,7 @@ def updatePrices():
     eth_fees = 0
     pnk_redistributed = 0
     for court in range(Court().ncourts):
-        fees = Court(id=court).fees_paid()
+        fees = Court(id=court).fees_paid
         eth_fees += fees['eth']
         pnk_redistributed += fees['pnk']
     Config.set('fees_ETH', eth_fees)

@@ -81,6 +81,27 @@ class Court(db.Model):
         else:
             return Dispute.query.filter(Dispute.subcourtID == self.id).order_by(Dispute.id.desc()).all()
 
+    def disputes_paginated(self, page=0, per_page=10):
+        """
+        Return the disputes of the court, paginated
+
+        Parameters
+        ----------
+        page : int, optional
+            Current page, by default is 0
+        per_page : int, optional
+            Amount of disputes per page. By default is 10
+
+        Returns
+        -------
+        List
+            List of all the Disputes
+
+        """
+        return Dispute.query.filter(Dispute.subcourtID == self.id).order_by(Dispute.id.desc()).paginate(page,
+                                                                                                        per_page,
+                                                                                                        error_out=False)
+
     @property
     def openCases(self):
         openCases = Dispute.query.filter(Dispute.ruled == 0).filter(Dispute.subcourtID == self.id).all()
@@ -91,13 +112,37 @@ class Court(db.Model):
         openCases = Dispute.query.filter(Dispute.ruled == 1).filter(Dispute.subcourtID == self.id).all()
         return len(openCases)
 
-    def children_ids(self):
-        children_ids = []
-        children = Court.query.filter(Court.parent == self.id)
-        for child in children:
-            children_ids.append(child.id)
-        return children_ids
+    def get_recursive_childs(self, node=0):
+        query = f"""
+                WITH RECURSIVE cte_court (id, name, parent) AS (
+                    SELECT e.id, e.name, e.parent
+                    FROM court e
+                    WHERE e.id = {node}
 
+                    UNION ALL
+
+                    SELECT e.id, e.name, e.parent
+                    FROM court e
+                    JOIN cte_court c ON c.id = e.parent
+                )
+
+                SELECT * FROM cte_court ORDER BY cte_court.id;
+        """
+        return [{'id': child[0], 'name': child[1]} for child in db.session.execute(query)]
+
+    @property
+    def children_ids(self):
+        return [child.id for child in Court.query.filter(Court.parent == self.id)]
+
+    @property
+    def children_names(self):
+        return [child.name for child in Court.query.filter(Court.parent == self.id)]
+
+    @property
+    def childrens(self):
+        return [child for child in Court.query.filter(Court.parent == self.id)]
+
+    @property
     def fees_paid(self):
         disputes = Dispute.query.filter_by(subcourtID=self.id)
         eth_fees_paid = 0
@@ -112,12 +157,12 @@ class Court(db.Model):
 
     @staticmethod
     def getAllCourtChilds(courtID):
-        childs = set(Court(id=courtID).children_ids())
+        childs = set(Court(id=courtID).children_ids)
         allChilds = []
         while childs:
             child = childs.pop()
             allChilds.append(child)
-            childs.update(Court(id=child).children_ids())
+            childs.update(Court(id=child).children_ids)
         return allChilds
 
     @staticmethod
@@ -130,24 +175,33 @@ class Court(db.Model):
 
     @property
     def jurors(self):
-        allStakes = db.session.execute(
-            "SELECT id,address,setStake, subcourtID \
-                FROM juror_stake \
-                WHERE id IN ( \
-                    SELECT MAX(id) \
-                    FROM juror_stake \
-                    GROUP BY address,subcourtID);"
-        )
-        stakedJurors = {}
-        courts_id = self.getAllCourtChilds(self.id)
-        courts_id.append(self.id)
-        for stake in allStakes:
-            if stake.setStake > 0 and stake.subcourtID in courts_id:
-                if stake.address.lower() in stakedJurors.keys():
-                    stakedJurors[stake.address.lower()] += stake.setStake
-                else:
-                    stakedJurors[stake.address.lower()] = stake.setStake
-        return stakedJurors
+        courts_childs = Court.getAllCourtChilds(self.id)
+        courts_childs.append(self.id)
+        if len(courts_childs) > 1:
+            courts_id = tuple(courts_childs)
+        else:
+            courts_id = f'({courts_childs[0]})'
+        query = f"""
+            SELECT address, SUM(setStake) as staked
+            FROM (
+                SELECT address, setStake
+                FROM juror_stake
+                WHERE id IN (
+                    SELECT MAX(id)
+                    FROM juror_stake
+                    WHERE subcourtID in {courts_id}
+                    GROUP BY address, subcourtID
+                    )
+            ) as Jurors
+            WHERE setStake > 0
+            GROUP BY address
+            ORDER BY setStake DESC
+            """
+        execute = db.session.execute(query).fetchall()
+        jurors = {}
+        for juror in execute:
+            jurors[juror[0]] = juror[1]
+        return jurors
 
     @property
     def map_name(self):
@@ -375,6 +429,12 @@ class Dispute(db.Model):
     def disputesByCreator(address):
         disputes = Dispute.query.filter(func.lower(Dispute.creator) == address.lower()).order_by(Dispute.id.desc()).all()
         return list(disputes)
+
+    @staticmethod
+    def disputesByCreator_paginated(address, page=0, per_page=10):
+        return Dispute.query.filter(func.lower(Dispute.creator) == address.lower()).order_by(Dispute.id.desc()).paginate(page,
+                                                                                                        per_page,
+                                                                                                        error_out=False)
 
     @property
     def winning_choice(self):
@@ -649,6 +709,17 @@ class Juror():
                  .order_by(Vote.round_id.desc())
                  .all()
                  )
+        return votes
+
+    def all_votes_paginated(self, page=0, per_page=10):
+        votes = (db.session.query(Vote, Round, Dispute)
+                 .filter(func.lower(Vote.account) == self.address)
+                 .filter(Vote.round_id == Round.id)
+                 .filter(Dispute.id == Round.disputeID)
+                 .order_by(Vote.round_id.desc())
+                 .paginate(page,
+                           per_page,
+                           error_out=False))
         return votes
 
     @property
