@@ -20,7 +20,7 @@ def get_court_info_table():
         courtInfo[c.name] = {'Jurors': c.activeJurors,
                              'Total Staked': c.totalStaked,
                              'Min Stake': c.minStake,
-                             'Locked Stake': c.voteStake,
+                             'Vote Stake': c.voteStake,
                              'Mean Staked': c.meanStaked,
                              'Max Staked': c.maxStaked,
                              'Disputes in the last 30 days': c.disputesLast30days,
