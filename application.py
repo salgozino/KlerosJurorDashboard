@@ -40,7 +40,6 @@ def index():
     courtTable = get_court_info_table()
     pnkStaked = courtTable['General Court']['Total Staked']
     activeJurors = courtTable['General Court']['Jurors']
-    print(mostActiveCourt, courtTable )
     return render_template('main.html',
                            last_update=Config.get('updated'),
                            disputes=Dispute.query.order_by(Dispute.id.desc()).first().id,
