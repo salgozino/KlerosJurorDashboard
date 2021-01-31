@@ -192,7 +192,7 @@ class KlerosLiquid(Etherscan):
         raw_dispute = self.contract.functions.disputes(dispute_id).call()
         ruling = self.contract.functions.currentRuling(dispute_id).call()
         current_status = self.contract.functions.disputeStatus(dispute_id).call()
-        broken_disputes = [105, 107, 108] # Disputes with ruled = 0, but already closed.
+        broken_disputes = [105, 107, 108, 250] # Disputes with ruled = 0, but already closed.
         return {
             'subcourtID': int(raw_dispute[0]),
             'arbitrated': raw_dispute[1],
