@@ -107,7 +107,7 @@ def updatePrices():
     eth_fees = 0
     pnk_redistributed = 0
     for court in range(Court().ncourts):
-        fees = Court(id=court).fees_paid()
+        fees = Court(id=court).fees_paid
         eth_fees += fees['eth']
         pnk_redistributed += fees['pnk']
     Config.set('fees_ETH', eth_fees)
