@@ -175,6 +175,8 @@ def court():
     if id is None:
         # if it's not specified, go to the general court
         id = 0
+    if dispute_page is None:
+        dispute_page = 0
 
     court = Court.query.get(id)
     parent = court.parent
