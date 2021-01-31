@@ -189,7 +189,7 @@ class Court(db.Model):
                 WHERE id IN (
                     SELECT MAX(id)
                     FROM juror_stake
-                    WHERE subcourtID in {courts_id})
+                    WHERE subcourtID in {courts_id}
                     GROUP BY address, subcourtID
                     )
             )
