@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 def index():
     Visitor().addVisit('dashboard')
     tokenSupply = float(Config().get('token_supply'))
+    tokenCircSupply = float(Config.get('PNKcirculating_supply'))
     drawnJurors = len(Juror.list())
     retention = Juror.retention() / drawnJurors
     adoption = len(Juror.adoption())
@@ -53,11 +54,12 @@ def index():
                            tokenSupply=tokenSupply,
                            pnkStaked=pnkStaked,
                            pnkStakedPercent=pnkStaked/tokenSupply,
+                           pnkStakedPercentSupply=pnkStaked/tokenCircSupply,
                            ethPrice=float(Config.get('ETHprice')),
                            pnkPrice=pnkPrice,
                            pnkPctChange=float(Config.get('PNKpctchange24h'))/100,
                            pnkVol24=float(Config.get('PNKvolume24h')),
-                           pnkCircSupply=float(Config.get('PNKcirculating_supply')),
+                           pnkCircSupply=tokenCircSupply,
                            fees_paid={'eth': float(Config.get('fees_ETH')),
                                       'pnk': float(Config.get('PNK_redistributed'))},
                            courtTable=courtTable
