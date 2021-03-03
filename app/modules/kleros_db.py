@@ -104,13 +104,11 @@ class Court(db.Model):
 
     @property
     def openCases(self):
-        openCases = Dispute.query.filter(Dispute.ruled == 0).filter(Dispute.subcourtID == self.id).all()
-        return len(openCases)
+        return Dispute.query.filter(Dispute.ruled == 0).filter(Dispute.subcourtID == self.id).count()
 
     @property
     def ruledCases(self):
-        openCases = Dispute.query.filter(Dispute.ruled == 1).filter(Dispute.subcourtID == self.id).all()
-        return len(openCases)
+        return Dispute.query.filter(Dispute.ruled == 1).filter(Dispute.subcourtID == self.id).count()
 
     def get_recursive_childs(self, node=0):
         query = f"""
@@ -348,13 +346,11 @@ class Dispute(db.Model):
 
     @property
     def openCases(self):
-        openCases = self.query.filter(Dispute.ruled == 0).all()
-        return len(openCases)
+        return self.query.filter(Dispute.ruled == 0).count()
 
     @property
     def ruledCases(self):
-        ruledCases = self.query.filter(Dispute.ruled == 1).all()
-        return len(ruledCases)
+        return self.query.filter(Dispute.ruled == 1).count()
 
     @staticmethod
     def mostActiveCourt(days=7):
