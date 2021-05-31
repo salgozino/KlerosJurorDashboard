@@ -12,8 +12,8 @@ from app import create_app
 from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
 from app.modules.kleros_db import Visitor, Court, Config, Juror, Dispute
-from app.modules.kleros import get_court_info_table, get_all_court_chances
-
+from app.modules.kleros import get_court_info_table, get_all_court_chances, getWhenPeriodEnd
+from app.modules.subgraph import getLastDisputeInfo, getDisputeInfo
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -130,35 +130,39 @@ def visitorMetrics():
 def dispute():
     id = request.args.get('id', type=int)
     if id is None:
-        id = Dispute.query.order_by(Dispute.id.desc()).first().id
-
-    vote_count = {}
-    dispute = Dispute.query.get(id)
-    try:
-        rounds = dispute.rounds()
-    except Exception:
-        return render_template('dispute.html',
+        dispute = getLastDisputeInfo()
+    else:
+        dispute = getDisputeInfo(id)
+        if dispute is None:
+            return render_template('dispute.html',
                                error="Error trying to reach the dispute data. This Dispute exist?",
                                dispute=dispute,
                                vote_count=None,
                                unique_vote_count=None,
                                last_update=Config.get('updated'),
                                )
+    vote_map = {'0': 'Refuse to Arbitrate',
+            '1': 'Yes',
+            '2': 'No',
+            '3': 'Pending'}
+    vote_count = {}
     unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse to Arbitrate': 0, 'Pending': 0}
     unique_jurors = set()
-    for r in rounds:
-        vote_count[r.id] = {'Yes': 0, 'No': 0, 'Refuse to Arbitrate': 0, 'Pending': 0}
-        votes = r.votes()
+    for r in dispute['rounds']:
+        vote_count[r['id']] = {'Yes': 0, 'No': 0, 'Refuse to Arbitrate': 0, 'Pending': 0}
+        votes = r['votes']
         for v in votes:
-            vote_str = v.vote_str
-            vote_count[r.id][vote_str] += 1
-            if v.account.lower() not in unique_jurors:
+            vote_str = vote_map[v['choice']] if v['voted'] else vote_map['3']
+            v['vote_str'] = vote_str
+            vote_count[r['id']][vote_str] += 1
+            if v['address'].lower() not in unique_jurors:
                 unique_vote_count[vote_str] += 1
-                unique_jurors.add(v.account.lower())
-
+                unique_jurors.add(v['address'].lower())
+        r['votes'] = sorted(r['votes'], key=lambda x : x['address'])
+    
+    dispute['periodEnds'] = getWhenPeriodEnd(dispute, int(dispute['subcourtID']['id']))
     return render_template('dispute.html',
                            dispute=dispute,
-                           rounds=rounds,
                            error=None,
                            vote_count=vote_count,
                            unique_vote_count=unique_vote_count,

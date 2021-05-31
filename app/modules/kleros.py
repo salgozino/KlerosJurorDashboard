@@ -3,10 +3,19 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from .kleros_db import Court, Juror, Config, JurorStake, StakesEvolution
+from .subgraph import getTimePeriods
 from app.modules import db
 
 import logging
 logger = logging.getLogger(__name__)
+
+def period2number(period):
+    period_map = {'execution':4,
+    'appeal':3,
+    'vote':2,
+    'commit':1,
+    'evidence':0}
+    return period_map[period]
 
 
 def get_staked_by_address(address):
@@ -95,3 +104,19 @@ def calculate_historic_stakes_in_courts():
         # logger.debug(f"Adding the values {stakes} to the StakesEvolution table")
         StakesEvolution.addDateValues(stakes)
     end += timedelta(days=1)
+
+
+def getWhenPeriodEnd(dispute, courtID):
+    """
+    Return the datetime when ends current period of the dispute.
+    Returns None if dispute it's in execution period
+    """
+    if dispute['period'] == 'execution':
+        return None
+    else:
+        timesPeriods = getTimePeriods(courtID)
+        lastPeriodChange = int(dispute['lastPeriodChange'])
+        periodlength = int(timesPeriods[period2number(dispute['period'])])
+        now = datetime.now()
+        return datetime.fromtimestamp(lastPeriodChange) + timedelta(seconds=periodlength)
+        

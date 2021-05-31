@@ -7,7 +7,7 @@
             <form class="form-inline text-center" action="{{ url_for('dispute') }}" method="get">
               <div class="form-group">
                 <label for="disputeIDInput">Dispute </label>
-                <input class="form-control box-shadow" id="id" name="id" type="int" value={{ dispute.id }}>
+                <input class="form-control box-shadow" id="id" name="id" type="int" value={{ dispute['disputeID'] }}>
               </div>
               <button type="submit" class="btn btn-default">Refresh</button>
             </form>
@@ -19,10 +19,11 @@
 {% if error %}
     <p>{{error}}</p>
 {% endif %}
-{% if dispute.id %}
+
+{% if dispute['disputeID'] %}
       <div class="row">
         <div class="col">
-          <h4>{% block title %}Dispute #{{ dispute['id']}}{% endblock %}</h4>
+          <h4>{% block title %}Dispute #{{ dispute['disputeID']}}{% endblock %}</h4>
         </div>
       </div>
 
@@ -32,13 +33,13 @@
             <td align="center">Court</td>
             <td align="center">Dispute Status</td>
             <td align="center">Period</td>
-            <td align="center">Last Period Change</td>
+            <td align="center">Period Finish</td>
           </tr>
-          <tr class={{'success' if dispute.ruled}}>
-            <td class="text-center"><a href={{url_for('court', id=dispute.subcourtID)}}>{{dispute.subcourtID}}</a></td>
-            <td class="text-center">{{'Case Closed' if dispute.ruled else 'Ongoing'}}</td>
-            <td class="text-center">{{dispute.period_name}}</td>
-            <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
+          <tr class={{'success' if dispute['ruled'] }}>
+            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID']['id'])}}>{{dispute['subcourtID']['id']}}</a></td>
+            <td class="text-center">{{'Case Closed' if dispute['ruled'] else 'Ongoing'}}</td>
+            <td class="text-center">{{dispute['period']}}</td>
+            <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] is not none%}UTC{%endif%}</td>
           </tr>
         </table>
     </div>
@@ -52,7 +53,7 @@
             <td style="width:25% !important">Refuse to arbitrate</td>
             <td style="width:25% !important">Pending</td>
           </tr>
-          <tr class={{"text-center success" if dispute.ruled else "text-center"}}>
+          <tr class={{"text-center success" if dispute['ruled'] else "text-center"}}>
             <td style="width:25% !important">{{unique_vote_count['Yes']}}</td>
             <td style="width:25% !important">{{unique_vote_count['No']}}</td>
             <td style="width:25% !important">{{unique_vote_count['Refuse to Arbitrate']}}</td>
@@ -60,7 +61,7 @@
           </tr>
         </table>
     </div>
-    {% for r in rounds: %}
+    {% for r in dispute['rounds']: %}
     <div class="table-responsive">
         <h4>Round {{r.round_num}}</H4>
         <table class="table table-bordered">
@@ -70,28 +71,28 @@
             <td style="width:25% !important">Refuse to arbitrate</td>
             <td style="width:25% !important">Pending</td>
           </tr>
-          <tr class={{"text-center success" if dispute.ruled else "text-center"}}>
-            <td style="width:25% !important">{{vote_count[r.id]['Yes']}}</td>
-            <td style="width:25% !important">{{vote_count[r.id]['No']}}</td>
-            <td style="width:25% !important">{{vote_count[r.id]['Refuse to Arbitrate']}}</td>
-            <td style="width:25% !important">{{vote_count[r.id]['Pending']}}</td>
+          <tr class={{"text-center success" if dispute['ruled'] else "text-center"}}>
+            <td style="width:25% !important">{{vote_count[r['id']]['Yes']}}</td>
+            <td style="width:25% !important">{{vote_count[r['id']]['No']}}</td>
+            <td style="width:25% !important">{{vote_count[r['id']]['Refuse to Arbitrate']}}</td>
+            <td style="width:25% !important">{{vote_count[r['id']]['Pending']}}</td>
           </tr>
         </table>
     </div>
     <div class="table-responsive">
         <table class="table table-bordered table-condensed">
-          <tr class={{"info" if r.majority_reached else "warning"}}>
-            <td class="">Round {{r.round_num}} - {{ 'Majority reached' if r.majority_reached else 'No majority' }}</td>
+          <tr class="info">
+            <td class="">Round {{r['id'].split('-')[1]}}</td>
             <td align="center">Vote</td>
           </tr>
-          {% for v in r.votes() %}
-            {% if dispute.period==4 %}
-                <tr class={{'success' if dispute.current_ruling == v.choice else 'danger'}}>
+          {% for v in r['votes'] %}
+            {% if dispute['period']=='execution' %}
+                <tr class={{'success' if dispute['current_ruling'] == v['choice'] else 'danger'}}>
             {% else %}
                 <tr>
             {% endif %}
-              <td><a href={{url_for('juror', address=v.account)}}>{{v.account}}</a></td>
-              <td align="right">{{ v.vote_str }}</td>
+              <td><a href={{url_for('juror', address=v['address'])}}>{{v['address']}}</a></td>
+              <td align="right">{{ v['vote_str'] }}</td>
             </tr>
           {% endfor %}
         </table>
@@ -100,7 +101,7 @@
 
       <div align="center">
       <button type="button" class="btn btn-primary cursor-clickable mb-3"
-      button onclick="window.location.href = 'https:court.kleros.io/cases/{{ dispute['id']}}';">Check this Case on Kleros</button>
+      button onclick="window.location.href = 'https:court.kleros.io/cases/'">Check this Case on Kleros</button>
       </div>
 {% endif %}
 {% endblock %}
