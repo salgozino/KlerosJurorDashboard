@@ -301,22 +301,22 @@
                     <thead>
                         <tr class="active">
                             <th scope="col">Court</th>
-                            {% for col in courtTable['General Court'].keys() %}
+                            {% for col in courtTable['0'].keys() %}
                             {% if col != 'id'%}<th scope="col">{{ col }}</th>{%endif%}
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
-                    {% set ns = namespace(mostActive='General Court') %} 
+                    {% set ns = namespace(mostActive='0') %} 
                     {% for c, data in courtTable.items() %}
                         {% if data['Disputes in the last 30 days'] > courtTable[ns.mostActive]['Disputes in the last 30 days']%}
                             {% set ns.mostActive = c%}
                         {% endif%}
                     {% endfor%}
                     
-                    {% for c, data in courtTable.items() %}
-                    {% if c == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
-                        <th scope="row"> <a href={{url_for('court', id=data['id'])}}>{{ c }}</a></th>
+                    {% for courtID, data in courtTable.items() %}
+                    {% if courtID == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
+                        <th scope="row"> <a href={{url_for('court', id=data['id'])}}>{{ courtID|courtName }}</a></th>
                         {% for col, value in data.items() %}
                             {% if col == 'Min Stake in USD' %}
                             <td class="text-right">${{ "{:,.2f}".format(value) }}</td>

@@ -18,7 +18,7 @@
     {% block content %}
     {% if court.id is not none %}
 
-    <h3>Court #{{court.id}}: {{ court.name}}</h3>
+    <h3>Court #{{court['subcourtID']}}</h3>
     <!-- Court Numbers -->
     <div class="row">
         <div class="col-lg-3">
@@ -26,7 +26,7 @@
                 <div class="panel-heading text-center">
                     <h4>Parent Court</h4>
                 </div>
-                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=parent.id)}}>{{parent.name}}</a></li></ul>{% endif %}
+                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=parent['subcourtID'])}}>{{parent['subcourtID']}}</a></li></ul>{% endif %}
             </div>
         </div>
 
@@ -38,7 +38,7 @@
                 {% if childs %}
                     <ul class="list-group">
                     {% for child in childs%}
-                        <li class="list-group-item"><a href={{url_for('court', id=child.id)}}>{{ child.name }}</a></li>
+                        <li class="list-group-item"><a href={{url_for('court', id=child['id'])}}>{{ child['id'] }}</a></li>
                     {% endfor %}
                     </ul>
                 {% else%}
@@ -133,24 +133,6 @@
     <!-- Jurors -->
     <h4>Total Jurors: {{n_jurors}}</h4>
 
-    <nav aria-label="Page navigation example">
-        <ul class="pagination">
-            {% if current_juror_page != 0 %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', jurors_page=current_juror_page-1, id=court.id) }}">Previous</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Previous</a></li>
-            {% endif %}
-
-
-            {% if current_juror_page <= n_jurors/10 %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', jurors_page=current_juror_page+1, id=court.id) }}">Next</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Next</a></li>
-            {% endif %}
-
-        </ul>
-    </nav>
-
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered ">
             <thead>
@@ -160,10 +142,10 @@
               </tr>
             </thead>
             <tbody>
-                {% for juror, stake in jurors.items(): %}
+                {% for juror in jurors: %}
                 <tr>
-                    <td class="text-center"><a href={{url_for('juror', address=juror)}}>{{juror}}</a></td>
-                    <td class="text-center">{{ "{:,.1f}".format(stake) }}</td>
+                    <td class="text-center"><a href={{url_for('juror', address=juror['id'])}}>{{juror['address']}}</a></td>
+                    <td class="text-center">{{ "{:,.2}".format(juror['stake']|float) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -174,7 +156,7 @@
     <div class="row">
         <div class="col-md-12 " id="juror_hist-id">
             <script>
-                var graph = {{juror_hist | safe}};
+                var graph = {{ juror_hist | safe }};
                 Plotly.plot('juror_hist-id',graph,{});
             </script>
         </div>
@@ -183,35 +165,22 @@
 
     <!-- Disputes -->
     <h4>Court Disputes</h4>
-    <nav aria-label="Page navigation example">
-        <ul class="pagination">
-            {% if disputes.has_prev %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', dispute_page=disputes.prev_num, id=court.id) }}">Previous</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Previous</a></li>
-            {% endif %}
-
-
-            {% if disputes.has_next %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', dispute_page=disputes.next_num, id=court.id) }}">Next</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Next</a></li>
-            {% endif %}
-
-        </ul>
-    </nav>
     <div class="table-responsive" style="max-height: 400px; overflow-y: auto">
         <table class="table table-bordered table-condensed">
           <tr class="info">
             <td align="center">Dispute N°</td>
             <td align="center">Status</td>
+            <td align="center">Current Rulling</td>
             <td align="center">Last Period Change</td>
+            <td align="center">Period Ends</td>
           </tr>
-          {% for dispute in disputes.items: %}
-          <tr class={{'success' if dispute.ruled else 'warning'}}>
-            <td class="text-center"><a href={{url_for('dispute', id=dispute.id)}}>{{dispute.id}}</a></td>
-            <td class="text-center">{{dispute.period_name}}</td>
-            <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
+          {% for dispute in disputes[::-1]: %}
+          <tr class={{'success' if dispute['ruled'] else 'warning'}}>
+            <td class="text-center"><a href={{url_for('dispute', id=dispute['id'])}}>{{dispute['id']}}</a></td>
+            <td class="text-center">{{dispute['period']}}</td>
+            <td class="text-center">{{dispute['currentRulling']}}</td>
+            <td class="text-center"><span class="datetime-string">{{dispute['lastPeriodChange']}}</span> UTC</td>
+            <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span></td>
           </tr>
           {% endfor %}
         </table>

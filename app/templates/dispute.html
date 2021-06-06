@@ -33,13 +33,15 @@
             <td align="center">Court</td>
             <td align="center">Dispute Status</td>
             <td align="center">Period</td>
-            <td align="center">Period Finish</td>
+            <td align="center">Period Ends</td>
+            <td align="center">Time remaining</td>
           </tr>
           <tr class={{'success' if dispute['ruled'] }}>
             <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID']['id'])}}>{{dispute['subcourtID']['id']}}</a></td>
-            <td class="text-center">{{'Case Closed' if dispute['ruled'] else 'Ongoing'}}</td>
+            <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
             <td class="text-center">{{dispute['period']}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] is not none%}UTC{%endif%}</td>
+            <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
           </tr>
         </table>
     </div>
@@ -87,11 +89,11 @@
           </tr>
           {% for v in r['votes'] %}
             {% if dispute['period']=='execution' %}
-                <tr class={{'success' if dispute['current_ruling'] == v['choice'] else 'danger'}}>
+                <tr class={{'success' if dispute['currentRulling'] == v['choice'] else 'danger'}}>
             {% else %}
                 <tr>
             {% endif %}
-              <td><a href={{url_for('juror', address=v['address'])}}>{{v['address']}}</a></td>
+              <td><a href={{url_for('juror', address=v['address']['id'])}}>{{v['address']['id']}}</a></td>
               <td align="right">{{ v['vote_str'] }}</td>
             </tr>
           {% endfor %}

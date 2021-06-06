@@ -158,6 +158,21 @@ class CoinGecko():
         pnkId = "kleros"
         response = self.getCryptoInfo(id=pnkId)
         return response['market_data']['current_price']['usd']
+    
+    def getPNKPctChange(self):
+        pnkId = "kleros"
+        response = self.getCryptoInfo(id=pnkId)
+        return response['market_data']['price_change_24h']
+
+    def getPNKVol24hs(self):
+        pnkId = "kleros"
+        response = self.getCryptoInfo(id=pnkId)
+        return response['market_data']['total_volume']['usd']
+    
+    def getPNKcircSupply(self):
+        pnkId = "kleros"
+        response = self.getCryptoInfo(id=pnkId)
+        return response['market_data']['total_volume']['usd']
 
     def getETHprice(self):
         ethId = "ethereum"

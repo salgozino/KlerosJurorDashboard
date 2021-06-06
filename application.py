@@ -5,15 +5,18 @@ Here all the website is created.
 """
 import os
 import logging
+from datetime import datetime
 
 from flask import render_template, request
+from requests.api import get
 
 from app import create_app
+from app.modules.etherscan import CoinGecko
 from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
 from app.modules.kleros_db import Visitor, Court, Config, Juror, Dispute
-from app.modules.kleros import get_court_info_table, get_all_court_chances, getWhenPeriodEnd
-from app.modules.subgraph import getLastDisputeInfo, getDisputeInfo
+from app.modules.kleros import get_court_info_table, get_all_court_chances
+from app.modules.subgraph import getCourtName, getKlerosCounters, getLastDisputeInfo, getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, getCourtTable
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -22,28 +25,49 @@ application = create_app(settings_module)
 logger = logging.getLogger(__name__)
 
 
+@application.template_filter()
+def timedelta(date):
+    if not isinstance(date, datetime):
+        date = datetime.fromtimestamp(date)
+    delta = date-datetime.now()
+    return delta
+
+
+@application.template_filter()
+def courtName(courtID):
+    return getCourtName(courtID)
+
+
 @application.route('/')
 def index():
     Visitor().addVisit('dashboard')
-    tokenSupply = float(Config().get('token_supply'))
-    tokenCircSupply = float(Config.get('PNKcirculating_supply'))
-    drawnJurors = len(Juror.list())
-    retention = Juror.retention() / drawnJurors
-    adoption = len(Juror.adoption())
-    ruledCases = Dispute().ruledCases
-    openCases = Dispute().openCases
-    mostActiveCourt = Dispute.mostActiveCourt()
+
+    klerosCounters = getKlerosCounters()
+    drawnJurors = 0 # len(Juror.list())
+    retention = 0  # Juror.retention() / drawnJurors
+    adoption = 0  # len(Juror.adoption())
+    ruledCases = int(klerosCounters['closedDisputes'])
+    openCases = int(klerosCounters['openDisputes'])
+    mostActiveCourt = None
     if mostActiveCourt:
-        mostActiveCourt = Court(id=int(list(mostActiveCourt.keys())[0])).map_name
+        mostActiveCourt = getCourtName(int(mostActiveCourt))
     else:
         mostActiveCourt = "No new cases in the last 7 days"
-    pnkPrice = float(Config.get('PNKprice'))
-    courtTable = get_court_info_table()
-    pnkStaked = courtTable['General Court']['Total Staked']
-    activeJurors = courtTable['General Court']['Jurors']
+    # PNK & ETH Information
+    coingecko = CoinGecko()
+    pnkInfo = coingecko.getCryptoInfo()
+    ethPrice = coingecko.getETHprice()
+    pnkPrice = pnkInfo['market_data']['current_price']['usd']
+    tokenSupply = pnkInfo['market_data']['total_supply']
+    pnkPctChange = pnkInfo['market_data']['price_change_24h']
+    pnkCircSupply = pnkInfo['market_data']['circulating_supply']
+    pnkVol24 = pnkInfo['market_data']['total_volume']['usd']
+    courtTable = getCourtTable()
+    pnkStaked = float(klerosCounters['tokenStaked'])
+    activeJurors = klerosCounters['activeJurors']
     return render_template('main.html',
-                           last_update=Config.get('updated'),
-                           disputes=Dispute.query.order_by(Dispute.id.desc()).first().id,
+                           last_update=datetime.now(),
+                           disputes=klerosCounters['disputesCount'],
                            activeJurors=activeJurors,
                            jurorsdrawn=drawnJurors,
                            retention=retention,
@@ -54,14 +78,14 @@ def index():
                            tokenSupply=tokenSupply,
                            pnkStaked=pnkStaked,
                            pnkStakedPercent=pnkStaked/tokenSupply,
-                           pnkStakedPercentSupply=pnkStaked/tokenCircSupply,
-                           ethPrice=float(Config.get('ETHprice')),
+                           pnkStakedPercentSupply=pnkStaked/pnkCircSupply,
+                           ethPrice=ethPrice,
                            pnkPrice=pnkPrice,
-                           pnkPctChange=float(Config.get('PNKpctchange24h'))/100,
-                           pnkVol24=float(Config.get('PNKvolume24h')),
-                           pnkCircSupply=tokenCircSupply,
-                           fees_paid={'eth': float(Config.get('fees_ETH')),
-                                      'pnk': float(Config.get('PNK_redistributed'))},
+                           pnkPctChange=pnkPctChange,
+                           pnkVol24=pnkVol24,
+                           pnkCircSupply=pnkCircSupply,
+                           fees_paid={'eth': 0,
+                                      'pnk': 0},
                            courtTable=courtTable
                            )
 
@@ -132,7 +156,7 @@ def dispute():
     if id is None:
         dispute = getLastDisputeInfo()
     else:
-        dispute = getDisputeInfo(id)
+        dispute = getDispute(id)
         if dispute is None:
             return render_template('dispute.html',
                                error="Error trying to reach the dispute data. This Dispute exist?",
@@ -141,31 +165,12 @@ def dispute():
                                unique_vote_count=None,
                                last_update=Config.get('updated'),
                                )
-    vote_map = {'0': 'Refuse to Arbitrate',
-            '1': 'Yes',
-            '2': 'No',
-            '3': 'Pending'}
-    vote_count = {}
-    unique_vote_count = {'Yes': 0, 'No': 0, 'Refuse to Arbitrate': 0, 'Pending': 0}
-    unique_jurors = set()
-    for r in dispute['rounds']:
-        vote_count[r['id']] = {'Yes': 0, 'No': 0, 'Refuse to Arbitrate': 0, 'Pending': 0}
-        votes = r['votes']
-        for v in votes:
-            vote_str = vote_map[v['choice']] if v['voted'] else vote_map['3']
-            v['vote_str'] = vote_str
-            vote_count[r['id']][vote_str] += 1
-            if v['address'].lower() not in unique_jurors:
-                unique_vote_count[vote_str] += 1
-                unique_jurors.add(v['address'].lower())
-        r['votes'] = sorted(r['votes'], key=lambda x : x['address'])
-    
-    dispute['periodEnds'] = getWhenPeriodEnd(dispute, int(dispute['subcourtID']['id']))
+    print(dispute)
     return render_template('dispute.html',
                            dispute=dispute,
                            error=None,
-                           vote_count=vote_count,
-                           unique_vote_count=unique_vote_count,
+                           vote_count=dispute['vote_count'],
+                           unique_vote_count=dispute['unique_vote_count'],
                            last_update=Config.get('updated'),
                            )
 
@@ -173,48 +178,40 @@ def dispute():
 @application.route('/court/', methods=['GET'])
 def court():
     id = request.args.get('id', type=int)
-    dispute_page = request.args.get('dispute_page', type=int)
-    jurors_page = request.args.get('jurors_page', type=int)
-    if jurors_page is None:
-        jurors_page = 0
-    if id is None:
-        # if it's not specified, go to the general court
-        id = 0
-    if dispute_page is None:
-        dispute_page = 0
+    court = getCourt(id)
+    if court['parent']:
+        parent = getCourt(int(court['parent']['id']))
+    else:
+        parent = None
+    
+    disputes = court['disputes']
 
-    court = Court.query.get(id)
-    parent = court.parent
-    if parent is not None:
-        parent = Court.query.get(parent)
-    disputes = court.disputes_paginated(dispute_page)
+    court_childs = []
+    for child in court['childs']:
+        court_childs.append(getCourt(int(child['id'])))
 
-    court_childs = court.childrens
-
-    jurors = court.jurors
-    sorted_jurors = sorted(jurors.items(),
-                           key=lambda item: item[1],
+    
+    jurors = getJurorsFromCourt(id)
+    sorted_jurors = sorted(jurors,
+                           key=lambda item: item['stake'],
                            reverse=True)
-    start = (jurors_page)*10
-    end = (jurors_page+1)*10
-    filt_jurors = {k: v for k, v in sorted_jurors[start:end]}
-    juror_hist = jurorHistogram(list(jurors.values()))
+    juror_hist = jurorHistogram([juror['stake'] for juror in jurors])
 
     return render_template('court.html',
                            court=court,
                            parent=parent,
                            childs=court_childs,
                            disputes=disputes,
-                           n_jurors=len(sorted_jurors),
-                           jurors=filt_jurors,
+                           n_jurors=len(jurors),
+                           jurors=sorted_jurors,
                            juror_hist=juror_hist,
-                           open_cases=court.openCases,
-                           ruled_cases=court.ruledCases,
-                           fees=court.fees_paid,
-                           min_stake=court.minStake,
-                           vote_stake=court.voteStake,
-                           last_update=Config.get('updated'),
-                           current_juror_page=jurors_page
+                           open_cases=int(court['disputesOngoing']),
+                           ruled_cases=int(court['disputesClosed']),
+                           fees={'eth':0, 'pnk':0},
+                           min_stake=float(court['minStake'])*(10**-18),
+                           vote_stake=calculateVoteStake(float(court['minStake'])*10**-18,court['alpha']),
+                           last_update=datetime.now(),
+                           current_juror_page=0
                            )
 
 
@@ -237,6 +234,10 @@ def juror(address):
                            last_update=Config.get('updated'),
                            )
 
+@application.route('/getCourtJurors/<int:courtID>', methods=['GET'])
+def courtJurors(courtID):
+    court = Court(id=courtID)
+    return court.jurors
 
 @application.errorhandler(404)
 def not_found(e):
