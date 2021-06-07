@@ -1,0 +1,65 @@
+{% extends 'layout.html' %}
+
+{% block body%}
+    {% block header %}
+      <div class="row">
+        <div class="col">
+          <h3>{% block title %}Juror {{ address }}</h3><h6><a href="https://etherscan.io/address/{{ address }}">view on etherscan</a></h6>{% endblock %}
+        </div>
+      </div>
+    {% endblock %}
+
+    {% block content %}
+        <h2>Disputes Created</h2>
+        <div class="mb-5">
+          <table class="table table-bordered responsive table-sm table-condensed">
+            <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
+            {% for d in disputes: %}
+            <tr>
+              <td><a href={{ url_for('dispute', id= d['id']) }}>Dispute {{d['id']}}</a></td>
+              <td>{{ d['startTime'] }}</td>
+              <td><a href="https://etherscan.io/tx/{{ d['txid'] }}">{{d['txid']}}</a></td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+
+        <h2>Stakes by Court</h2>
+        <div class="mb-5">
+          <h4>Total Staked: {{"{:,.2f} PNK".format(totalStaked)}}</h4>
+          <table class="table table-bordered responsive table-sm table-condensed">
+            <tr class="info"><td>Court</td><td>Amount</td><td>TxID</td></tr>
+            {% for stake in stakes: %}
+              <tr>
+                <td><a href={{url_for('court', id=stake['court'])}}>{{stake['court']}}</td>
+                <td>{{"{:0.2f}".format(stake['stake'])}}</td>
+                <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid']}}</a></td>
+              </tr>
+            {% endfor %}
+          </table>
+        </div>
+
+        <h2>Votes</h2>
+        <div class="mb-5">
+          <h4>Coherency: {{"{:.2%}".format(coherency)}}</h4>
+          <table class="table table-bordered responsive table-sm table-condensed">
+            <tr class="info"><td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td></tr>
+            {% for v in votes|reverse: %}
+                {% set winner = v['currentRulling'] if v['ruled'] else none %}
+                {%if winner is none %}
+                    <tr class='active'>
+                {% elif winner == v['choice'] %}
+                    <tr class='success'>
+                {% else %}
+                    <tr class='danger'>
+                {% endif %}
+                <td><a href="{{ url_for('dispute',id=v['dispute']) }}">Dispute {{ v['dispute']}}</a></td>
+                <td>{{v['roundNumber']}}</td>
+                <td>{{ "Voted" if v['voted'] else "Pending"}}</td>
+                <td>{{ v['vote_str'] }}</td>
+              </tr>
+            {% endfor %}
+          </table>
+        </div>
+    {% endblock %}
+{% endblock %}

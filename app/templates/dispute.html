@@ -93,7 +93,7 @@
             {% else %}
                 <tr>
             {% endif %}
-              <td><a href={{url_for('juror', address=v['address']['id'])}}>{{v['address']['id']}}</a></td>
+              <td><a href={{url_for('profile', address=v['address']['id'])}}>{{v['address']['id']}}</a></td>
               <td align="right">{{ v['vote_str'] }}</td>
             </tr>
           {% endfor %}

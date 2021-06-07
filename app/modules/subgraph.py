@@ -21,12 +21,14 @@ def period2number(period):
     'evidence':0}
     return period_map[period]
 
+
 def gwei2eth(gwei):
-    return gwei*10**-18
+    return float(gwei)*10**-18
 
 
 def calculateVoteStake(minStake, alpha):
     return float(alpha)*(10**-4)*float(minStake)
+
 
 def getKlerosCounters():
     query = '''{
@@ -78,7 +80,6 @@ def getDispute(disputeNumber):
         return None
     else:
         dispute = result.json()['data']['disputes'][0]
-        print(dispute)
         dispute['periodEnds'] = getWhenPeriodEnd(dispute, int(dispute['subcourtID']['id']))
         
         vote_map = {'0': 'Refuse to Arbitrate',
@@ -106,6 +107,7 @@ def getDispute(disputeNumber):
         dispute['unique_jurors'] = unique_jurors
         return dispute
 
+
 def getLastDisputeInfo():
     query = (
     '{'
@@ -119,6 +121,7 @@ def getLastDisputeInfo():
     else:
         return getDispute(int(result.json()['data']['disputes'][0]['id']))
 
+
 def getTimePeriods(courtID):
     query = (
     '{'
@@ -131,6 +134,7 @@ def getTimePeriods(courtID):
         return None
     else:
         return result.json()['data']['courts'][0]['timePeriods']
+
 
 def getCourt(courtID):
     query = (
@@ -165,6 +169,7 @@ def getCourt(courtID):
         for dispute in court['disputes']:
             dispute['periodEnds'] = getWhenPeriodEnd(dispute, int(dispute['subcourtID']['id']),court['timePeriods'])
         return court
+
 
 def getAllCourts():
     query = (
@@ -235,6 +240,7 @@ def getAllCourtsDaysBefore(days=30):
     else:
         return result.json()['data']['courts']
 
+
 def getCourtDaysBefore(courtID, days=30):
     blockNumber = getBlockNumberbefore(days)
     query = (
@@ -262,13 +268,16 @@ def getCourtDaysBefore(courtID, days=30):
     else:
         return result.json()['data']['courts'][0]
 
+
 def getCourtName(courtID):
     # TODO!, not implemented yet
     return str(courtID)
 
+
 def readPolicy(policyID):
     # TODO!, not implemented yet
     return None
+
 
 def getJurorsFromCourt(courtID):
     query = (
@@ -335,5 +344,97 @@ def court2table(court, pnkUSDPrice):
             'Open Disputes': int(court['disputesOngoing']),
             'Min Stake in USD': minStake*pnkUSDPrice,
             'Total Disputes': int(court['disputesNum']),
-            'id': int(court['subcourtID'])
+            'id': int(court['subcourtID']),
+            'Name': getCourtName(court['subcourtID'])
             }
+
+
+def getAllVotesFromJuror(address):
+    initDispute = 0
+    votes = []
+    while True:
+        query='{votes(where:{address:"'+str(address)+'",dispute_gt:"'+str(initDispute)+'"}){dispute{id,currentRulling,ruled,startTime},choice,voted,round{id}}}'
+        result = requests.post(subgraph_node, json={'query':query})
+
+        if len(result.json()['data']['votes']) == 0:
+            break
+        else:
+            currentVotes=result.json()['data']['votes']
+            print(len(currentVotes))
+            print(len(votes))
+            votes.extend(currentVotes)
+            print(len(votes))
+            initDispute = int(currentVotes[-1]['dispute']['id'])
+            print(initDispute)
+    for vote in votes:
+        vote.update({'vote_str':getVoteStr(int(vote['choice']),vote['voted'],vote['dispute']['id'])})
+        print(vote)
+    return votes
+    
+
+def getProfile(address):
+    query = (
+    '{jurors(where:{id:"'+str(address)+'"}) {'
+    '   currentStakes{court{id},stake,timestamp},'
+    '   totalStaked,'
+    '   activeJuror,'
+    '   numberOfDisputesAsJuror,'
+    '   numberOfDisputesCreated,'
+    '   disputesAsCreator{id,currentRulling,startTime,ruled}'
+    '}}'
+    )
+    result = requests.post(subgraph_node, json={'query':query})
+    if len(result.json()['data']['jurors']) == 0:
+        return None
+    else:
+        rawProfileData = result.json()['data']['jurors'][0]
+        profile = {}
+        profile['currentStakes'] = []
+        for stake in rawProfileData['currentStakes']:
+             profile['currentStakes'].append({'court':stake['court']['id'],
+                        'stake':gwei2eth(stake['stake']),
+                        'timestamp':int(stake['timestamp']),
+                        'date':datetime.fromtimestamp(int(stake['timestamp']))}
+                        )
+        profile['totalStaked'] = gwei2eth(rawProfileData['totalStaked'])
+        profile['votes'] = []
+        profile['coherent_votes'] = 0
+        profile['ruled_cases'] = 0
+        votes = getAllVotesFromJuror(address)
+        for vote in votes:
+            profile['votes'].append({'dispute':vote['dispute']['id'],
+                            'ruled':vote['dispute']['ruled'],
+                            'currentRulling':vote['dispute']['currentRulling'],
+                            'choice':vote['choice'],
+                            'roundID':vote['round']['id'],
+                            'roundNumber':vote['round']['id'].split('-')[1],
+                            'vote_str':vote['vote_str']}
+                            )
+            if vote['dispute']['ruled']:
+                if vote['dispute']['currentRulling']==vote['choice']:
+                    profile['coherent_votes'] = profile['coherent_votes']+1 
+                profile['ruled_cases'] += 1
+        profile['coherency'] = profile['coherent_votes']/profile['ruled_cases']
+        profile['disputesAsCreator'] = []
+        for dispute in rawProfileData['disputesAsCreator']:
+            profile['disputesAsCreator'].append({
+                'dispute':dispute['id'],
+                'currentRulling':dispute['currentRulling'],
+                'timestamp':dispute['startTime'],
+                'txid':None,
+            })
+        return profile
+
+
+def getVoteStr(choice,voted,dispute=None):
+    """
+    Return the text of the vote choice.
+    TODO!, use the metadata of the dispute, currently it's just fixed to Refuse,Yes,No
+    """
+    if voted:
+        vote_map = {0:'Refuse to Arbitrate',
+                    1:'Yes',
+                    2:'No'}
+        return vote_map[choice]
+    else:
+        return 'Pending'

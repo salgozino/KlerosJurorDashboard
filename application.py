@@ -16,7 +16,7 @@ from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
 from app.modules.kleros_db import Visitor, Court, Config, Juror, Dispute
 from app.modules.kleros import get_court_info_table, get_all_court_chances
-from app.modules.subgraph import getCourtName, getKlerosCounters, getLastDisputeInfo, getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, getCourtTable
+from app.modules.subgraph import getCourtName, getKlerosCounters, getLastDisputeInfo, getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, getCourtTable, getProfile
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -215,24 +215,29 @@ def court():
                            )
 
 
-@application.route('/juror/<string:address>', methods=['GET'])
-def juror(address):
-    juror = Juror(address)
-    page_disputes = request.args.get('page_disputes', type=int)
-    page_votes = request.args.get('page_votes', type=int)
-    disputes = Dispute.disputesByCreator_paginated(address, page_disputes)
-    votes = juror.all_votes_paginated(page_votes)
-    juror_stakes = juror.current_stakings_per_court
-    stakes = []
-    for court, stake in juror_stakes.items():
-        stakes.append((Court(id=court).map_name, stake))
-    return render_template('juror.html',
+@application.route('/profile/<string:address>', methods=['GET'])
+def profile(address):
+    profile = getProfile(address)
+    if profile is None:
+        return render_template('profile.html',
                            address=address,
-                           disputes=disputes,
-                           stakes=stakes,
-                           votes=votes,
-                           last_update=Config.get('updated'),
+                           disputes=[],
+                           stakes=[],
+                           votes=[],
+                           totalStaked=0,
+                           coherency=0,
+                           last_update=datetime.now(),
                            )
+    else:
+        return render_template('profile.html',
+                            address=address,
+                            disputes=profile['disputesAsCreator'],
+                            stakes=profile['currentStakes'],
+                            votes=profile['votes'],
+                            totalStaked=profile['totalStaked'],
+                            coherency=profile['coherency'],
+                            last_update=datetime.now(),
+                            )
 
 @application.route('/getCourtJurors/<int:courtID>', methods=['GET'])
 def courtJurors(courtID):
