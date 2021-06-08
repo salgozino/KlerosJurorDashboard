@@ -117,7 +117,6 @@ def getAllCourtDisputes(courtID):
         '}}'
         )
         result = requests.post(subgraph_node, json={'query':query})
-        print(result.json())
         if len(result.json()['data']['disputes']) == 0:
             break
         else:
@@ -337,7 +336,6 @@ def getStakedByJuror(address):
         rawStakes = result.json()['data']['courtStakes']
         stakes = []
         for stake in rawStakes:
-            print(stake)
             if float(stake['stake'])>0:
                 stakes.append({'court':stake['court']['id'],
                                 'stake': gwei2eth(stake['stake'])})
@@ -405,15 +403,10 @@ def getAllVotesFromJuror(address):
             break
         else:
             currentVotes=result.json()['data']['votes']
-            print(len(currentVotes))
-            print(len(votes))
             votes.extend(currentVotes)
-            print(len(votes))
             initDispute = int(currentVotes[-1]['dispute']['id'])
-            print(initDispute)
     for vote in votes:
         vote.update({'vote_str':getVoteStr(int(vote['choice']),vote['voted'],vote['dispute']['id'])})
-        print(vote)
     return votes
     
 
