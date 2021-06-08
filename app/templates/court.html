@@ -144,8 +144,8 @@
             <tbody>
                 {% for juror in jurors: %}
                 <tr>
-                    <td class="text-center"><a href={{url_for('juror', address=juror['id'])}}>{{juror['address']}}</a></td>
-                    <td class="text-center">{{ "{:,.2}".format(juror['stake']|float) }}</td>
+                    <td class="text-center"><a href={{url_for('profile', address=juror['address'])}}>{{juror['address']}}</a></td>
+                    <td class="text-center">{{ "{:0,.2}".format(juror['stake']|float) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -174,7 +174,7 @@
             <td align="center">Last Period Change</td>
             <td align="center">Period Ends</td>
           </tr>
-          {% for dispute in disputes[::-1]: %}
+          {% for dispute in disputes|sort(attribute='id', reverse=True): %}
           <tr class={{'success' if dispute['ruled'] else 'warning'}}>
             <td class="text-center"><a href={{url_for('dispute', id=dispute['id'])}}>{{dispute['id']}}</a></td>
             <td class="text-center">{{dispute['period']}}</td>

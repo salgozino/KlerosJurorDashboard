@@ -12,10 +12,10 @@ from requests.api import get
 
 from app import create_app
 from app.modules.etherscan import CoinGecko
-from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
-    disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
-from app.modules.kleros_db import Visitor, Court, Config, Juror, Dispute
-from app.modules.kleros import get_court_info_table, get_all_court_chances
+from app.modules.plotters import jurorHistogram
+# from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
+#     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
+from app.modules.kleros import get_all_court_chances
 from app.modules.subgraph import getCourtName, getKlerosCounters, getLastDisputeInfo, getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, getCourtTable, getProfile
 
 # Elastic Beanstalk initalization
@@ -40,7 +40,7 @@ def courtName(courtID):
 
 @application.route('/')
 def index():
-    Visitor().addVisit('dashboard')
+    # Visitor().addVisit('dashboard')
 
     klerosCounters = getKlerosCounters()
     drawnJurors = 0 # len(Juror.list())
@@ -92,8 +92,10 @@ def index():
 
 @application.route('/graphs/')
 def graphsMaker():
-    Visitor().addVisit('graphs')
-    courtTable = get_court_info_table()
+    return "Under construction"
+"""
+    # Visitor().addVisit('graphs')
+    courtTable = getCourtTable()
     sjGraph = stakesJurorsGraph()
     return render_template('graphs.html',
                            last_update=Config.get('updated'),
@@ -104,18 +106,18 @@ def graphsMaker():
                            treemapJurorsGraph=treeMapGraph(courtTable),
                            treemapStakedGraph=treeMapGraph(courtTable, 'Total Staked')
                            )
-
+"""
 
 @application.route('/support/')
 def support():
-    Visitor().addVisit('support')
+    # Visitor().addVisit('support')
     return render_template('support.html',
-                           last_update=Config.get('updated'))
+                           last_update=datetime.now())
 
 
 @application.route('/odds/', methods=['GET', 'POST'])
 def odds():
-    Visitor().addVisit('odds')
+    # Visitor().addVisit('odds')
     pnkStaked = 100000
     if request.method == 'POST':
         # Form being submitted; grab data from form.
@@ -125,28 +127,28 @@ def odds():
             pnkStaked = 100000
 
     return render_template('odds.html',
-                           last_update=Config.get('updated'),
+                           last_update=datetime.now(),
                            pnkStaked=pnkStaked,
                            courtChances=get_all_court_chances(pnkStaked))
 
 
 @application.route('/kleros-map/')
 def maps():
-    Visitor().addVisit('map')
+    # Visitor().addVisit('map')
     return render_template('kleros-map.html',
-                           last_update=Config.get('updated')
+                           last_update=datetime.now()
                            )
 
 
 @application.route('/visitorMetrics/')
 def visitorMetrics():
-    visitors = Visitor()
+    # visitor = Visitor()
     return render_template('visitors.html',
-                           home=visitors.dashboard,
-                           odds=visitors.odds,
-                           map=visitors.map,
-                           support=visitors.support,
-                           last_update=Config.get('updated'),
+                           home=0,
+                           odds=0,
+                           map=0,
+                           support=0,
+                           last_update=datetime.now(),
                            )
 
 
@@ -163,21 +165,22 @@ def dispute():
                                dispute=dispute,
                                vote_count=None,
                                unique_vote_count=None,
-                               last_update=Config.get('updated'),
+                               last_update=datetime.now(),
                                )
-    print(dispute)
-    return render_template('dispute.html',
+        return render_template('dispute.html',
                            dispute=dispute,
                            error=None,
                            vote_count=dispute['vote_count'],
                            unique_vote_count=dispute['unique_vote_count'],
-                           last_update=Config.get('updated'),
+                           last_update=datetime.now(),
                            )
 
 
 @application.route('/court/', methods=['GET'])
 def court():
     id = request.args.get('id', type=int)
+    if id is None:
+        id = 0
     court = getCourt(id)
     if court['parent']:
         parent = getCourt(int(court['parent']['id']))
@@ -238,6 +241,7 @@ def profile(address):
                             coherency=profile['coherency'],
                             last_update=datetime.now(),
                             )
+
 
 @application.route('/getCourtJurors/<int:courtID>', methods=['GET'])
 def courtJurors(courtID):

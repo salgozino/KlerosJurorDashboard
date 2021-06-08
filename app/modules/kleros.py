@@ -2,9 +2,9 @@
 # import os
 import pandas as pd
 from datetime import datetime, timedelta
-from .kleros_db import Court, Juror, Config, JurorStake, StakesEvolution
-from .subgraph import getTimePeriods
-from app.modules import db
+from .subgraph import getCourtTable, getTimePeriods, gwei2eth
+from .etherscan import CoinGecko
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -18,48 +18,29 @@ def period2number(period):
     return period_map[period]
 
 
-def get_staked_by_address(address):
-    return Juror(address=address).current_stakings_per_court
-
-
-def get_court_info_table():
-    courts = Court.query.all()
-    courtInfo = {}
-    for c in courts:
-        courtInfo[c.name] = {'Jurors': c.activeJurors,
-                             'Total Staked': c.totalStaked,
-                             'Min Stake': c.minStake,
-                             'Vote Stake': c.voteStake,
-                             'Mean Staked': c.meanStaked,
-                             'Max Staked': c.maxStaked,
-                             'Disputes in the last 30 days': c.disputesLast30days,
-                             'Open Disputes': c.openCases,
-                             'Min Stake in USD': c.minStakeUSD,
-                             'id': c.id
-                             }
-    return courtInfo
-
-
 def get_all_court_chances(pnkStaked):
-    courts = Court.query.all()
+    courts = getCourtTable()
+    print(courts)
     courtChances = {}
-    pnkPrice = float(Config.get('PNKprice'))
-    ethPrice = float(Config.get('ETHprice'))
-    for c in courts:
-        rewardETH = c.feeForJuror
+    pnkPrice = CoinGecko().getPNKprice()
+    ethPrice = CoinGecko().getETHprice()
+    for c in courts.keys():
+        print(c)
+        print(courts[c]['Fee For Juror'])
+        rewardETH = courts[c]['Fee For Juror']
         rewardUSD = rewardETH * ethPrice
-        voteStakePNK = c.voteStake
+        voteStakePNK = courts[c]['Vote Stake']
         voteStakeUSD = voteStakePNK * pnkPrice
-        stats = c.juror_stats()
-        totalStaked = c.totalStaked
+        activeJurors = courts[c]['Jurors']
+        totalStaked = courts[c]['Total Staked']
         odds = chance_calculator(pnkStaked, totalStaked)
         if odds == 0:
             chances = float('nan')
         else:
             chances = 1/odds
-        courtChances[c.name] = {
-                    'Jurors': stats['length'],
-                    'Disputes in the last 30 days': len(c.disputes(30)),
+        courtChances[courts[c]['Name']] = {
+                    'Jurors': activeJurors,
+                    'Disputes in the last 30 days': courts[c]['Disputes in the last 30 days'],
                     'Odds': odds,
                     'Chances': chances,
                     'Reward (ETH)': rewardETH,

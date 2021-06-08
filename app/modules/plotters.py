@@ -12,11 +12,11 @@ from plotly.utils import PlotlyJSONEncoder
 from plotly.express import colors as colormap
 import pandas as pd
 
-from .kleros_db import Court, StakesEvolution, Dispute
+# from .kleros_db import Court, StakesEvolution, Dispute
 
 logger = logging.getLogger(__name__)
 
-
+"""
 def multiBar(df, columns=['0', '2', '8', '9']):
     fig = go.Figure()
     for column in df.columns.to_list():
@@ -213,7 +213,7 @@ def treeMapGraph(courtTable, key="Jurors"):
                          margin={'l': 10, 'b': 80, 't': 30, 'r': 30},
                          legend={'orientation': 'h'})
     return json.dumps(fig, cls=PlotlyJSONEncoder)
-
+"""
 
 def jurorHistogram(jurorStakes):
     fig = go.Figure(data=[go.Histogram(x=jurorStakes,

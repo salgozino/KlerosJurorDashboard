@@ -108,6 +108,25 @@ def getDispute(disputeNumber):
         return dispute
 
 
+def getAllCourtDisputes(courtID):
+    initDispute = 0
+    disputes = []
+    while True:
+        query=('{disputes(where:{subcourtID:"'+str(courtID)+'",id_gt:'+str(initDispute)+'}){'
+        'id,subcourtID{id},currentRulling,ruled,startTime,period,lastPeriodChange'
+        '}}'
+        )
+        result = requests.post(subgraph_node, json={'query':query})
+        print(result.json())
+        if len(result.json()['data']['disputes']) == 0:
+            break
+        else:
+            currentDisputes=result.json()['data']['disputes']
+            disputes.extend(currentDisputes)
+            initDispute = int(currentDisputes[-1]['id'])
+    return disputes
+
+
 def getLastDisputeInfo():
     query = (
     '{'
@@ -145,7 +164,6 @@ def getCourt(courtID):
     '   disputesOngoing,'
     '   disputesClosed,'
     '   disputesNum,'
-    '   disputes{id,subcourtID{id},ruled,period,currentRulling,lastPeriodChange},'
     '   childs{id},'
     '   parent{id},'
     '   policy{policy},'
@@ -160,14 +178,16 @@ def getCourt(courtID):
     '   timePeriods,'
     '}}'
     )
-    
+    #    '   disputes{id,subcourtID{id},ruled,period,currentRulling,lastPeriodChange},'
     result = requests.post(subgraph_node, json={'query':query})
     if len(result.json()['data']['courts']) == 0:
         return None
     else:
         court = result.json()['data']['courts'][0]
+        court['disputes'] = getAllCourtDisputes(courtID)
         for dispute in court['disputes']:
             dispute['periodEnds'] = getWhenPeriodEnd(dispute, int(dispute['subcourtID']['id']),court['timePeriods'])
+            dispute['id'] = int(dispute['id'])
         return court
 
 
@@ -301,6 +321,29 @@ def getJurorsFromCourt(courtID):
         return jurors
 
 
+def getStakedByJuror(address):
+    query = (
+    '{'
+    'courtStakes(where:{juror:"'+str(address)+'"}) {'
+    '    stake,'
+    '    court{id}'
+    '    juror {id}'
+    '}}'
+    )
+    result = requests.post(subgraph_node, json={'query':query})
+    if len(result.json()['data']['courtStakes']) == 0:
+        return None
+    else:
+        rawStakes = result.json()['data']['courtStakes']
+        stakes = []
+        for stake in rawStakes:
+            print(stake)
+            if float(stake['stake'])>0:
+                stakes.append({'court':stake['court']['id'],
+                                'stake': gwei2eth(stake['stake'])})
+        return stakes
+
+
 def getWhenPeriodEnd(dispute, courtID, timesPeriods=None):
     """
     Return the datetime when ends current period of the dispute.
@@ -337,9 +380,11 @@ def getCourtTable():
 def court2table(court, pnkUSDPrice):
     
     minStake = gwei2eth(float(court['minStake']))
+    feeForJuror = gwei2eth(court['feeForJuror'])
     return {'Jurors': int(court['activeJurors']),
             'Total Staked': gwei2eth(float(court['tokenStaked'])),
             'Min Stake': minStake,
+            'Fee For Juror':feeForJuror,
             'Vote Stake': calculateVoteStake(minStake, court['alpha']),
             'Open Disputes': int(court['disputesOngoing']),
             'Min Stake in USD': minStake*pnkUSDPrice,
@@ -414,7 +459,7 @@ def getProfile(address):
                 if vote['dispute']['currentRulling']==vote['choice']:
                     profile['coherent_votes'] = profile['coherent_votes']+1 
                 profile['ruled_cases'] += 1
-        profile['coherency'] = profile['coherent_votes']/profile['ruled_cases']
+        profile['coherency'] = profile['coherent_votes']/profile['ruled_cases'] if profile['ruled_cases']>0 else None
         profile['disputesAsCreator'] = []
         for dispute in rawProfileData['disputesAsCreator']:
             profile['disputesAsCreator'].append({

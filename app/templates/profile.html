@@ -32,7 +32,7 @@
             {% for stake in stakes: %}
               <tr>
                 <td><a href={{url_for('court', id=stake['court'])}}>{{stake['court']}}</td>
-                <td>{{"{:0.2f}".format(stake['stake'])}}</td>
+                <td>{{"{:,.2f}".format(stake['stake'])}}</td>
                 <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid']}}</a></td>
               </tr>
             {% endfor %}
@@ -41,7 +41,7 @@
 
         <h2>Votes</h2>
         <div class="mb-5">
-          <h4>Coherency: {{"{:.2%}".format(coherency)}}</h4>
+          <h4>Coherency: {%if coherency is not none%}{{"{:.2%}".format(coherency)}}{%else%}-{%endif%}</h4>
           <table class="table table-bordered responsive table-sm table-condensed">
             <tr class="info"><td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td></tr>
             {% for v in votes|reverse: %}
