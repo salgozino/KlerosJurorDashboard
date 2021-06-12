@@ -3,7 +3,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from .subgraph import getCourtTable, getTimePeriods, gwei2eth
-from .etherscan import CoinGecko
+from .oracles import CoinGecko
 
 
 import logging
@@ -67,7 +67,7 @@ def chance_calculator(amountStaked, totalStaked, nJurors=3):
         chanceDrawnOnce = 1 - noDrawn
         return chanceDrawnOnce
 
-
+"""
 def calculate_historic_stakes_in_courts():
     try:
         end = StakesEvolution.query.order_by(StakesEvolution.id.desc()).first().timestamp
@@ -85,7 +85,7 @@ def calculate_historic_stakes_in_courts():
         # logger.debug(f"Adding the values {stakes} to the StakesEvolution table")
         StakesEvolution.addDateValues(stakes)
     end += timedelta(days=1)
-
+"""
 
 def getWhenPeriodEnd(dispute, courtID):
     """

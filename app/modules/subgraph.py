@@ -1,14 +1,16 @@
 import requests
 import os
 from datetime import datetime, timedelta
-from app.modules.web3_node import web3Node
+from collections import defaultdict
 
-from app.modules.etherscan import CoinGecko
+from app.modules.oracles import CoinGecko
+from app.modules.web3_node import web3Node
 
 try:
     subgraph_id = os.getenv['SUBGRAPH_ID']
 except:
-    subgraph_id = 'QmS3WaiRenqHmAPfjH9MPShSEb1mQegmMivh1vLg4Bi9UP'
+    # subgraph_id = 'QmS3WaiRenqHmAPfjH9MPShSEb1mQegmMivh1vLg4Bi9UP' Last "stable"
+    subgraph_id = 'QmWHCdvhR4PwTQEzQGrSu2yyGtwXCL1bsBMBAupPH7CWfd'
 
 subgraph_node = 'https://api.thegraph.com/subgraphs/id/' + subgraph_id
 
@@ -42,6 +44,7 @@ def getKlerosCounters():
         courtsCount
         activeJurors
         inactiveJurors
+        drawnJurors
         tokenStaked
     }}
     '''
@@ -62,6 +65,7 @@ def getDispute(disputeNumber):
     '    currentRulling,'
     '    lastPeriodChange'
     '    period,'
+    '    txid,'
     '    rounds{,'
     '        id,'
     '        winningChoice,'
@@ -212,7 +216,6 @@ def getAllCourts():
        timePeriods,
     }}'''
     )
-    
     result = requests.post(subgraph_node, json={'query':query})
     if len(result.json()['data']['courts']) == 0:
         return None
@@ -254,6 +257,8 @@ def getAllCourtsDaysBefore(days=30):
     '}}'
     )
     result = requests.post(subgraph_node, json={'query':query})
+    if 'errors' in result.json().keys():
+        return None
     if len(result.json()['data']['courts']) == 0:
         return None
     else:
@@ -356,6 +361,34 @@ def getWhenPeriodEnd(dispute, courtID, timesPeriods=None):
         periodlength = int(timesPeriods[period2number(dispute['period'])])
         return datetime.fromtimestamp(lastPeriodChange) + timedelta(seconds=periodlength)
 
+def getCourtDisputesNumberBefore(days=30):
+    blockNumber = getBlockNumberbefore(days)
+    query = (
+    '{courts(block:{number:'+str(blockNumber)+'}){'
+    '   disputesNum'
+    '   subcourtID'
+    '}}'
+    )
+    result = requests.post(subgraph_node, json={'query':query})
+    if 'errors' in result.json().keys():
+        return None
+    if len(result.json()['data']['courts']) == 0:
+        return None
+    else:
+        return result.json()['data']['courts']
+
+
+def getCourtTotalStaked(courtID):
+    query = (
+    '{courts(where:{id:"'+str(courtID)+'"}){'
+    '   tokenStaked,'
+    '}}'
+    )
+    result = requests.post(subgraph_node, json={'query':query})
+    if len(result.json()['data']['courts']) == 0:
+        return None
+    else:
+        return gwei2eth(result.json()['data']['courts'][0]['tokenStaked'])
 
 def getCourtTable():
     courtsInfo = {}
@@ -363,20 +396,30 @@ def getCourtTable():
     courts = getAllCourts()
     pnkUSDprice = CoinGecko().getPNKprice()
     
-    oldCourts = getAllCourtsDaysBefore(30)
-    for court in oldCourts:
-        oldcourtsInfo[str(court['subcourtID'])] = court2table(court, pnkUSDprice)
-    
+    oldCourts = getCourtDisputesNumberBefore(30)
+    if oldCourts is not None:
+        for court in oldCourts:
+            oldcourtsInfo[int(court['subcourtID'])] = int(court['disputesNum'])
     for court in courts:
-        courtID = str(court['subcourtID'])
+        courtID = int(court['subcourtID'])
         courtsInfo[courtID] = court2table(court, pnkUSDprice)
-        diff = courtsInfo[courtID]['Total Disputes']-oldcourtsInfo[courtID]['Total Disputes']
+        if oldCourts is not None:
+            diff = courtsInfo[courtID]['Total Disputes']-oldcourtsInfo[courtID]
+        else:
+            diff = courtsInfo[courtID]['Total Disputes']
         courtsInfo[courtID]['Disputes in the last 30 days'] = diff
+    """
+    for court in courts[::-1]:
+        print(court['id'])
+        childs_total_staked = 0
+        for child in court['childs']:
+            childs_total_staked += getCourtTotalStaked(child['id'])
+        courtsInfo[int(court['id'])]['Total Staked'] = gwei2eth(court['tokenStaked'])+childs_total_staked
+    """
     return courtsInfo
 
 
 def court2table(court, pnkUSDPrice):
-    
     minStake = gwei2eth(float(court['minStake']))
     feeForJuror = gwei2eth(court['feeForJuror'])
     return {'Jurors': int(court['activeJurors']),
@@ -418,7 +461,7 @@ def getProfile(address):
     '   activeJuror,'
     '   numberOfDisputesAsJuror,'
     '   numberOfDisputesCreated,'
-    '   disputesAsCreator{id,currentRulling,startTime,ruled}'
+    '   disputesAsCreator{id,currentRulling,startTime,ruled,txid}'
     '}}'
     )
     result = requests.post(subgraph_node, json={'query':query})
@@ -427,6 +470,7 @@ def getProfile(address):
     else:
         rawProfileData = result.json()['data']['jurors'][0]
         profile = {}
+        profile['numberOfDisputesAsJuror'] = rawProfileData['numberOfDisputesAsJuror']
         profile['currentStakes'] = []
         for stake in rawProfileData['currentStakes']:
              profile['currentStakes'].append({'court':stake['court']['id'],
@@ -459,7 +503,7 @@ def getProfile(address):
                 'dispute':dispute['id'],
                 'currentRulling':dispute['currentRulling'],
                 'timestamp':dispute['startTime'],
-                'txid':None,
+                'txid':dispute['txid'],
             })
         return profile
 
@@ -476,3 +520,70 @@ def getVoteStr(choice,voted,dispute=None):
         return vote_map[choice]
     else:
         return 'Pending'
+
+
+def totalStakedInCourts():
+    "Just has to be used to compare with KlerosCounters[tokenStaked]"
+    skip = 0
+    total = 0
+    total_by_court = defaultdict(int)
+    while True:
+        query = (
+        '{courtStakes(first:1000, skip:'+str(skip)+'){'
+        '   stake'
+        '   court{id}'
+        '}}'
+        )
+        result = requests.post(subgraph_node, json={'query':query})
+        courtStakes = result.json()['data']['courtStakes']
+        if len(courtStakes) == 0:
+            break
+        else:
+            for courtStake in courtStakes:
+                total += gwei2eth(courtStake['stake'])
+                total_by_court[courtStake['court']['id']] += gwei2eth(courtStake['stake'])
+            print(len(courtStakes))
+            skip += len(courtStakes)
+    return total, total_by_court
+
+
+def getAdoption():
+    "return the number of new jurors in the last 30 days"
+    query = ('{klerosCounters{'
+    '   activeJurors,'
+    '   inactiveJurors'
+    '}}'
+    )
+    current_result = requests.post(subgraph_node, json={'query':query})
+    bn = getBlockNumberbefore(30)
+    query = ('{klerosCounters(block:{number:'+str(bn)+'}){'
+    '   activeJurors,'
+    '   inactiveJurors'
+    '}}'
+    )
+    before_result = requests.post(subgraph_node, json={'query':query})
+    if len(current_result.json()['data']['klerosCounters']) == 0:
+        return 0
+    else:
+        result = current_result.json()['data']['klerosCounters'][0]
+        try:
+            old_result = before_result.json()['data']['klerosCounters'][0]
+        except:
+            return None
+        newTotal = int(result['activeJurors']) + int(result['inactiveJurors'])
+        oldTotal = int(old_result['activeJurors']) + int(old_result['inactiveJurors'])
+        return newTotal-oldTotal
+
+
+def getMostActiveCourt(days=7):
+    "return the most active court in the last days, by default, a week"
+    courts_data = getCourtDisputesNumberBefore(7)
+    if courts_data is None:
+        return None
+    max_dispute_number = 0
+    court_most_bussy = None
+    for court in courts_data:
+        if int(court['disputesNum']) > max_dispute_number:
+            max_dispute_number = int(court['disputesNum'])
+            court_most_bussy = int(court['subcourtID'])
+    return court_most_bussy

@@ -128,7 +128,7 @@
                     <h3 class="panel-title text-center">Adoption</h3>
                 </div>
                 <div class="panel-body text-center">
-                    <h4>{{ "%.0f"|format(adoption) }}</h4>
+                    <h4>{% if adoption is not none%}{{ "%.0f"|format(adoption) }}{%else%}Not disponible{%endif%}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of new Jurors staked in the last month
@@ -211,7 +211,8 @@
                     <h3 class="panel-title text-center">Fees Paid</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "{:,.3f}".format(fees_paid['eth']) }} ETH</h4>
+                <!--<h4>{{ "{:,.3f}".format(fees_paid['eth']) }} ETH</h4> -->
+                <h4>Soon</h4>
                 </div>
                 <div class="panel-footer">
                     Fees paid to the coherent jurors in all the court
@@ -225,7 +226,8 @@
                     <h3 class="panel-title text-center">PNK Redistributed</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "{:,.0f}".format(fees_paid['pnk']) }}</h4>
+                <h4>Soon</h4>
+                <!--<h4>{{ "{:,.0f}".format(fees_paid['pnk']) }}</h4>-->
                 </div>
                 <div class="panel-footer">
                     PNK transfered from incoherent jurors to coherent jurors of all the disputes
@@ -302,14 +304,14 @@
                         <tr class="active">
                             <th scope="col">Court Id</th>
                             <th scope="col">Name</th>
-                            {% for col in courtTable['0'].keys() %}
+                            {% for col in courtTable[0].keys() %}
                             {% if col!='id' and col!='Name' %}<th scope="col">{{ col }}</th>{%endif%}
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
-                    {% set ns = namespace(mostActive='0') %} 
-                    {% for c, data in courtTable.items() %}
+                    {% set ns = namespace(mostActive=0) %} 
+                    {% for c, data in courtTable.items()|sort(attribute='id') %}
                         {% if data['Disputes in the last 30 days'] > courtTable[ns.mostActive]['Disputes in the last 30 days']%}
                             {% set ns.mostActive = c%}
                         {% endif%}

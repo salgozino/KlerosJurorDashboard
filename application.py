@@ -8,15 +8,16 @@ import logging
 from datetime import datetime
 
 from flask import render_template, request
-from requests.api import get
 
 from app import create_app
-from app.modules.etherscan import CoinGecko
+from app.modules.oracles import CoinGecko
 from app.modules.plotters import jurorHistogram
 # from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
 #     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
 from app.modules.kleros import get_all_court_chances
-from app.modules.subgraph import getCourtName, getKlerosCounters, getLastDisputeInfo, getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, getCourtTable, getProfile
+from app.modules.subgraph import getMostActiveCourt, getAdoption, getCourtName, \
+    getKlerosCounters, getLastDisputeInfo, getDispute, getCourt, getJurorsFromCourt, \
+    calculateVoteStake, getCourtTable, getProfile, gwei2eth
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -38,18 +39,31 @@ def courtName(courtID):
     return getCourtName(courtID)
 
 
+@application.template_filter()
+def timestamp2datetime(value):
+    if value is None:
+        return ""
+    format="%Y-%m-%d %H:%M"
+    value = datetime.utcfromtimestamp(int(value))
+    print(value)
+
+    return value.strftime(format)
+
+@application.template_filter()
+def filter_gwei_2_eth(gwei):
+    value = gwei2eth(gwei)
+    return value
+
 @application.route('/')
 def index():
-    # Visitor().addVisit('dashboard')
-
     klerosCounters = getKlerosCounters()
-    drawnJurors = 0 # len(Juror.list())
+    drawnJurors = int(klerosCounters['drawnJurors'])
     retention = 0  # Juror.retention() / drawnJurors
-    adoption = 0  # len(Juror.adoption())
+    adoption = getAdoption()
     ruledCases = int(klerosCounters['closedDisputes'])
     openCases = int(klerosCounters['openDisputes'])
-    mostActiveCourt = None
-    if mostActiveCourt:
+    mostActiveCourt = getMostActiveCourt()
+    if mostActiveCourt is not None:
         mostActiveCourt = getCourtName(int(mostActiveCourt))
     else:
         mostActiveCourt = "No new cases in the last 7 days"
@@ -63,7 +77,7 @@ def index():
     pnkCircSupply = pnkInfo['market_data']['circulating_supply']
     pnkVol24 = pnkInfo['market_data']['total_volume']['usd']
     courtTable = getCourtTable()
-    pnkStaked = float(klerosCounters['tokenStaked'])
+    pnkStaked = gwei2eth(klerosCounters['tokenStaked'])
     activeJurors = klerosCounters['activeJurors']
     return render_template('main.html',
                            last_update=datetime.now(),
@@ -167,13 +181,13 @@ def dispute():
                                unique_vote_count=None,
                                last_update=datetime.now(),
                                )
-        return render_template('dispute.html',
-                           dispute=dispute,
-                           error=None,
-                           vote_count=dispute['vote_count'],
-                           unique_vote_count=dispute['unique_vote_count'],
-                           last_update=datetime.now(),
-                           )
+    return render_template('dispute.html',
+                        dispute=dispute,
+                        error=None,
+                        vote_count=dispute['vote_count'],
+                        unique_vote_count=dispute['unique_vote_count'],
+                        last_update=datetime.now(),
+                        )
 
 
 @application.route('/court/', methods=['GET'])
@@ -224,6 +238,7 @@ def profile(address):
     if profile is None:
         return render_template('profile.html',
                            address=address,
+                           numberOfDisputesAsJuror=0,
                            disputes=[],
                            stakes=[],
                            votes=[],
@@ -234,6 +249,7 @@ def profile(address):
     else:
         return render_template('profile.html',
                             address=address,
+                            numberOfDisputesAsJuror=int(profile['numberOfDisputesAsJuror']),
                             disputes=profile['disputesAsCreator'],
                             stakes=profile['currentStakes'],
                             votes=profile['votes'],
@@ -245,14 +261,14 @@ def profile(address):
 
 @application.route('/getCourtJurors/<int:courtID>', methods=['GET'])
 def courtJurors(courtID):
-    court = Court(id=courtID)
-    return court.jurors
+    court = getCourt(id=courtID)
+    return court
 
 @application.errorhandler(404)
 def not_found(e):
-    Visitor().addVisit('unknown')
+    # Visitor().addVisit('unknown')
     return render_template("404.html",
-                           last_update=Config.get('updated'))
+                           last_update=datetime.now())
 
 
 if __name__ == "__main__":

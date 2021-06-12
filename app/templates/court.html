@@ -126,12 +126,10 @@
                 </div>
             </div>
         </div>
-        
-
     </div>
 
     <!-- Jurors -->
-    <h4>Total Jurors: {{n_jurors}}</h4>
+    <h4>Total Jurors: {{n_jurors}} | Total Staked: {{"{:,.0f} PNKs".format(court['tokenStaked']|filter_gwei_2_eth)}}</h4>
 
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered ">
@@ -145,7 +143,7 @@
                 {% for juror in jurors: %}
                 <tr>
                     <td class="text-center"><a href={{url_for('profile', address=juror['address'])}}>{{juror['address']}}</a></td>
-                    <td class="text-center">{{ "{:0,.2}".format(juror['stake']|float) }}</td>
+                    <td class="text-center">{{ "{:0,.2f}".format(juror['stake']|float) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -165,6 +163,7 @@
 
     <!-- Disputes -->
     <h4>Court Disputes</h4>
+    <h5>Number of disputes in this courts: {{disputes|length}}</h5>
     <div class="table-responsive" style="max-height: 400px; overflow-y: auto">
         <table class="table table-bordered table-condensed">
           <tr class="info">

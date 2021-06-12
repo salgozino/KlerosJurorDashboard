@@ -14,10 +14,10 @@
         <div class="mb-5">
           <table class="table table-bordered responsive table-sm table-condensed">
             <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
-            {% for d in disputes: %}
+            {% for d in disputes|sort(attribute='timestamp', reverse=True): %}
             <tr>
-              <td><a href={{ url_for('dispute', id= d['id']) }}>Dispute {{d['id']}}</a></td>
-              <td>{{ d['startTime'] }}</td>
+              <td><a href={{ url_for('dispute', id= d['dispute']) }}>Dispute {{d['dispute']}}</a></td>
+              <td>{{ d['timestamp']|timestamp2datetime }}</td>
               <td><a href="https://etherscan.io/tx/{{ d['txid'] }}">{{d['txid']}}</a></td>
             </tr>
             {% endfor %}
@@ -30,17 +30,23 @@
           <table class="table table-bordered responsive table-sm table-condensed">
             <tr class="info"><td>Court</td><td>Amount</td><td>TxID</td></tr>
             {% for stake in stakes: %}
+            {%if stake['stake'] > 0%}
               <tr>
-                <td><a href={{url_for('court', id=stake['court'])}}>{{stake['court']}}</td>
+                <td><a href={{url_for('court', id=stake['court'])}}>{{stake['court']|courtName}}</td>
                 <td>{{"{:,.2f}".format(stake['stake'])}}</td>
                 <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid']}}</a></td>
               </tr>
+            {% endif %}
             {% endfor %}
           </table>
         </div>
 
         <h2>Votes</h2>
         <div class="mb-5">
+          <h4>Number of votes drawn: {{votes|length}}</h4>
+          <!-- Commented until a fix for this counter will be found
+            <h4>Number of disputes as juror: {{numberOfDisputesAsJuror}}</h4>
+          -->
           <h4>Coherency: {%if coherency is not none%}{{"{:.2%}".format(coherency)}}{%else%}-{%endif%}</h4>
           <table class="table table-bordered responsive table-sm table-condensed">
             <tr class="info"><td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td></tr>
@@ -55,7 +61,7 @@
                 {% endif %}
                 <td><a href="{{ url_for('dispute',id=v['dispute']) }}">Dispute {{ v['dispute']}}</a></td>
                 <td>{{v['roundNumber']}}</td>
-                <td>{{ "Voted" if v['voted'] else "Pending"}}</td>
+                <td>{{ "Ruled" if v['ruled'] else "Ongoing"}}</td>
                 <td>{{ v['vote_str'] }}</td>
               </tr>
             {% endfor %}

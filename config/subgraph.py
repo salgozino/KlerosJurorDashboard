@@ -1,4 +1,3 @@
-from config.default import APP_ENV_LOCAL, APP_ENV_TESTING
 from os.path import abspath, dirname
 # Define the application directory
 BASE_DIR = dirname(dirname(abspath(__file__)))
