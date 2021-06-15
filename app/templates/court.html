@@ -18,7 +18,7 @@
     {% block content %}
     {% if court.id is not none %}
 
-    <h3>Court #{{court['subcourtID']}}</h3>
+    <h3>Court #{{court['subcourtID']}}: {{court['subcourtID']|courtName}}</h3>
     <!-- Court Numbers -->
     <div class="row">
         <div class="col-lg-3">
@@ -26,7 +26,7 @@
                 <div class="panel-heading text-center">
                     <h4>Parent Court</h4>
                 </div>
-                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=parent['subcourtID'])}}>{{parent['subcourtID']}}</a></li></ul>{% endif %}
+                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=parent)}}>{{parent|courtName}}</a></li></ul>{% endif %}
             </div>
         </div>
 
@@ -38,7 +38,7 @@
                 {% if childs %}
                     <ul class="list-group">
                     {% for child in childs%}
-                        <li class="list-group-item"><a href={{url_for('court', id=child['id'])}}>{{ child['id'] }}</a></li>
+                        <li class="list-group-item"><a href={{url_for('court', id=child)}}>{{ child|courtName }}</a></li>
                     {% endfor %}
                     </ul>
                 {% else%}
@@ -129,7 +129,7 @@
     </div>
 
     <!-- Jurors -->
-    <h4>Total Jurors: {{n_jurors}} | Total Staked: {{"{:,.0f} PNKs".format(court['tokenStaked']|filter_gwei_2_eth)}}</h4>
+    <h4>Total Jurors: {{n_jurors}} | Total Staked: {{"{:,.0f} PNKs".format(court['tokenStaked'])}}</h4>
 
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered ">
@@ -154,7 +154,7 @@
     <div class="row">
         <div class="col-md-12 " id="juror_hist-id">
             <script>
-                var graph = {{ juror_hist | safe }};
+                var graph = {{ juror_hist|safe }};
                 Plotly.plot('juror_hist-id',graph,{});
             </script>
         </div>

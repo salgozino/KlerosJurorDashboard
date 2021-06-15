@@ -13,11 +13,13 @@ from app import create_app
 from app.modules.oracles import CoinGecko
 from app.modules.plotters import jurorHistogram
 # from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
-#     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
+#     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, \
+#     jurorHistogram
 from app.modules.kleros import get_all_court_chances
-from app.modules.subgraph import getMostActiveCourt, getAdoption, getCourtName, \
-    getKlerosCounters, getLastDisputeInfo, getDispute, getCourt, getJurorsFromCourt, \
-    calculateVoteStake, getCourtTable, getProfile, gwei2eth
+from app.modules.subgraph import getMostActiveCourt, \
+    getAdoption, getCourtName, getKlerosCounters, getLastDisputeInfo, \
+    getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, \
+    getCourtTable, getProfile, gwei2eth
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -43,16 +45,18 @@ def courtName(courtID):
 def timestamp2datetime(value):
     if value is None:
         return ""
-    format="%Y-%m-%d %H:%M"
+    format = "%Y-%m-%d %H:%M"
     value = datetime.utcfromtimestamp(int(value))
     print(value)
 
     return value.strftime(format)
 
+
 @application.template_filter()
 def filter_gwei_2_eth(gwei):
     value = gwei2eth(gwei)
     return value
+
 
 @application.route('/')
 def index():
@@ -107,7 +111,7 @@ def index():
 @application.route('/graphs/')
 def graphsMaker():
     return "Under construction"
-"""
+    """
     # Visitor().addVisit('graphs')
     courtTable = getCourtTable()
     sjGraph = stakesJurorsGraph()
@@ -118,9 +122,11 @@ def graphsMaker():
                            disputeCourtgraph=disputesbyCourtGraph(),
                            disputeCreatorgraph=disputesbyArbitratedGraph(),
                            treemapJurorsGraph=treeMapGraph(courtTable),
-                           treemapStakedGraph=treeMapGraph(courtTable, 'Total Staked')
+                           treemapStakedGraph=treeMapGraph(courtTable,
+                                                           'Total Staked')
                            )
-"""
+    """
+
 
 @application.route('/support/')
 def support():
@@ -174,20 +180,23 @@ def dispute():
     else:
         dispute = getDispute(id)
         if dispute is None:
+            error_msg = ("Error trying to reach the dispute data."
+                         "This Dispute exist?"
+                         )
             return render_template('dispute.html',
-                               error="Error trying to reach the dispute data. This Dispute exist?",
-                               dispute=dispute,
-                               vote_count=None,
-                               unique_vote_count=None,
-                               last_update=datetime.now(),
-                               )
+                                   error=error_msg,
+                                   dispute=dispute,
+                                   vote_count=None,
+                                   unique_vote_count=None,
+                                   last_update=datetime.now(),
+                                   )
     return render_template('dispute.html',
-                        dispute=dispute,
-                        error=None,
-                        vote_count=dispute['vote_count'],
-                        unique_vote_count=dispute['unique_vote_count'],
-                        last_update=datetime.now(),
-                        )
+                           dispute=dispute,
+                           error=None,
+                           vote_count=dispute['vote_count'],
+                           unique_vote_count=dispute['unique_vote_count'],
+                           last_update=datetime.now(),
+                           )
 
 
 @application.route('/court/', methods=['GET'])
@@ -196,22 +205,26 @@ def court():
     if id is None:
         id = 0
     court = getCourt(id)
+    if court is None:
+        return "Error!, court not found"
     if court['parent']:
-        parent = getCourt(int(court['parent']['id']))
+        parent = int(court['parent']['id'])
     else:
         parent = None
-    
+
     disputes = court['disputes']
 
     court_childs = []
     for child in court['childs']:
-        court_childs.append(getCourt(int(child['id'])))
+        court_childs.append(int(child['id']))
 
-    
     jurors = getJurorsFromCourt(id)
-    sorted_jurors = sorted(jurors,
-                           key=lambda item: item['stake'],
-                           reverse=True)
+    if jurors is not None:
+        sorted_jurors = sorted(jurors,
+                               key=lambda item: item['stake'],
+                               reverse=True)
+    else:
+        sorted_jurors = []
     juror_hist = jurorHistogram([juror['stake'] for juror in jurors])
 
     return render_template('court.html',
@@ -224,9 +237,11 @@ def court():
                            juror_hist=juror_hist,
                            open_cases=int(court['disputesOngoing']),
                            ruled_cases=int(court['disputesClosed']),
-                           fees={'eth':0, 'pnk':0},
+                           fees={'eth': 0, 'pnk': 0},
                            min_stake=float(court['minStake'])*(10**-18),
-                           vote_stake=calculateVoteStake(float(court['minStake'])*10**-18,court['alpha']),
+                           vote_stake=calculateVoteStake(float(
+                               court['minStake'])*10**-18,
+                               court['alpha']),
                            last_update=datetime.now(),
                            current_juror_page=0
                            )
@@ -237,32 +252,34 @@ def profile(address):
     profile = getProfile(address)
     if profile is None:
         return render_template('profile.html',
-                           address=address,
-                           numberOfDisputesAsJuror=0,
-                           disputes=[],
-                           stakes=[],
-                           votes=[],
-                           totalStaked=0,
-                           coherency=0,
-                           last_update=datetime.now(),
-                           )
+                               address=address,
+                               numberOfDisputesAsJuror=0,
+                               disputes=[],
+                               stakes=[],
+                               votes=[],
+                               totalStaked=0,
+                               coherency=0,
+                               last_update=datetime.now(),
+                               )
     else:
         return render_template('profile.html',
-                            address=address,
-                            numberOfDisputesAsJuror=int(profile['numberOfDisputesAsJuror']),
-                            disputes=profile['disputesAsCreator'],
-                            stakes=profile['currentStakes'],
-                            votes=profile['votes'],
-                            totalStaked=profile['totalStaked'],
-                            coherency=profile['coherency'],
-                            last_update=datetime.now(),
-                            )
+                               address=address,
+                               numberOfDisputesAsJuror=int(
+                                   profile['numberOfDisputesAsJuror']),
+                               disputes=profile['disputesAsCreator'],
+                               stakes=profile['currentStakes'],
+                               votes=profile['votes'],
+                               totalStaked=profile['totalStaked'],
+                               coherency=profile['coherency'],
+                               last_update=datetime.now(),
+                               )
 
 
 @application.route('/getCourtJurors/<int:courtID>', methods=['GET'])
 def courtJurors(courtID):
     court = getCourt(id=courtID)
     return court
+
 
 @application.errorhandler(404)
 def not_found(e):

@@ -302,8 +302,8 @@
                 <table class="table table-hover ">
                     <thead>
                         <tr class="active">
-                            <th scope="col">Court Id</th>
                             <th scope="col">Name</th>
+                            <th scope="col">Id</th>
                             {% for col in courtTable[0].keys() %}
                             {% if col!='id' and col!='Name' %}<th scope="col">{{ col }}</th>{%endif%}
                             {% endfor %}
@@ -319,8 +319,9 @@
                     
                     {% for courtID, data in courtTable|dictsort(false) %}
                     {% if courtID == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
-                        <th scope="row"> <a href={{url_for('court', id=data['id'])}}>{{ courtID|courtName }}</a></th>
-                        <td class="text-right">{{ data['Name'] }}</td>
+                        <td class="text-right"><a href={{url_for('court', id=data['id'])}}>{{ data['Name'] }}</a></td>
+                        <th scope="row"> {{ courtID }}</th>
+                        
                         {% for col, value in data.items() %}
                             {% if col == 'Min Stake in USD' %}
                             <td class="text-right">${{ "{:,.2f}".format(value) }}</td>
