@@ -9,7 +9,7 @@ from app.modules.web3_node import web3Node
 try:
     subgraph_id = os.getenv['SUBGRAPH_ID']
 except TypeError:
-    subgraph_id = 'QmQkcN12axMxiWZ4ko4mhvtZwCTDxroxZ9WtgvneYchkP2'
+    subgraph_id = 'QmRVJWpEpRP8A6UBAsVNbajnfuiMQsRnaj7Jk6qz9un8BS'
     # subgraph_id = 'Qmavrcim17JnYB3yKhZXtzExww984HLTQ31o9EKb1ESJVT' # estable
 
 subgraph_node = 'https://api.thegraph.com/subgraphs/id/' + subgraph_id
