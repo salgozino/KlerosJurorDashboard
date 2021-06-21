@@ -9,11 +9,15 @@ from app.modules.web3_node import web3Node
 try:
     subgraph_id = os.getenv['SUBGRAPH_ID']
 except TypeError:
-    subgraph_id = 'QmRVJWpEpRP8A6UBAsVNbajnfuiMQsRnaj7Jk6qz9un8BS'
-    # subgraph_id = 'Qmavrcim17JnYB3yKhZXtzExww984HLTQ31o9EKb1ESJVT' # estable
+    subgraph_id = 'QmWdc3kkTjT8fF8KusEQr2Pzh3iWxVo7KUxArtkxcm4qXu'
+    # subgraph_id = 'QmTiTbo89bb9P6aq47S5pfSWEVUyEwMtA5b9wnX1uyRvno' # estable
 
+# Node definitions
 subgraph_node = 'https://api.thegraph.com/subgraphs/id/' + subgraph_id
-ipfs_node = 'https://ipfs.kleros.io'
+try:
+    ipfs_node = os.getenv['IPFS_NODE']
+except TypeError:
+    ipfs_node = 'https://ipfs.kleros.io'
 
 
 def period2number(period):
@@ -144,6 +148,32 @@ def getAllCourtDisputes(courtID):
     return disputes
 
 
+def getAllDisputes():
+    initDispute = 0
+    disputes = []
+    while True:
+        query = (
+            '{disputes(where:{id_gt:'+str(initDispute)+'}){'
+            'id,subcourtID{id},currentRulling,ruled,startTime,'
+            'period,lastPeriodChange'
+            '}}'
+        )
+        result = requests.post(subgraph_node, json={'query': query})
+        if len(result.json()['data']['disputes']) == 0:
+            break
+        else:
+            currentDisputes = result.json()['data']['disputes']
+            disputes.extend(currentDisputes)
+            initDispute = int(currentDisputes[-1]['id'])
+    courtTimePeriods = getTimePeriodsAllCourts()
+    for dispute in disputes:
+            subcourtID = dispute['subcourtID']['id']
+            dispute['periodEnds'] = getWhenPeriodEnd(dispute,
+                                                     int(subcourtID),
+                                                     courtTimePeriods[subcourtID])
+    return disputes
+
+
 def getLastDisputeInfo():
     query = (
         '{'
@@ -171,6 +201,22 @@ def getTimePeriods(courtID):
     else:
         return result.json()['data']['courts'][0]['timePeriods']
 
+def getTimePeriodsAllCourts():
+    query = (
+        '{'
+        'courts {'
+        '   id,timePeriods,'
+        '}}'
+    )
+    result = requests.post(subgraph_node, json={'query': query})
+    if len(result.json()['data']['courts']) == 0:
+        return None
+    else:
+        timePeriods = {}
+        for court in result.json()['data']['courts']:
+            print(court)
+            timePeriods[court['id']] = court['timePeriods']
+        return timePeriods
 
 def getCourt(courtID):
     query = (
@@ -200,6 +246,7 @@ def getCourt(courtID):
         return None
     else:
         court = result.json()['data']['courts'][0]
+        court['tokenStaked'] = gwei2eth(court['tokenStaked'])
         court['disputes'] = getAllCourtDisputes(courtID)
         for dispute in court['disputes']:
             subcourtID = dispute['subcourtID']['id']
@@ -207,6 +254,7 @@ def getCourt(courtID):
                                                      int(subcourtID),
                                                      court['timePeriods'])
             dispute['id'] = int(dispute['id'])
+
         return court
 
 
@@ -608,7 +656,11 @@ def totalStakedInCourts():
                 total += gwei2eth(courtStake['stake'])
                 total_by_court[courtStake['court']['id']] += gwei2eth(
                     courtStake['stake'])
-            skip += len(courtStakes)
+            if len(courtStakes)<1000:
+                # no need to keep in the loop, all the items where queried
+                break
+            else:
+                skip += len(courtStakes)
     return total, total_by_court
 
 

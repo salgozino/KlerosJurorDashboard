@@ -22,7 +22,8 @@
                 <thead>
                     <tr class="active">
                         <th scope="col" class="text-center">Court</th>
-                        {% for col in courtChances['0'].keys() %}
+                        {% set row_index =  courtChances.keys()|list %}
+                        {% for col in courtChances[row_index[0]].keys() %}
                         <th scope="col" class="text-center">{{ col }}</th>
                         {% endfor %}
                     </tr>
@@ -44,6 +45,8 @@
                                 <td class="text-right">{{ "{:.3f}".format(value) }}</td>
                             {% elif 'Risk' in col %}
                                 <td class="text-right">{{ "{:.3f}".format(value) }}</td>
+                            {% elif 'Stake share' in col %}
+                                <td class="text-right">{{ "{:.2%}".format(value) }}</td>
                             {% else %}
                                 <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
                             {%endif%}
@@ -57,7 +60,7 @@
 
     <!-- Explainers -->
     <div class="alert alert-info alert-dismissible" role="alert">
-        <p>3 jurors are considered for the drawn odds</p>
+        <p>The odds and chances columns shows the chances to be drawn <strong>at least once</strong> in a dispute with 3 jurors</p>
     </div>
     <div class="alert alert-info alert-dismissible" role="alert">
         <p>Reward/Risk is the ratio between Reward(USD) and VoteStake(USD)</p>

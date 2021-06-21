@@ -13,3 +13,4 @@ tester_updateCourt.py
 jurors_hist.py
 __pycache__*
 .vscode*
+subgraph_tester.py

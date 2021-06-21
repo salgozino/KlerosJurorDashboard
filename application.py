@@ -19,7 +19,7 @@ from app.modules.kleros import get_all_court_chances
 from app.modules.subgraph import getMostActiveCourt, \
     getAdoption, getCourtName, getKlerosCounters, getLastDisputeInfo, \
     getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, \
-    getCourtTable, getProfile, gwei2eth
+    getCourtTable, getProfile, gwei2eth, getAllDisputes
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -47,8 +47,6 @@ def timestamp2datetime(value):
         return ""
     format = "%Y-%m-%d %H:%M"
     value = datetime.utcfromtimestamp(int(value))
-    print(value)
-
     return value.strftime(format)
 
 
@@ -176,7 +174,13 @@ def visitorMetrics():
 def dispute():
     id = request.args.get('id', type=int)
     if id is None:
-        dispute = getLastDisputeInfo()
+        disputes = getAllDisputes()
+        return render_template('allDisputes.html',
+                               error=None,
+                               disputes=disputes,
+                               last_update=datetime.now(),
+                               )
+
     else:
         dispute = getDispute(id)
         if dispute is None:
@@ -225,14 +229,16 @@ def court():
                                reverse=True)
     else:
         sorted_jurors = []
-    juror_hist = jurorHistogram([juror['stake'] for juror in jurors])
+    juror_hist = jurorHistogram([juror['stake'] for juror in sorted_jurors])
+    staked_in_this_court = sum(juror['stake'] for juror in sorted_jurors)
 
     return render_template('court.html',
                            court=court,
                            parent=parent,
                            childs=court_childs,
                            disputes=disputes,
-                           n_jurors=len(jurors),
+                           n_jurors=len(sorted_jurors),
+                           staked_in_this_court=staked_in_this_court,
                            jurors=sorted_jurors,
                            juror_hist=juror_hist,
                            open_cases=int(court['disputesOngoing']),

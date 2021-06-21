@@ -22,6 +22,9 @@
     <!-- Court Numbers -->
     <div class="row">
         <div class="col-lg-3">
+            <!-- Just to center the other cards -->
+        </div>
+        <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
                     <h4>Parent Court</h4>
@@ -44,6 +47,20 @@
                 {% else%}
                 <ul class="list-group"><li class="list-group-item">No Childs</li></ul>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-1"></div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Total Disputes</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ open_cases + ruled_cases }}
+                </div>
             </div>
         </div>
         <div class="col-lg-3">
@@ -104,7 +121,8 @@
                     <h4>Fees paid</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{ "%.3f ETH"|format(fees['eth']) }}
+                    <!--{{ "%.3f ETH"|format(fees['eth']) }}-->
+                    Soon
                 </div>
                 <div class="panel-footer">
                     Fees paid to the coherent jurors of this court
@@ -118,8 +136,8 @@
                     <h4>PNK redistributed</h4>
                 </div>
                 <div class="panel-body text-center">
-                
-                    {{"{:,.2f} PNK".format(fees['pnk'])}}
+                    Soon
+                    <!--{{"{:,.2f} PNK".format(fees['pnk'])}}-->
                 </div>
                 <div class="panel-footer">
                     PNK transfered from incoherent jurors to coherent jurors
@@ -127,10 +145,71 @@
             </div>
         </div>
     </div>
+        
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Active Jurors</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{court['activeJurors']}}
+                </div>
+                <div class="panel-footer">
+                    Number of Active jurors considering childrens courts
+                </div>
+            </div>
+        </div>
+                
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Active Jurors</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{n_jurors}}
+                </div>
+                <div class="panel-footer">
+                    Number of active jurors staked in this court, without considering childrens courts
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>PNK Staked</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{"{:,.2f} PNK".format(court['tokenStaked'])}}
+                </div>
+                <div class="panel-footer">
+                    PNK staked in this court considering childrens courts
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>PNK Staked</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ "{:,.2f} PNK".format(staked_in_this_court) }}
+                </div>
+                <div class="panel-footer">
+                    PNK Staked just in this court
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     <!-- Jurors -->
-    <h4>Total Jurors: {{n_jurors}} | Total Staked: {{"{:,.0f} PNKs".format(court['tokenStaked'])}}</h4>
-
+    <h4>Jurors without considering the childrens courts</h4>
+    <h5> Total Staked in this court: {{ jurors | sum(attribute='stake') }}</h5>
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered ">
             <thead>
@@ -178,7 +257,7 @@
             <td class="text-center"><a href={{url_for('dispute', id=dispute['id'])}}>{{dispute['id']}}</a></td>
             <td class="text-center">{{dispute['period']}}</td>
             <td class="text-center">{{dispute['currentRulling']}}</td>
-            <td class="text-center"><span class="datetime-string">{{dispute['lastPeriodChange']}}</span> UTC</td>
+            <td class="text-center"><span class="datetime-string">{{dispute['lastPeriodChange']|timestamp2datetime}}</span> UTC</td>
             <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span></td>
           </tr>
           {% endfor %}
