@@ -1,7 +1,8 @@
 #%%
 from app.modules.kleros import get_all_court_chances
 from app.modules.subgraph import *
-print(getTimePeriodsAllCourts())
+#print(getTimePeriodsAllCourts())
+print(getMostActiveCourt())
 
 #print(getKlerosCounters())
 #print(totalStakedInCourts())
@@ -13,13 +14,15 @@ print(getTimePeriodsAllCourts())
 
 #print(getCourtName(3))
 #print(getCourt(0))
-"""
+
 #%%
+"""
 from app.modules.kleros import get_all_court_chances
 courtChances = get_all_court_chances(100000)
 print(courtChances[list(courtChances.keys())[0]].keys())
-
+"""
 #%%
+"""
 from app.modules.subgraph import *
 total, total_by_court =  totalStakedInCourts()
 print(total_by_court)

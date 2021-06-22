@@ -33,7 +33,7 @@ def timedelta(date):
     if not isinstance(date, datetime):
         date = datetime.fromtimestamp(date)
     delta = date-datetime.now()
-    return delta
+    return str(delta).split(".")[0]
 
 
 @application.template_filter()

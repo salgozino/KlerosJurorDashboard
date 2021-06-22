@@ -10,7 +10,7 @@ try:
     subgraph_id = os.getenv['SUBGRAPH_ID']
 except TypeError:
     subgraph_id = 'QmWdc3kkTjT8fF8KusEQr2Pzh3iWxVo7KUxArtkxcm4qXu'
-    # subgraph_id = 'QmTiTbo89bb9P6aq47S5pfSWEVUyEwMtA5b9wnX1uyRvno' # estable
+    # subgraph_id = 'QmWdc3kkTjT8fF8KusEQr2Pzh3iWxVo7KUxArtkxcm4qXu' # estable
 
 # Node definitions
 subgraph_node = 'https://api.thegraph.com/subgraphs/id/' + subgraph_id
@@ -457,8 +457,25 @@ def getWhenPeriodEnd(dispute, courtID, timesPeriods=None):
 
 def getCourtDisputesNumberBefore(days=30):
     blockNumber = getBlockNumberbefore(days)
+    print(blockNumber)
     query = (
         '{courts(block:{number:'+str(blockNumber)+'}){'
+        '   disputesNum'
+        '   subcourtID'
+        '}}'
+    )
+    result = requests.post(subgraph_node, json={'query': query})
+    if 'errors' in result.json().keys():
+        return None
+    if len(result.json()['data']['courts']) == 0:
+        return None
+    else:
+        return result.json()['data']['courts']
+
+
+def getCourtDisputesNumber():
+    query = (
+        '{courts{'
         '   disputesNum'
         '   subcourtID'
         '}}'
@@ -555,7 +572,7 @@ def getAllVotesFromJuror(address):
 
 def getProfile(address):
     query = (
-        '{jurors(where:{id:"'+str(address)+'"}) {'
+        '{jurors(where:{id:"'+str(address).lower()+'"}) {'
         '   currentStakes{court{id},stake,timestamp},'
         '   totalStaked,'
         '   activeJuror,'
@@ -745,13 +762,22 @@ def getAdoption():
 
 def getMostActiveCourt(days=7):
     "return the most active court in the last days, by default, a week"
-    courts_data = getCourtDisputesNumberBefore(7)
-    if courts_data is None:
+    old_courts_data = getCourtDisputesNumberBefore(7)
+    courts_data = getCourtDisputesNumber()
+    if (courts_data is None) or (old_courts_data is None):
         return None
+
     max_dispute_number = 0
     court_most_bussy = None
     for court in courts_data:
-        if int(court['disputesNum']) > max_dispute_number:
-            max_dispute_number = int(court['disputesNum'])
-            court_most_bussy = int(court['subcourtID'])
+        courtID = court['subcourtID']
+        oldDisputesNum = 0
+        for oldcourt in old_courts_data:
+            if courtID == oldcourt['subcourtID']:
+                oldDisputesNum = int(oldcourt['disputesNum'])
+        DisputesNum = int(court['disputesNum'])
+        delta = DisputesNum - oldDisputesNum
+        if delta > max_dispute_number:
+            max_dispute_number = delta
+            court_most_bussy = int(courtID)
     return court_most_bussy
