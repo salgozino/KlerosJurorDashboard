@@ -4,7 +4,7 @@
     {% block header %}
       <div class="row">
         <div class="col">
-          <h3>{% block title %}Juror {{ profile['address'] }}</h3><h6><a href="https://etherscan.io/address/{{ address }}">view on etherscan</a></h6>{% endblock %}
+          <h3>{% block title %}Juror {{ profile['id'] }}</h3><h6><a href="https://etherscan.io/address/{{ profile['id'] }}">view on etherscan</a></h6>{% endblock %}
         </div>
       </div>
     {% endblock %}
@@ -18,7 +18,7 @@
               <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
               {% for dispute in profile['disputesAsCreator']|sort(attribute='timestamp', reverse=True): %}
               <tr>
-                <td><a href={{ url_for('dispute', id= dispute['dispute']) }}>Dispute {{dispute['dispute']}}</a></td>
+                <td><a href={{ url_for('dispute', id= dispute['id']) }}>Dispute {{dispute['id']}}</a></td>
                 <td>{{ dispute['startTime']|timestamp2datetime }}</td>
                 <td><a href="https://etherscan.io/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
               </tr>
@@ -48,9 +48,12 @@
               <h4>Number of disputes as juror: {{numberOfDisputesAsJuror}}</h4>
             -->
             <h4>Coherency: {%if profile['coherency'] is not none%}{{"{:.2%}".format(profile['coherency'])}}{%else%}-{%endif%}</h4>
-            <table class="table table-bordered responsive table-sm table-condensed">
-              <tr class="info"><td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td></tr>
-              {% for v in profile['votes']|reverse: %}
+            <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+              <table class="table table-bordered table-condensed table-hover">
+              <tr class="info">
+                <td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td>
+              </tr>
+              {% for v in profile['votes']|sort(attribute='id', reverse=True): %}
                   {% set winner = v['dispute']['currentRulling'] if v['dispute']['ruled'] else none %}
                   {%if winner is none %}
                       <tr class='active'>
@@ -59,7 +62,7 @@
                   {% else %}
                       <tr class='danger'>
                   {% endif %}
-                  <td><a href="{{ url_for('dispute',id=v['dispute']) }}">Dispute {{ v['dispute']['id']}}</a></td>
+                  <td><a href="{{ url_for('dispute',id=v['dispute']['id']) }}">Dispute {{ v['dispute']['id']}}</a></td>
                   <td>{{v['roundNumber']}}</td>
                   <td>{{ "Ruled" if v['dispute']['ruled'] else "Ongoing"}}</td>
                   <td>{{ v['vote_str'] }}</td>

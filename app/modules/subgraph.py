@@ -127,7 +127,7 @@ def _parseDispute(dispute, timePeriods=None):
             # easier to read the jurors with multiple votes
             round['votes'] = sorted(round['votes'], key=lambda x: x['address'])
             if 'id' in round.keys():
-                round['round_num'] = round['id']
+                round['round_num'] = _getRoundNumFromID(round['id'])
         dispute['vote_count'] = vote_count
         dispute['unique_vote_count'] = unique_vote_count
         dispute['unique_jurors'] = unique_jurors
@@ -196,6 +196,7 @@ def _parseProfile(profile):
         for dispute in profile['disputesAsCreator']:
             disputes_as_creator.append(_parseDispute(dispute))
         profile['disputesAsCreator'] = disputes_as_creator
+        print(profile['disputesAsCreator'])
     return profile
 
 
