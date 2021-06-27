@@ -102,6 +102,8 @@ def _parseDispute(dispute, timePeriods=None):
             dispute['currentRulling'] = int(dispute['currentRulling'])
     if 'lastPeriodChange' in keys:
         dispute['lastPeriodChange'] = int(dispute['lastPeriodChange'])
+    if 'creator' in keys:
+        dispute['creator'] = dispute['creator']['id']
     if ('period' in keys) and ('subcourtID' in keys):
         dispute['periodEnds'] = getWhenPeriodEnd(dispute,
                                                 subcourtID,
