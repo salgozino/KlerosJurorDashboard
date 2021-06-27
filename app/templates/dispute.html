@@ -26,7 +26,6 @@
           <h4>{% block title %}Dispute #{{ dispute['disputeID']}}{% endblock %}</h4>
         </div>
       </div>
-
     <div class="table-responsive">
         <table class="table table-bordered">
           <tr class="info">
@@ -39,7 +38,7 @@
             <td align="center">Creator</td>
           </tr>
           <tr class={{'success' if dispute['ruled'] }}>
-            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID']['id'])}}>{{dispute['subcourtID']['id']}}</a></td>
+            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'])}}>{{dispute['subcourtID']}}</a></td>
             <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
             <td class="text-center">{{dispute['period']|capitalize}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] != 'Already Executed'%}UTC{%endif%}</td>
@@ -60,10 +59,10 @@
             <td style="width:25% !important">Pending</td>
           </tr>
           <tr class={{"text-center success" if dispute['ruled'] else "text-center"}}>
-            <td style="width:25% !important">{{unique_vote_count['Yes']}}</td>
-            <td style="width:25% !important">{{unique_vote_count['No']}}</td>
-            <td style="width:25% !important">{{unique_vote_count['Refuse to Arbitrate']}}</td>
-            <td style="width:25% !important">{{unique_vote_count['Pending']}}</td>
+            <td style="width:25% !important">{{dispute['unique_vote_count']['Yes']}}</td>
+            <td style="width:25% !important">{{dispute['unique_vote_count']['No']}}</td>
+            <td style="width:25% !important">{{dispute['unique_vote_count']['Refuse to Arbitrate']}}</td>
+            <td style="width:25% !important">{{dispute['unique_vote_count']['Pending']}}</td>
           </tr>
         </table>
     </div>
@@ -78,10 +77,10 @@
             <td style="width:25% !important">Pending</td>
           </tr>
           <tr class={{"text-center success" if dispute['ruled'] else "text-center"}}>
-            <td style="width:25% !important">{{vote_count[r['id']]['Yes']}}</td>
-            <td style="width:25% !important">{{vote_count[r['id']]['No']}}</td>
-            <td style="width:25% !important">{{vote_count[r['id']]['Refuse to Arbitrate']}}</td>
-            <td style="width:25% !important">{{vote_count[r['id']]['Pending']}}</td>
+            <td style="width:25% !important">{{dispute['vote_count'][r['id']]['Yes']}}</td>
+            <td style="width:25% !important">{{dispute['vote_count'][r['id']]['No']}}</td>
+            <td style="width:25% !important">{{dispute['vote_count'][r['id']]['Refuse to Arbitrate']}}</td>
+            <td style="width:25% !important">{{dispute['vote_count'][r['id']]['Pending']}}</td>
           </tr>
         </table>
     </div>
@@ -97,7 +96,7 @@
             {% else %}
                 <tr>
             {% endif %}
-              <td><a href={{url_for('profile', address=v['address']['id'])}}>{{v['address']['id']}}</a></td>
+              <td><a href={{url_for('profile', address=v['address'])}}>{{v['address']}}</a></td>
               <td align="right">{{ v['vote_str'] }}</td>
             </tr>
           {% endfor %}

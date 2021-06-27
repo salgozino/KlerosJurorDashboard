@@ -185,12 +185,10 @@ def dispute():
                                    unique_vote_count=None,
                                    last_update=datetime.now(),
                                    )
+    print(dispute)
     return render_template('dispute.html',
                            dispute=dispute,
-                           error=None,
-                           vote_count=dispute['vote_count'],
-                           unique_vote_count=dispute['unique_vote_count'],
-                           last_update=datetime.now(),
+                           error=None
                            )
 
 
