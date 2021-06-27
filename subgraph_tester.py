@@ -2,12 +2,12 @@
 from app.modules.kleros import get_all_court_chances
 from app.modules.subgraph import *
 #print(getTimePeriodsAllCourts())
-print(getMostActiveCourt())
+#print(getMostActiveCourt())
 
 #print(getKlerosCounters())
-#print(totalStakedInCourts())
-#print(gwei2eth(getKlerosCounters()['tokenStaked']))
-#print(getCourtTable()[0]['Total Staked'])
+print(getTotalStakedInCourts())
+print(_wei2eth(getKlerosCounters()['tokenStaked']))
+print(getCourtTable()[0]['Total Staked'])
 
 # print(str(list(getCourtChildrens(2))).replace("'",'"'))
 # print(totalStakedInCourtAndChildrens(3))
