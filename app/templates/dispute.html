@@ -20,7 +20,7 @@
     <p>{{error}}</p>
 {% endif %}
 
-{% if dispute['disputeID'] %}
+{% if dispute['disputeID'] is not none %}
       <div class="row">
         <div class="col">
           <h4>{% block title %}Dispute #{{ dispute['disputeID']}}{% endblock %}</h4>
