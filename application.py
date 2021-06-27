@@ -231,27 +231,13 @@ def court():
 def profile(address):
     profile = getProfile(address)
     if profile is None:
+        profile = {'address':address}
         return render_template('profile.html',
-                               address=address,
-                               numberOfDisputesAsJuror=0,
-                               disputes=[],
-                               stakes=[],
-                               votes=[],
-                               totalStaked=0,
-                               coherency=0,
-                               last_update=datetime.now(),
+                               profile=profile
                                )
     else:
         return render_template('profile.html',
-                               address=address,
-                               numberOfDisputesAsJuror=int(
-                                   profile['numberOfDisputesAsJuror']),
-                               disputes=profile['disputesAsCreator'],
-                               stakes=profile['currentStakes'],
-                               votes=profile['votes'],
-                               totalStaked=profile['totalStaked'],
-                               coherency=profile['coherency'],
-                               last_update=datetime.now(),
+                               profile=profile
                                )
 
 

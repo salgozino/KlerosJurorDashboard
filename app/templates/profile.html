@@ -4,68 +4,69 @@
     {% block header %}
       <div class="row">
         <div class="col">
-          <h3>{% block title %}Juror {{ address }}</h3><h6><a href="https://etherscan.io/address/{{ address }}">view on etherscan</a></h6>{% endblock %}
+          <h3>{% block title %}Juror {{ profile['address'] }}</h3><h6><a href="https://etherscan.io/address/{{ address }}">view on etherscan</a></h6>{% endblock %}
         </div>
       </div>
     {% endblock %}
 
-    {% block content %}
-        <h2>Disputes Created</h2>
-        <div class="mb-5">
-          <table class="table table-bordered responsive table-sm table-condensed">
-            <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
-            {% for d in disputes|sort(attribute='timestamp', reverse=True): %}
-            <tr>
-              <td><a href={{ url_for('dispute', id= d['dispute']) }}>Dispute {{d['dispute']}}</a></td>
-              <td>{{ d['timestamp']|timestamp2datetime }}</td>
-              <td><a href="https://etherscan.io/tx/{{ d['txid'] }}">{{d['txid']}}</a></td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
-
-        <h2>Stakes by Court</h2>
-        <div class="mb-5">
-          <h4>Total Staked: {{"{:,.2f} PNK".format(totalStaked)}}</h4>
-          <table class="table table-bordered responsive table-sm table-condensed">
-            <tr class="info"><td>Court</td><td>Amount</td><td>TxID</td></tr>
-            {% for stake in stakes: %}
-            {%if stake['stake'] > 0%}
+    {% if profile.keys()|length > 1 %}
+      {% block content %}
+      
+          <h2>Disputes Created</h2>
+          <div class="mb-5">
+            <table class="table table-bordered responsive table-sm table-condensed">
+              <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
+              {% for dispute in profile['disputesAsCreator']|sort(attribute='timestamp', reverse=True): %}
               <tr>
-                <td><a href={{url_for('court', id=stake['court'])}}>{{stake['court']|courtName}}</td>
-                <td>{{"{:,.2f}".format(stake['stake'])}}</td>
-                <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid']}}</a></td>
+                <td><a href={{ url_for('dispute', id= dispute['dispute']) }}>Dispute {{dispute['dispute']}}</a></td>
+                <td>{{ dispute['startTime']|timestamp2datetime }}</td>
+                <td><a href="https://etherscan.io/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
               </tr>
-            {% endif %}
-            {% endfor %}
-          </table>
-        </div>
+              {% endfor %}
+            </table>
+          </div>
 
-        <h2>Votes</h2>
-        <div class="mb-5">
-          <h4>Number of votes drawn: {{votes|length}}</h4>
-          <!-- Commented until a fix for this counter will be found
-            <h4>Number of disputes as juror: {{numberOfDisputesAsJuror}}</h4>
-          -->
-          <h4>Coherency: {%if coherency is not none%}{{"{:.2%}".format(coherency)}}{%else%}-{%endif%}</h4>
-          <table class="table table-bordered responsive table-sm table-condensed">
-            <tr class="info"><td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td></tr>
-            {% for v in votes|reverse: %}
-                {% set winner = v['currentRulling'] if v['ruled'] else none %}
-                {%if winner is none %}
-                    <tr class='active'>
-                {% elif winner == v['choice'] %}
-                    <tr class='success'>
-                {% else %}
-                    <tr class='danger'>
-                {% endif %}
-                <td><a href="{{ url_for('dispute',id=v['dispute']) }}">Dispute {{ v['dispute']}}</a></td>
-                <td>{{v['roundNumber']}}</td>
-                <td>{{ "Ruled" if v['ruled'] else "Ongoing"}}</td>
-                <td>{{ v['vote_str'] }}</td>
-              </tr>
-            {% endfor %}
-          </table>
-        </div>
-    {% endblock %}
+          <h2>Stakes by Court</h2>
+          <div class="mb-5">
+            <h4>Total Staked: {{"{:,.2f} PNK".format(profile['totalStaked'])}}</h4>
+            <table class="table table-bordered responsive table-sm table-condensed">
+              <tr class="info"><td>Court</td><td>Amount</td><td>TxID</td></tr>
+              {% for stake in profile['currentStakes']|sort(attribute='stake', reverse=True): %}
+                <tr>
+                  <td><a href={{url_for('court', id=stake['court'])}}>{{stake['court']|courtName}}</td>
+                  <td>{{"{:,.2f}".format(stake['stake'])}}</td>
+                  <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid']}}</a></td>
+                </tr>
+              {% endfor %}
+            </table>
+          </div>
+
+          <h2>Votes</h2>
+          <div class="mb-5">
+            <h4>Number of votes drawn: {{profile['votes']|length}}</h4>
+            <!-- Commented until a fix for this counter will be found
+              <h4>Number of disputes as juror: {{numberOfDisputesAsJuror}}</h4>
+            -->
+            <h4>Coherency: {%if profile['coherency'] is not none%}{{"{:.2%}".format(profile['coherency'])}}{%else%}-{%endif%}</h4>
+            <table class="table table-bordered responsive table-sm table-condensed">
+              <tr class="info"><td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td></tr>
+              {% for v in profile['votes']|reverse: %}
+                  {% set winner = v['dispute']['currentRulling'] if v['dispute']['ruled'] else none %}
+                  {%if winner is none %}
+                      <tr class='active'>
+                  {% elif winner == v['choice'] %}
+                      <tr class='success'>
+                  {% else %}
+                      <tr class='danger'>
+                  {% endif %}
+                  <td><a href="{{ url_for('dispute',id=v['dispute']) }}">Dispute {{ v['dispute']['id']}}</a></td>
+                  <td>{{v['roundNumber']}}</td>
+                  <td>{{ "Ruled" if v['dispute']['ruled'] else "Ongoing"}}</td>
+                  <td>{{ v['vote_str'] }}</td>
+                </tr>
+              {% endfor %}
+            </table>
+          </div>
+      {% endblock %}
+    {%endif%}
 {% endblock %}

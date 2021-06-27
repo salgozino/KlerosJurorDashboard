@@ -38,6 +38,10 @@ def _getBlockNumberbefore(days=30):
     return int(currentBlockNumber - days*24*60*60/averageBlockTime)
 
 
+def _getRoundNumFromID(roundID):
+    return int(roundID.split('-')[1])
+
+
 def _parseCourt(court):
     # get a query of a courts and parse values to the correct format
     if court is None:
@@ -123,7 +127,7 @@ def _parseDispute(dispute, timePeriods=None):
             # easier to read the jurors with multiple votes
             round['votes'] = sorted(round['votes'], key=lambda x: x['address'])
             if 'id' in round.keys():
-                round['round_num'] = round['id'].split('-')[1]
+                round['round_num'] = round['id']
         dispute['vote_count'] = vote_count
         dispute['unique_vote_count'] = unique_vote_count
         dispute['unique_jurors'] = unique_jurors
@@ -146,10 +150,53 @@ def _parseCourtStake(courtStake):
     if 'stake' in keys:
         courtStake['stake'] = _wei2eth(courtStake['stake'])
     if 'court' in keys:
-        courtStake['court'] = int(courtStake['court']['id'])
+        courtID = int(courtStake['court']['id'])
+        courtStake['court'] = courtID
     if 'juror' in keys:
         courtStake['address'] = courtStake['juror']['id']
+    if 'timestamp' in keys:
+        courtStake['timestamp'] = int(courtStake['timestamp'])
+        courtStake['date'] = datetime.fromtimestamp(
+            courtStake['timestamp']
+            )
     return courtStake
+
+
+def _parseProfile(profile):
+    keys = profile.keys()
+    if 'numberOfDisputesAsJuror' in keys:
+        profile['numberOfDisputesAsJuror'] = profile[
+            'numberOfDisputesAsJuror'
+            ]
+    if 'currentStakes' in keys:
+        for stake in profile['currentStakes']:
+            stake = _parseCourtStake(stake)
+    if 'totalStaked' in keys:
+        profile['totalStaked'] = _wei2eth(profile['totalStaked'])
+    
+    profile['coherent_votes'] = 0
+    profile['ruled_cases'] = 0
+    if 'votes' in keys:
+        for vote in profile['votes']:
+            vote = _parseVote(vote)
+            if vote['dispute']['ruled']:
+                if vote['dispute']['currentRulling'] == vote['choice']:
+                    profile['coherent_votes'] = profile['coherent_votes'] + 1
+                profile['ruled_cases'] += 1
+    
+    if profile['ruled_cases'] > 0:
+        profile['coherency'] = profile['coherent_votes']/profile[
+            'ruled_cases'
+            ]
+    else:
+        profile['coherency'] = None
+    
+    disputes_as_creator = []
+    if 'disputesAsCreator' in keys:
+        for dispute in profile['disputesAsCreator']:
+            disputes_as_creator.append(_parseDispute(dispute))
+        profile['disputesAsCreator'] = disputes_as_creator
+    return profile
 
 
 def _parseVote(vote):
@@ -160,11 +207,15 @@ def _parseVote(vote):
     if 'choice' in keys:
         vote['choice'] = int(vote['choice'])
     if 'dispute' in keys:
-        vote['dispute'] = int(vote['dispute']['id'])
+        if isinstance(vote['dispute'], dict):
+            vote['dispute'] = _parseDispute(vote['dispute'])
     if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):
         vote['vote_str'] = _vote_mapping(vote['choice'],
                                          vote['voted'],
                                          vote['dispute'])
+    if 'round' in keys:
+        if 'id' in vote['round'].keys():
+            vote['roundNumber'] = _getRoundNumFromID(vote['round']['id'])
     return vote
 
 
@@ -759,7 +810,8 @@ def getStakedByJuror(address):
 def getProfile(address):
     query = (
         '{jurors(where:{id:"'+str(address).lower()+'"}) {'
-        '   currentStakes{court{id},stake,timestamp},'
+        '   id,'
+        '   currentStakes{court{id},stake,timestamp,txid},'
         '   totalStaked,'
         '   activeJuror,'
         '   numberOfDisputesAsJuror,'
@@ -771,56 +823,9 @@ def getProfile(address):
     if len(result.json()['data']['jurors']) == 0:
         return None
     else:
-        rawProfileData = result.json()['data']['jurors'][0]
-        profile = {}
-        profile['numberOfDisputesAsJuror'] = rawProfileData[
-            'numberOfDisputesAsJuror'
-            ]
-        profile['currentStakes'] = []
-        for stake in rawProfileData['currentStakes']:
-            profile['currentStakes'].append({'court': stake['court']['id'],
-                                             'stake': _wei2eth(stake['stake']),
-                                             'timestamp': int(
-                                                 stake['timestamp']
-                                                 ),
-                                             'date': datetime.fromtimestamp(
-                                                 int(stake['timestamp'])
-                                                )}
-                                            )
-        profile['totalStaked'] = _wei2eth(rawProfileData['totalStaked'])
-        profile['votes'] = []
-        profile['coherent_votes'] = 0
-        profile['ruled_cases'] = 0
-        votes = getAllVotesFromJuror(address)
-        for vote in votes:
-            profile['votes'].append({
-                'dispute': vote['dispute']['id'],
-                'ruled': vote['dispute']['ruled'],
-                'currentRulling': vote['dispute']['currentRulling'],
-                'choice': vote['choice'],
-                'roundID': vote['round']['id'],
-                'roundNumber': vote['round']['id'].split('-')[1],
-                'vote_str': vote['vote_str']}
-                )
-            if vote['dispute']['ruled']:
-                if vote['dispute']['currentRulling'] == vote['choice']:
-                    profile['coherent_votes'] = profile['coherent_votes'] + 1
-                profile['ruled_cases'] += 1
-        if profile['ruled_cases'] > 0:
-            profile['coherency'] = profile['coherent_votes']/profile[
-                'ruled_cases'
-                ]
-        else:
-            profile['coherency'] = None
-        profile['disputesAsCreator'] = []
-        for dispute in rawProfileData['disputesAsCreator']:
-            profile['disputesAsCreator'].append({
-                'dispute': dispute['id'],
-                'currentRulling': dispute['currentRulling'],
-                'timestamp': dispute['startTime'],
-                'txid': dispute['txid'],
-            })
-        return profile
+        profile_data = result.json()['data']['jurors'][0]
+        profile_data['votes'] = getAllVotesFromJuror(profile_data['id'])
+        return _parseProfile(profile_data)
 
 
 def getTotalStakedInCourts():
