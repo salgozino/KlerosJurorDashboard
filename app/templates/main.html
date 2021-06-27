@@ -318,18 +318,18 @@
                     {% endfor%}
                     
                     {% for courtID, data in courtTable|dictsort(false) %}
-                    {% if courtID == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
+                        {% if courtID == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
                         <td class="text-right"><a href={{url_for('court', id=data['id'])}}>{{ data['Name'] }}</a></td>
                         <th scope="row"> {{ courtID }}</th>
                         
                         {% for col, value in data.items() %}
                             {% if col == 'Min Stake in USD' %}
-                            <td class="text-right">${{ "{:,.2f}".format(value) }}</td>
+                                <td class="text-right">${{ "{:,.2f}".format(value) }}</td>
                             {%elif col == 'Name'%}
                             {%elif col == 'Fee For Juror'%}
-                            <td class="text-right">{{ "{:,.3f}".format(value) }}</td>
+                                <td class="text-right">{{ "{:,.3f}".format(value) }}</td>
                             {%elif col != 'id'%}
-                            <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
+                                <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
                             {%endif%}
                         {% endfor %}
                         </tr>

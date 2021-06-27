@@ -16,10 +16,10 @@ from app.modules.plotters import jurorHistogram
 #     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, \
 #     jurorHistogram
 from app.modules.kleros import get_all_court_chances
-from app.modules.subgraph import getMostActiveCourt, \
-    getAdoption, getCourtName, getKlerosCounters, getLastDisputeInfo, \
-    getDispute, getCourt, getJurorsFromCourt, calculateVoteStake, \
-    getCourtTable, getProfile, gwei2eth, getAllDisputes
+from app.modules.subgraph import getCourtWithDisputes, getMostActiveCourt, \
+    getAdoption, getCourtName, getKlerosCounters, \
+    getDispute, getCourt, getActiveJurorsFromCourt, \
+    getCourtTable, getProfile, _wei2eth, getAllDisputes
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -51,9 +51,8 @@ def timestamp2datetime(value):
 
 
 @application.template_filter()
-def filter_gwei_2_eth(gwei):
-    value = gwei2eth(gwei)
-    return value
+def filter_wei_2_eth(gwei):
+    return _wei2eth(gwei)
 
 
 @application.route('/')
@@ -79,7 +78,7 @@ def index():
     pnkCircSupply = pnkInfo['market_data']['circulating_supply']
     pnkVol24 = pnkInfo['market_data']['total_volume']['usd']
     courtTable = getCourtTable()
-    pnkStaked = gwei2eth(klerosCounters['tokenStaked'])
+    pnkStaked = _wei2eth(klerosCounters['tokenStaked'])
     activeJurors = klerosCounters['activeJurors']
     return render_template('main.html',
                            last_update=datetime.now(),
@@ -108,22 +107,14 @@ def index():
 
 @application.route('/graphs/')
 def graphsMaker():
-    return "Under construction"
-    """
-    # Visitor().addVisit('graphs')
-    courtTable = getCourtTable()
-    sjGraph = stakesJurorsGraph()
     return render_template('graphs.html',
-                           last_update=Config.get('updated'),
-                           stakedPNKgraph=sjGraph,
-                           disputesgraph=disputesGraph(),
-                           disputeCourtgraph=disputesbyCourtGraph(),
-                           disputeCreatorgraph=disputesbyArbitratedGraph(),
-                           treemapJurorsGraph=treeMapGraph(courtTable),
-                           treemapStakedGraph=treeMapGraph(courtTable,
-                                                           'Total Staked')
+                           stakedPNKgraph=[],
+                           disputesgraph=[],
+                           disputeCourtgraph=[],
+                           disputeCreatorgraph=[],
+                           treemapJurorsGraph=[],
+                           treemapStakedGraph=[],
                            )
-    """
 
 
 @application.route('/support/')
@@ -208,46 +199,29 @@ def court():
     id = request.args.get('id', type=int)
     if id is None:
         id = 0
-    court = getCourt(id)
+    court = getCourtWithDisputes(id)
     if court is None:
         return "Error!, court not found"
-    if court['parent']:
-        parent = int(court['parent']['id'])
-    else:
-        parent = None
-
     disputes = court['disputes']
 
-    court_childs = []
-    for child in court['childs']:
-        court_childs.append(int(child['id']))
-
-    jurors = getJurorsFromCourt(id)
-    if jurors is not None:
-        sorted_jurors = sorted(jurors,
-                               key=lambda item: item['stake'],
-                               reverse=True)
-    else:
-        sorted_jurors = []
+    jurors = getActiveJurorsFromCourt(id)
+    sorted_jurors = sorted(jurors,
+                            key=lambda item: item['stake'],
+                            reverse=True)
     juror_hist = jurorHistogram([juror['stake'] for juror in sorted_jurors])
     staked_in_this_court = sum(juror['stake'] for juror in sorted_jurors)
-
     return render_template('court.html',
                            court=court,
-                           parent=parent,
-                           childs=court_childs,
                            disputes=disputes,
                            n_jurors=len(sorted_jurors),
                            staked_in_this_court=staked_in_this_court,
                            jurors=sorted_jurors,
                            juror_hist=juror_hist,
-                           open_cases=int(court['disputesOngoing']),
-                           ruled_cases=int(court['disputesClosed']),
+                           open_cases=court['disputesOngoing'],
+                           ruled_cases=court['disputesClosed'],
                            fees={'eth': 0, 'pnk': 0},
-                           min_stake=float(court['minStake'])*(10**-18),
-                           vote_stake=calculateVoteStake(float(
-                               court['minStake'])*10**-18,
-                               court['alpha']),
+                           min_stake=court['minStake'],
+                           vote_stake=court['voteStake'],
                            last_update=datetime.now(),
                            current_juror_page=0
                            )

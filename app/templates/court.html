@@ -27,7 +27,7 @@
                 <div class="panel-heading text-center">
                     <h4>Parent Court</h4>
                 </div>
-                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=parent)}}>{{parent|courtName}}</a></li></ul>{% endif %}
+                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=court['parent'])}}>{{court['parent']|courtName}}</a></li></ul>{% endif %}
             </div>
         </div>
 
@@ -36,9 +36,9 @@
                 <div class="panel-heading text-center">
                     <h4>Court "Childrens"</h4>
                 </div>
-                {% if childs %}
+                {% if court['childs']|length > 0 %}
                     <ul class="list-group">
-                    {% for child in childs%}
+                    {% for child in court['childs']%}
                         <li class="list-group-item"><a href={{url_for('court', id=child)}}>{{ child|courtName }}</a></li>
                     {% endfor %}
                     </ul>
@@ -54,7 +54,7 @@
                     <h4>Court Reward</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{"{:,.3f} ETH".format(court['feeForJuror']|filter_gwei_2_eth)}}
+                    {{"{:,.3f} ETH".format(court['feeForJuror']|filter_wei_2_eth)}}
                 </div>
             </div>
         </div>
@@ -246,7 +246,7 @@
                 {% for juror in jurors: %}
                 <tr>
                     <td class="text-center"><a href={{url_for('profile', address=juror['address'])}}>{{juror['address']}}</a></td>
-                    <td class="text-center">{{ "{:0,.2f}".format(juror['stake']|float) }}</td>
+                    <td class="text-center">{{ "{:0,.2f}".format(juror['stake']) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
