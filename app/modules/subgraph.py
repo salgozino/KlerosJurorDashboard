@@ -8,8 +8,9 @@ from app.modules.oracles import CoinGecko
 from app.modules.web3_node import web3Node
 
 try:
-    subgraph_id = os.getenv['SUBGRAPH_ID']
+    subgraph_id = os.environ['SUBGRAPH_ID']
 except TypeError:
+    print("No SUBGRAPH_ID found, using hardcoded value")
     subgraph_id = 'QmY77tLGkmsWR5usbbVR8haCfs6QA9hjn6v6GWhQXBpRyX'
     # subgraph_id = 'QmaH1pbCwP4XzGGbZY4HaXioY8C1sT3d4rcs5UmB4MFfom' # estable
 
