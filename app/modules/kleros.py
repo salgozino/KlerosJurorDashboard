@@ -2,7 +2,7 @@
 # import os
 import pandas as pd
 from datetime import datetime, timedelta
-from .subgraph import getCourtTable, getTimePeriods, gwei2eth
+from .subgraph import getCourtTable, getTimePeriods
 from .oracles import CoinGecko
 
 

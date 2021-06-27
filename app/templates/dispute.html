@@ -37,7 +37,7 @@
             <td align="center">Time remaining</td>
           </tr>
           <tr class={{'success' if dispute['ruled'] }}>
-            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID']['id'])}}>{{dispute['subcourtID']['id']}}</a></td>
+            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'])}}>{{dispute['subcourtID']}}</a></td>
             <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
             <td class="text-center">{{dispute['period']|capitalize}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] is not none%}UTC{%endif%}</td>
@@ -65,7 +65,7 @@
     </div>
     {% for r in dispute['rounds']: %}
     <div class="table-responsive">
-        <h4>Round {{r.round_num}}</H4>
+        <h4>Round {{r['round_num']}}</H4>
         <table class="table table-bordered">
           <tr class="text-center info">
             <td style="width:25% !important">Yes</td>
@@ -93,7 +93,7 @@
             {% else %}
                 <tr>
             {% endif %}
-              <td><a href={{url_for('profile', address=v['address']['id'])}}>{{v['address']['id']}}</a></td>
+              <td><a href={{url_for('profile', address=v['address'])}}>{{v['address']}}</a></td>
               <td align="right">{{ v['vote_str'] }}</td>
             </tr>
           {% endfor %}
