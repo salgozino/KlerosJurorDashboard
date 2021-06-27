@@ -334,7 +334,7 @@ def getAllCourtDisputes(courtID):
 
 
 def getAllDisputes():
-    initDispute = 0
+    initDispute = -1
     disputes = []
     while True:
         query = (
