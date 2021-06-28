@@ -1,6 +1,7 @@
 from logging import raiseExceptions
 import requests
 import os
+import json
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -613,16 +614,14 @@ def getCourtDisputesNumberBefore(days=30):
 
 
 def getCourtName(courtID):
-    # nice to have the name already in the graph to speed up this operation
-    # commented right now to testing more quickly, but this works.
-    # TODO!
-    """
-    policy = getCourtPolicy(courtID)
-    if policy:
-        if 'name' in policy.keys():
-            return policy['name']
-    return str(courtID)
-    """
+    file_path = 'app/lib/court_policies.json'
+    courtID = str(courtID)
+    if os.path.isfile(file_path):
+        with open(file_path) as jsonFile:
+            policies = json.load(jsonFile)
+            if courtID in policies.keys():
+                if 'name' in policies[courtID]:
+                    return policies[courtID]['name']
     return str(courtID)
 
 
