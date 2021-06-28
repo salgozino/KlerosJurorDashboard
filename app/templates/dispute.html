@@ -105,8 +105,7 @@
     {% endfor %}
 
       <div align="center">
-      <button type="button" class="btn btn-primary cursor-clickable mb-3"
-      button onclick="window.location.href = 'https:court.kleros.io/cases/'">Check this Case on Kleros</button>
+      <a class="btn btn-primary cursor-clickable mb-3" href="https://resolve.kleros.io/cases/{{ dispute['id']}}" target="_blank">Check this Case on Kleros Resolve</a>
       </div>
 {% endif %}
 {% endblock %}
