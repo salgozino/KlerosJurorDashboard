@@ -9,7 +9,9 @@
         <form class="form-inline text-center" method="post">
           <div class="form-group">
             <label for="pnkStakedInput">PNK Staked</label>
-            <input class="form-control box-shadow" id="pnkStakedInput" name="pnkStaked" type="text" value={{ pnkStaked }}>
+            <input class="form-control box-shadow" id="pnkStakedInput" name="pnkStaked" type="number" value={{ pnkStaked }}>  
+            <label for="nJurors">Num. of votes</label>
+            <input class="form-control box-shadow" id="n_votes" name="n_votes" type="number" step="2" value={{ n_votes }}>
           </div>
           <button type="submit" class="btn btn-default">Refresh</button>
         </form>
@@ -60,7 +62,7 @@
 
     <!-- Explainers -->
     <div class="alert alert-info alert-dismissible" role="alert">
-        <p>The odds and chances columns shows the chances to be drawn <strong>at least once</strong> in a dispute with 3 jurors</p>
+        <p>The odds and chances columns shows the chances to be drawn <strong>at least once</strong> in a dispute with the number of jurors selected.</p>
     </div>
     <div class="alert alert-info alert-dismissible" role="alert">
         <p>Reward/Risk is the ratio between Reward(USD) and VoteStake(USD)</p>

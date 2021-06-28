@@ -18,7 +18,7 @@ def period2number(period):
     return period_map[period]
 
 
-def get_all_court_chances(pnkStaked):
+def get_all_court_chances(pnkStaked, n_votes=3):
     courts = getCourtTable()
     courtChances = {}
     pnkPrice = CoinGecko().getPNKprice()
@@ -30,7 +30,7 @@ def get_all_court_chances(pnkStaked):
         voteStakeUSD = voteStakePNK * pnkPrice
         activeJurors = courts[c]['Jurors']
         totalStaked = courts[c]['Total Staked']
-        odds = chance_calculator(pnkStaked, totalStaked)
+        odds = chance_calculator(pnkStaked, totalStaked, n_votes)
         if odds == 0:
             chances = float('nan')
             share = float('nan')

@@ -128,17 +128,23 @@ def support():
 def odds():
     # Visitor().addVisit('odds')
     pnkStaked = 100000
+    n_votes = 3
     if request.method == 'POST':
         # Form being submitted; grab data from form.
         try:
             pnkStaked = int(request.form['pnkStaked'])
         except Exception:
             pnkStaked = 100000
+        try:
+            n_votes = abs(int(request.form['n_votes']))
+        except Exception:
+            n_votes = 3
 
     return render_template('odds.html',
                            last_update=datetime.now(),
                            pnkStaked=pnkStaked,
-                           courtChances=get_all_court_chances(pnkStaked))
+                           n_votes=n_votes,
+                           courtChances=get_all_court_chances(pnkStaked, n_votes))
 
 
 @application.route('/kleros-map/')
