@@ -38,7 +38,7 @@
             <td align="center">Creator</td>
           </tr>
           <tr class={{'success' if dispute['ruled'] }}>
-            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'])}}>{{dispute['subcourtID']}}</a></td>
+            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'])}}>{{dispute['subcourtID']|courtName}}</a></td>
             <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
             <td class="text-center">{{dispute['period']|capitalize}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] != 'Already Executed'%}UTC{%endif%}</td>

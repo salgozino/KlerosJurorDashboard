@@ -58,11 +58,11 @@ def filter_wei_2_eth(gwei):
 @application.route('/')
 def index():
     klerosCounters = getKlerosCounters()
-    drawnJurors = int(klerosCounters['drawnJurors'])
+    drawnJurors = klerosCounters['drawnJurors']
     retention = 0  # Juror.retention() / drawnJurors
     adoption = getAdoption()
-    ruledCases = int(klerosCounters['closedDisputes'])
-    openCases = int(klerosCounters['openDisputes'])
+    ruledCases = klerosCounters['closedDisputes']
+    openCases = klerosCounters['openDisputes']
     mostActiveCourt = getMostActiveCourt()
     if mostActiveCourt is not None:
         mostActiveCourt = getCourtName(int(mostActiveCourt))
@@ -191,7 +191,6 @@ def dispute():
                                    unique_vote_count=None,
                                    last_update=datetime.now(),
                                    )
-    print(dispute)
     return render_template('dispute.html',
                            dispute=dispute,
                            error=None
