@@ -18,15 +18,16 @@
     {% block content %}
     {% if court.id is not none %}
 
-    <h3>Court #{{court.id}}: {{ court.name}}</h3>
+    <h3>Court #{{court['subcourtID']}}: {{court['subcourtID']|courtName}}</h3>
     <!-- Court Numbers -->
     <div class="row">
+        
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
                     <h4>Parent Court</h4>
                 </div>
-                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=parent.id)}}>{{parent.name}}</a></li></ul>{% endif %}
+                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=court['parent'])}}>{{court['parent']|courtName}}</a></li></ul>{% endif %}
             </div>
         </div>
 
@@ -35,15 +36,55 @@
                 <div class="panel-heading text-center">
                     <h4>Court "Childrens"</h4>
                 </div>
-                {% if childs %}
+                {% if court['childs']|length > 0 %}
                     <ul class="list-group">
-                    {% for child in childs%}
-                        <li class="list-group-item"><a href={{url_for('court', id=child.id)}}>{{ child.name }}</a></li>
+                    {% for child in court['childs']%}
+                        <li class="list-group-item"><a href={{url_for('court', id=child)}}>{{ child|courtName }}</a></li>
                     {% endfor %}
                     </ul>
                 {% else%}
                 <ul class="list-group"><li class="list-group-item">No Childs</li></ul>
                 {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Court Reward</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{"{:,.3f} ETH".format(court['feeForJuror'])}}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Juror for court jump</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{court['jurorsForCourtJump']}}
+                </div>
+                <div class="panel-footer">
+                    Amount of jurors in a dispute for jump to the parent court
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-lg-1"></div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Total Disputes</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ open_cases + ruled_cases }}
+                </div>
             </div>
         </div>
         <div class="col-lg-3">
@@ -104,7 +145,8 @@
                     <h4>Fees paid</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{ "%.3f ETH"|format(fees['eth']) }}
+                    <!--{{ "%.3f ETH"|format(fees['eth']) }}-->
+                    Soon
                 </div>
                 <div class="panel-footer">
                     Fees paid to the coherent jurors of this court
@@ -118,41 +160,82 @@
                     <h4>PNK redistributed</h4>
                 </div>
                 <div class="panel-body text-center">
-                
-                    {{"{:,.2f} PNK".format(fees['pnk'])}}
+                    Soon
+                    <!--{{"{:,.2f} PNK".format(fees['pnk'])}}-->
                 </div>
                 <div class="panel-footer">
                     PNK transfered from incoherent jurors to coherent jurors
                 </div>
             </div>
         </div>
+    </div>
         
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Active Jurors</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{court['activeJurors']}}
+                </div>
+                <div class="panel-footer">
+                    Number of Active jurors considering childrens courts
+                </div>
+            </div>
+        </div>
+                
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Active Jurors</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{n_jurors}}
+                </div>
+                <div class="panel-footer">
+                    Number of active jurors staked in this court, without considering childrens courts
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>PNK Staked</h4>
+                </div>
+                <div class="panel-body text-center">
+                
+                    {{"{:,.2f} PNK".format(court['tokenStaked'])}}
+                </div>
+                <div class="panel-footer">
+                    PNK staked in this court considering childrens courts
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>PNK Staked</h4>
+                </div>
+                <div class="panel-body text-center">
+                    {{ "{:,.2f} PNK".format(staked_in_this_court) }}
+                </div>
+                <div class="panel-footer">
+                    PNK Staked just in this court
+                </div>
+            </div>
+        </div>
 
     </div>
 
     <!-- Jurors -->
-    <h4>Total Jurors: {{n_jurors}}</h4>
-
-    <nav aria-label="Page navigation example">
-        <ul class="pagination">
-            {% if current_juror_page != 0 %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', jurors_page=current_juror_page-1, id=court.id) }}">Previous</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Previous</a></li>
-            {% endif %}
-
-
-            {% if current_juror_page <= n_jurors/10 %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', jurors_page=current_juror_page+1, id=court.id) }}">Next</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Next</a></li>
-            {% endif %}
-
-        </ul>
-    </nav>
-
+    <h4>Jurors without considering the childrens courts</h4>
+    <!-- <h5> Total Staked in this court: {{ jurors | sum(attribute='stake') }}</h5> -->
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
-        <table class="table table-bordered ">
+        <table class="table table-bordered table-hover ">
             <thead>
               <tr class="info">
                 <th align="center">Juror</td>
@@ -160,10 +243,10 @@
               </tr>
             </thead>
             <tbody>
-                {% for juror, stake in jurors.items(): %}
+                {% for juror in jurors: %}
                 <tr>
-                    <td class="text-center"><a href={{url_for('juror', address=juror)}}>{{juror}}</a></td>
-                    <td class="text-center">{{ "{:,.1f}".format(stake) }}</td>
+                    <td class="text-center"><a href={{url_for('profile', address=juror['address'])}}>{{juror['address']}}</a></td>
+                    <td class="text-center">{{ "{:0,.2f}".format(juror['stake']) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -174,7 +257,7 @@
     <div class="row">
         <div class="col-md-12 " id="juror_hist-id">
             <script>
-                var graph = {{juror_hist | safe}};
+                var graph = {{ juror_hist|safe }};
                 Plotly.plot('juror_hist-id',graph,{});
             </script>
         </div>
@@ -183,37 +266,29 @@
 
     <!-- Disputes -->
     <h4>Court Disputes</h4>
-    <nav aria-label="Page navigation example">
-        <ul class="pagination">
-            {% if disputes.has_prev %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', dispute_page=disputes.prev_num, id=court.id) }}">Previous</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Previous</a></li>
-            {% endif %}
-
-
-            {% if disputes.has_next %}
-              <li class="page-item"> <a class="page-link" href="{{ url_for('court', dispute_page=disputes.next_num, id=court.id) }}">Next</a></li>
-            {% else %}
-              <li class="page-item"><a class="page-link btn disabled" href="#">Next</a></li>
-            {% endif %}
-
-        </ul>
-    </nav>
-    <div class="table-responsive" style="max-height: 400px; overflow-y: auto">
-        <table class="table table-bordered table-condensed">
+    <h5>Number of disputes in this courts: {{disputes|length}}</h5>
+    <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+        <table class="table table-bordered table-hover">
+            <thead>
           <tr class="info">
             <td align="center">Dispute N°</td>
             <td align="center">Status</td>
+            <td align="center">Current Rulling</td>
             <td align="center">Last Period Change</td>
+            <td align="center">Period Ends</td>
           </tr>
-          {% for dispute in disputes.items: %}
-          <tr class={{'success' if dispute.ruled else 'warning'}}>
-            <td class="text-center"><a href={{url_for('dispute', id=dispute.id)}}>{{dispute.id}}</a></td>
-            <td class="text-center">{{dispute.period_name}}</td>
-            <td class="text-center"><span class="datetime-string">{{dispute.last_period_change}}</span> UTC</td>
+          </thead>
+          <tbody>
+          {% for dispute in disputes|sort(attribute='id', reverse=True): %}
+          <tr class={{'success' if dispute['ruled'] else 'warning'}}>
+            <td class="text-center"><a href={{url_for('dispute', id=dispute['id'])}}>{{dispute['id']}}</a></td>
+            <td class="text-center">{{dispute['period']}}</td>
+            <td class="text-center">{{dispute['currentRulling']}}</td>
+            <td class="text-center"><span class="datetime-string">{{dispute['lastPeriodChange']|timestamp2datetime}}</span> UTC</td>
+            <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span></td>
           </tr>
           {% endfor %}
+          </tbody>
         </table>
     </div>
     {% endif %}

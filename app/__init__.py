@@ -8,8 +8,8 @@ def create_app(settings_module='config.development'):
     # configure the logger
     configure_logging(app)
     # load the database
-    from app.modules import db
-    db.init_app(app)
+    # from app.modules import db
+    # db.init_app(app)
     
     return app
 

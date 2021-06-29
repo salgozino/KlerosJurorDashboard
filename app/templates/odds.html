@@ -9,7 +9,9 @@
         <form class="form-inline text-center" method="post">
           <div class="form-group">
             <label for="pnkStakedInput">PNK Staked</label>
-            <input class="form-control box-shadow" id="pnkStakedInput" name="pnkStaked" type="text" value={{ pnkStaked }}>
+            <input class="form-control box-shadow" id="pnkStakedInput" name="pnkStaked" type="number" value={{ pnkStaked }}>  
+            <label for="nJurors">Num. of votes</label>
+            <input class="form-control box-shadow" id="n_votes" name="n_votes" type="number" step="2" value={{ n_votes }}>
           </div>
           <button type="submit" class="btn btn-default">Refresh</button>
         </form>
@@ -22,7 +24,8 @@
                 <thead>
                     <tr class="active">
                         <th scope="col" class="text-center">Court</th>
-                        {% for col in courtChances['General Court'].keys() %}
+                        {% set row_index =  courtChances.keys()|list %}
+                        {% for col in courtChances[row_index[0]].keys() %}
                         <th scope="col" class="text-center">{{ col }}</th>
                         {% endfor %}
                     </tr>
@@ -44,6 +47,8 @@
                                 <td class="text-right">{{ "{:.3f}".format(value) }}</td>
                             {% elif 'Risk' in col %}
                                 <td class="text-right">{{ "{:.3f}".format(value) }}</td>
+                            {% elif 'Stake share' in col %}
+                                <td class="text-right">{{ "{:.2%}".format(value) }}</td>
                             {% else %}
                                 <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
                             {%endif%}
@@ -57,7 +62,7 @@
 
     <!-- Explainers -->
     <div class="alert alert-info alert-dismissible" role="alert">
-        <p>3 jurors are considered for the drawn odds</p>
+        <p>The odds and chances columns shows the chances to be drawn <strong>at least once</strong> in a dispute with the number of jurors selected. The Stake share is the ratio between the configured stake and the total stake in that court, equivalent to the odds with one vote per round.</p>
     </div>
     <div class="alert alert-info alert-dismissible" role="alert">
         <p>Reward/Risk is the ratio between Reward(USD) and VoteStake(USD)</p>

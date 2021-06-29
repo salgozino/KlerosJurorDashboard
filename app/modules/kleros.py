@@ -2,55 +2,47 @@
 # import os
 import pandas as pd
 from datetime import datetime, timedelta
-from .kleros_db import Court, Juror, Config, JurorStake, StakesEvolution
-from app.modules import db
+from .subgraph import getCourtTable, getTimePeriods
+from .oracles import CoinGecko
+
 
 import logging
 logger = logging.getLogger(__name__)
 
-
-def get_staked_by_address(address):
-    return Juror(address=address).current_stakings_per_court
-
-
-def get_court_info_table():
-    courts = Court.query.all()
-    courtInfo = {}
-    for c in courts:
-        courtInfo[c.name] = {'Jurors': c.activeJurors,
-                             'Total Staked': c.totalStaked,
-                             'Min Stake': c.minStake,
-                             'Vote Stake': c.voteStake,
-                             'Mean Staked': c.meanStaked,
-                             'Max Staked': c.maxStaked,
-                             'Disputes in the last 30 days': c.disputesLast30days,
-                             'Open Disputes': c.openCases,
-                             'Min Stake in USD': c.minStakeUSD,
-                             'id': c.id
-                             }
-    return courtInfo
+def period2number(period):
+    period_map = {'execution':4,
+    'appeal':3,
+    'vote':2,
+    'commit':1,
+    'evidence':0}
+    return period_map[period]
 
 
-def get_all_court_chances(pnkStaked):
-    courts = Court.query.all()
+def get_all_court_chances(pnkStaked, n_votes=3):
+    courts = getCourtTable()
     courtChances = {}
-    pnkPrice = float(Config.get('PNKprice'))
-    ethPrice = float(Config.get('ETHprice'))
-    for c in courts:
-        rewardETH = c.feeForJuror
+    pnkPrice = CoinGecko().getPNKprice()
+    ethPrice = CoinGecko().getETHprice()
+    for c in courts.keys():
+        rewardETH = courts[c]['Fee For Juror']
         rewardUSD = rewardETH * ethPrice
-        voteStakePNK = c.voteStake
+        voteStakePNK = courts[c]['Vote Stake']
         voteStakeUSD = voteStakePNK * pnkPrice
-        stats = c.juror_stats()
-        totalStaked = c.totalStaked
-        odds = chance_calculator(pnkStaked, totalStaked)
+        activeJurors = courts[c]['Jurors']
+        totalStaked = courts[c]['Total Staked']
+        odds = chance_calculator(pnkStaked, totalStaked, n_votes)
         if odds == 0:
             chances = float('nan')
+            share = float('nan')
         else:
             chances = 1/odds
-        courtChances[c.name] = {
-                    'Jurors': stats['length'],
-                    'Disputes in the last 30 days': len(c.disputes(30)),
+            share = pnkStaked/totalStaked
+
+        courtChances[courts[c]['Name']] = {
+                    'Jurors': activeJurors,
+                    'Total Staked': totalStaked,
+                    'Stake share': share,
+                    'Disputes in the last 30 days': courts[c]['Disputes in the last 30 days'],
                     'Odds': odds,
                     'Chances': chances,
                     'Reward (ETH)': rewardETH,
@@ -77,7 +69,7 @@ def chance_calculator(amountStaked, totalStaked, nJurors=3):
         chanceDrawnOnce = 1 - noDrawn
         return chanceDrawnOnce
 
-
+"""
 def calculate_historic_stakes_in_courts():
     try:
         end = StakesEvolution.query.order_by(StakesEvolution.id.desc()).first().timestamp
@@ -95,3 +87,19 @@ def calculate_historic_stakes_in_courts():
         # logger.debug(f"Adding the values {stakes} to the StakesEvolution table")
         StakesEvolution.addDateValues(stakes)
     end += timedelta(days=1)
+"""
+
+def getWhenPeriodEnd(dispute, courtID):
+    """
+    Return the datetime when ends current period of the dispute.
+    Returns None if dispute it's in execution period
+    """
+    if dispute['period'] == 'execution':
+        return None
+    else:
+        timesPeriods = getTimePeriods(courtID)
+        lastPeriodChange = int(dispute['lastPeriodChange'])
+        periodlength = int(timesPeriods[period2number(dispute['period'])])
+        now = datetime.now()
+        return datetime.fromtimestamp(lastPeriodChange) + timedelta(seconds=periodlength)
+        

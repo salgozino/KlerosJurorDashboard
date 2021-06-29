@@ -9,7 +9,6 @@ import os
 
 from web3 import Web3
 
-
 class web3Node():
     try:
         infura_node = os.environ['INFURA_NODE']

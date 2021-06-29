@@ -14,7 +14,7 @@
     <!-- Plotly JS -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
-    <title>Kleros Dashboard!</title>
+    <title>Kleros Dashboard 2.0!</title>
   </head>
   
   <header>
@@ -46,7 +46,6 @@
 
     <ul class="nav navbar-nav navbar-right">
         <div style="margin-right: 10px; margin-left: 15px; margin-top: 5px; margin-bottom: 5px;"  class="container-fluid">
-            <p class="nav navbar-text"> Last Update: {{ last_update }} UTC</p>
             <a href="/support/" class="navbar-text"> <span class="glyphicon glyphicon-heart"></span> Support</a>
         </div>
     </ul>
@@ -56,8 +55,7 @@
         <div class="alert alert-info alert-dismissible" role="alert">
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <p>This Dashboard is still under development in beta mode. If you find a bug or values that don't make sense,
-            please contact me on <a href="https://www.t.me/kokialgo" class="alert-link">Telegram</a> or open an issue 
-            on <a href="https://github.com/salgozino/KlerosJurorDashboard/issues" class="alert-link">github</a>
+            please open an issue on <a href="https://github.com/salgozino/KlerosJurorDashboard/issues" class="alert-link">github</a>
             </p>
         </div>
     </div>
@@ -74,7 +72,10 @@
 
     <footer class="footer">
         <div class="container">
-        <p class="text-center padding-top text-muted">Made with <span class="glyphicon glyphicon-heart"></span> to the Kleros Community</p>
+            <div class="text-center padding-top text-muted">Made with <span class="glyphicon glyphicon-heart"></span> to the Kleros Community | 
+                <a href="https://thegraph.com/explorer/subgraph/salgozino/klerosboard"><img class=".img-responsive" src="/static/images/graphprotocol.png" width="16 px" height="16 px"></a>
+                <a href="https://github.com/salgozino/KlerosJurorDashboard/"><img class=".img-responsive" src="/static/images/github.png"  width="16 px" height="16 px"></a>
+            </div>
         </div>
     </footer>
     </body>
