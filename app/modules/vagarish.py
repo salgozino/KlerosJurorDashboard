@@ -11,7 +11,6 @@ def get_evidences(disputeID):
         logger.error("wrong dispute input")
         return []
     query_endpoint = _endpoint+'?id={}'.format(disputeID)
-    print(query_endpoint)
     response = requests.get(query_endpoint)
     return _parse_evidences(response.json())
 

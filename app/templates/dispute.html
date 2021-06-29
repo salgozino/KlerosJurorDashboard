@@ -106,13 +106,14 @@
 
     <!--- Evidences -->
     <h3> Evidences </h3>
+    Evidences provided by <a href='https://vagarish.forer.es/'>Vagarish</a>
+
     {% if dispute['evidences']|length > 0%}
-      {% import 'evidence.html' as evidence with context  %}
       {% for evidenceData in dispute['evidences']|reverse %}
         <div class="row">
           <div class="panel panel-default">
             <div class="panel-heading">
-             <h3 class="panel-title text-center">Evidence #{{loop.index}}:</h3>
+             <h4 class="panel-title text-center">Evidence #{{loop.index}}:</h4>
             </div>
             <div class="panel-body text-left">
               {{evidenceData['textContent']}}
@@ -121,7 +122,7 @@
               <div class="col text-left"><a href={{url_for('profile', address=evidenceData['byAddress'])}}>{{evidenceData['byAddress']}}</a></div>
               <div class="col text-right">
               {%if evidenceData['fileIpfsPath']%}
-              <a href="https://ipfs.kleros.io/{{evidence['fileIpfsPath']}}"><span class="glyphicon glyphicon-paperclip"></span></a>
+              <a href="https://ipfs.kleros.io/{{evidenceData['fileIpfsPath']}}"><span class="glyphicon glyphicon-paperclip"></span></a>
               {%endif%}
               </div>
             </div>
@@ -131,7 +132,6 @@
     {% else %}
     <p>There is no evidence for this dispute.
     This probably happened because this dispute was not compliant with ERC-1497.</p>
-      </br>
     {% endif%}
 
       <div align="center">
