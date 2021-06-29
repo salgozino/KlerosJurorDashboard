@@ -20,6 +20,8 @@ from app.modules.subgraph import getCourtWithDisputes, getMostActiveCourt, \
     getAdoption, getCourtName, getKlerosCounters, \
     getDispute, getCourt, getActiveJurorsFromCourt, \
     getCourtTable, getProfile, _wei2eth, getAllDisputes
+from app.modules.vagarish import get_evidences
+
 
 # Elastic Beanstalk initalization
 settings_module = os.environ.get('CONFIG_MODULE')
@@ -174,8 +176,7 @@ def dispute():
         disputes = getAllDisputes()
         return render_template('allDisputes.html',
                                error=None,
-                               disputes=disputes,
-                               last_update=datetime.now(),
+                               disputes=disputes
                                )
 
     else:
@@ -186,15 +187,12 @@ def dispute():
                          )
             return render_template('dispute.html',
                                    error=error_msg,
-                                   dispute=dispute,
-                                   vote_count=None,
-                                   unique_vote_count=None,
-                                   last_update=datetime.now(),
                                    )
-    return render_template('dispute.html',
-                           dispute=dispute,
-                           error=None
-                           )
+        dispute['evidences'] = get_evidences(id)
+        return render_template('dispute.html',
+                            dispute=dispute,
+                            error=None
+                            )
 
 
 @application.route('/court/', methods=['GET'])

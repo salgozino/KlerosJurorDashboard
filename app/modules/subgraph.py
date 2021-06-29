@@ -664,7 +664,7 @@ def getDispute(disputeNumber):
 def getActiveJurorsFromCourt(courtID):
     query = (
         '{'
-        'courtStakes(where:{court:"'+str(courtID)+'", stake_gt:0}) {'
+        'courtStakes(where:{court:"'+str(courtID)+'", stake_gt:0}, first:1000) {'
         '    stake,'
         '    juror {id}'
         '}}'

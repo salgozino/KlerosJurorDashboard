@@ -104,6 +104,36 @@
     </div>
     {% endfor %}
 
+    <!--- Evidences -->
+    <h3> Evidences </h3>
+    Evidences provided by <a href='https://vagarish.forer.es/'>Vagarish</a>
+
+    {% if dispute['evidences']|length > 0%}
+      {% for evidenceData in dispute['evidences']|reverse %}
+        <div class="row">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+             <h4 class="panel-title text-center">Evidence #{{loop.index}}:</h4>
+            </div>
+            <div class="panel-body text-left">
+              {{evidenceData['textContent']}}
+            </div>
+            <div class="panel-footer">
+              <div class="col text-left"><a href={{url_for('profile', address=evidenceData['byAddress'])}}>{{evidenceData['byAddress']}}</a></div>
+              <div class="col text-right">
+              {%if evidenceData['fileIpfsPath']%}
+              <a href="https://ipfs.kleros.io/{{evidenceData['fileIpfsPath']}}"><span class="glyphicon glyphicon-paperclip"></span></a>
+              {%endif%}
+              </div>
+            </div>
+          </div>
+        </div>
+      {%endfor%}
+    {% else %}
+    <p>There is no evidence for this dispute.
+    This probably happened because this dispute was not compliant with ERC-1497.</p>
+    {% endif%}
+
       <div align="center">
       <a class="btn btn-primary cursor-clickable mb-3" href="https://resolve.kleros.io/cases/{{ dispute['id']}}" target="_blank">Check this Case on Kleros Resolve</a>
       </div>
