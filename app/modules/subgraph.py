@@ -7,12 +7,11 @@ from collections import defaultdict
 from app.modules.oracles import CoinGecko
 from app.modules.web3_node import web3Node
 
-#try:
-#    subgraph_id = os.environ['SUBGRAPH_ID']
-#except TypeError:
-print("No SUBGRAPH_ID found, using hardcoded value")
-subgraph_id = 'QmS7uu3QofFFs39PQ7tRjW3HkbAcJdnoTbWJLiHPE2b1qJ'
-    # subgraph_id = 'QmaH1pbCwP4XzGGbZY4HaXioY8C1sT3d4rcs5UmB4MFfom' # estable
+try:
+    subgraph_id = os.environ['SUBGRAPH_ID']
+except TypeError:
+    print("No SUBGRAPH_ID found, using hardcoded value")
+    subgraph_id = 'QmURxoVayAjutjCmdM2S8Xr3zvvULyLVW8VCqR3GTyfVJd'
 
 # Node definitions
 subgraph_node = 'https://api.thegraph.com/subgraphs/id/' + subgraph_id
@@ -846,7 +845,6 @@ def getProfile(address):
         '   id,'
         '   currentStakes{court{id},stake,timestamp,txid},'
         '   totalStaked,'
-        '   activeJuror,'
         '   numberOfDisputesAsJuror,'
         '   numberOfDisputesCreated,'
         '   disputesAsCreator{id,currentRulling,startTime,ruled,txid}'
