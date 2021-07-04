@@ -19,7 +19,7 @@ from app.modules.kleros import get_all_court_chances
 from app.modules.subgraph import getCourtWithDisputes, getMostActiveCourt, \
     getAdoption, getCourtName, getKlerosCounters, \
     getDispute, getCourt, getActiveJurorsFromCourt, \
-    getCourtTable, getProfile, _wei2eth, getAllDisputes
+    getCourtTable, getProfile, _wei2eth, getAllDisputes, getStatus
 from app.modules.vagarish import get_evidences
 
 
@@ -103,7 +103,8 @@ def index():
                            pnkCircSupply=pnkCircSupply,
                            fees_paid={'eth': 0,
                                       'pnk': 0},
-                           courtTable=courtTable
+                           courtTable=courtTable,
+                           subgraph_status=getStatus()
                            )
 
 
@@ -116,6 +117,7 @@ def graphsMaker():
                            disputeCreatorgraph=[],
                            treemapJurorsGraph=[],
                            treemapStakedGraph=[],
+                           subgraph_status=getStatus()
                            )
 
 
@@ -123,7 +125,8 @@ def graphsMaker():
 def support():
     # Visitor().addVisit('support')
     return render_template('support.html',
-                           last_update=datetime.now())
+                           subgraph_status=getStatus()
+                           )
 
 
 @application.route('/odds/', methods=['GET', 'POST'])
@@ -146,14 +149,15 @@ def odds():
                            last_update=datetime.now(),
                            pnkStaked=pnkStaked,
                            n_votes=n_votes,
-                           courtChances=get_all_court_chances(pnkStaked, n_votes))
+                           courtChances=get_all_court_chances(pnkStaked, n_votes),
+                           subgraph_status=getStatus())
 
 
 @application.route('/kleros-map/')
 def maps():
     # Visitor().addVisit('map')
     return render_template('kleros-map.html',
-                           last_update=datetime.now()
+                           subgraph_status=getStatus()
                            )
 
 
@@ -165,7 +169,7 @@ def visitorMetrics():
                            odds=0,
                            map=0,
                            support=0,
-                           last_update=datetime.now(),
+                           subgraph_status=getStatus()
                            )
 
 
@@ -176,7 +180,8 @@ def dispute():
         disputes = getAllDisputes()
         return render_template('allDisputes.html',
                                error=None,
-                               disputes=disputes
+                               disputes=disputes,
+                               subgraph_status=getStatus()
                                )
 
     else:
@@ -187,11 +192,13 @@ def dispute():
                          )
             return render_template('dispute.html',
                                    error=error_msg,
+                                   subgraph_status=getStatus()
                                    )
         dispute['evidences'] = get_evidences(id)
         return render_template('dispute.html',
                             dispute=dispute,
-                            error=None
+                            error=None,
+                            subgraph_status=getStatus()
                             )
 
 
@@ -224,7 +231,8 @@ def court():
                            min_stake=court['minStake'],
                            vote_stake=court['voteStake'],
                            last_update=datetime.now(),
-                           current_juror_page=0
+                           current_juror_page=0,
+                           subgraph_status=getStatus()
                            )
 
 
@@ -234,25 +242,22 @@ def profile(address):
     if profile is None:
         profile = {'address':address}
         return render_template('profile.html',
-                               profile=profile
+                               profile=profile,
+                               subgraph_status=getStatus()
                                )
     else:
         return render_template('profile.html',
-                               profile=profile
+                               profile=profile,
+                               subgraph_status=getStatus()
                                )
-
-
-@application.route('/getCourtJurors/<int:courtID>', methods=['GET'])
-def courtJurors(courtID):
-    court = getCourt(id=courtID)
-    return court
 
 
 @application.errorhandler(404)
 def not_found(e):
     # Visitor().addVisit('unknown')
     return render_template("404.html",
-                           last_update=datetime.now())
+                           subgraph_status=getStatus()
+                           )
 
 
 if __name__ == "__main__":

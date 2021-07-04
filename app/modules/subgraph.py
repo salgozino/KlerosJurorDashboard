@@ -1,4 +1,3 @@
-from logging import raiseExceptions
 import requests
 import os
 import json
@@ -8,11 +7,11 @@ from collections import defaultdict
 from app.modules.oracles import CoinGecko
 from app.modules.web3_node import web3Node
 
-try:
-    subgraph_id = os.environ['SUBGRAPH_ID']
-except TypeError:
-    print("No SUBGRAPH_ID found, using hardcoded value")
-    subgraph_id = 'QmY77tLGkmsWR5usbbVR8haCfs6QA9hjn6v6GWhQXBpRyX'
+#try:
+#    subgraph_id = os.environ['SUBGRAPH_ID']
+#except TypeError:
+print("No SUBGRAPH_ID found, using hardcoded value")
+subgraph_id = 'QmS7uu3QofFFs39PQ7tRjW3HkbAcJdnoTbWJLiHPE2b1qJ'
     # subgraph_id = 'QmaH1pbCwP4XzGGbZY4HaXioY8C1sT3d4rcs5UmB4MFfom' # estable
 
 # Node definitions
@@ -808,6 +807,37 @@ def getStakedByJuror(address):
                 stakes.append({'court': int(stake['court']['id']),
                                'stake': _wei2eth(stake['stake'])})
         return stakes
+
+
+def getStatus():
+    """
+    Return the status of the subgraph
+    """
+    query = """
+    {
+        _meta{
+            block {
+            number
+            }
+            deployment
+         }
+    }
+    """
+    result = requests.post(subgraph_node, json={'query': query}).json()
+    last_block_number = web3Node.web3.eth.blockNumber
+    meta = result['data']['_meta']
+    subgraph_block_number = int(meta['block']['number'])
+    subgraph_id = meta['deployment']
+    if abs(last_block_number - subgraph_block_number) < 20:
+        # ~ 5 min of delay allowed
+        return {'status':'Updated',
+                'last_block':subgraph_block_number,
+                'deployment':subgraph_id}
+    else:
+        return {'status':'Updating',
+               'last_block':subgraph_block_number,
+               'deployment':subgraph_id}
+    
 
 
 def getProfile(address):

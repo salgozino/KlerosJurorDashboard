@@ -58,6 +58,16 @@
             please open an issue on <a href="https://github.com/salgozino/KlerosJurorDashboard/issues" class="alert-link">github</a>
             </p>
         </div>
+        {% if subgraph_status is not none %}
+            {% if subgraph_status['status'] == 'Updating' %}
+            <div class="alert alert-danger" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <p>The <a href="https://thegraph.com/explorer/subgraph/salgozino/klerosboard">subgraph</a> it's updating, the numbers reported in this board aren't updated to the last ethereum block. Please return in a minutes.
+                    Last block synced = {{subgraph_status['last_block']}}
+                </p>
+            </div>
+            {% endif %}
+        {% endif %}
     </div>
   </header>
   
