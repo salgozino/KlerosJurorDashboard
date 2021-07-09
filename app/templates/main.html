@@ -24,7 +24,7 @@
                     <h3 class="panel-title text-center">Disputes</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ disputes }}</h4>
+                <h4>{{ dashboard['disputesCount'] }}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of disputes created in Kleros Courts.
@@ -37,7 +37,7 @@
                     <h3 class="panel-title text-center">Most Active Courts</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ most_active_court }}</h4>
+                <h4>{{ dashboard['mostActiveCourt'] }}</h4>
                 </div>
                 <div class="panel-footer">
                 The court with more cases in the last 7 days.
@@ -51,7 +51,7 @@
                     <h3 class="panel-title text-center">Cases already Closed</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ cases_closed }}</h4>
+                <h4>{{ dashboard['closedDisputes'] }}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of cases already ruled
@@ -65,7 +65,7 @@
                     <h3 class="panel-title text-center">Cases under ruling</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ cases_rulling }}</h4>
+                <h4>{{ dashboard['openDisputes'] }}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of open cases.
@@ -86,7 +86,7 @@
                     <h3 class="panel-title text-center">Active Jurors</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ activeJurors }}</h4>
+                <h4>{{ dashboard['activeJurors'] }}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of active Jurors
@@ -100,7 +100,7 @@
                     <h3 class="panel-title text-center">Drawn Jurors</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ jurorsdrawn }}</h4>
+                <h4>{{ dashboard['drawnJurors'] }}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of Jurors that were drawn at least one time.
@@ -114,7 +114,7 @@
                     <h3 class="panel-title text-center">Retention</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "%.2f"|format(retention*100) }}%</h4>
+                <h4>{%if dashboard['retention'] is not none%}{{ "%.2f"|format(dashboard['retention']*100) }}%{%else%}Soon{%endif%}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of Jurors that keep staking after the first vote.
@@ -128,7 +128,7 @@
                     <h3 class="panel-title text-center">Adoption</h3>
                 </div>
                 <div class="panel-body text-center">
-                    <h4>{% if adoption is not none%}{{ "%.0f"|format(adoption) }}{%else%}Not disponible{%endif%}</h4>
+                    <h4>{% if dashboard['adoption'] is not none%}{{ "%.0f"|format(dashboard['adoption']) }}{%else%}Soon{%endif%}</h4>
                 </div>
                 <div class="panel-footer">
                 Number of new Jurors staked in the last month
@@ -148,7 +148,7 @@
                     <h3 class="panel-title text-center">PNK Total Supply</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "{:,.0f}".format(tokenSupply) }}</h4>
+                <h4>{{ "{:,.0f}".format(dashboard['tokenSupply']) }}</h4>
                 </div>
             </div>
         </div>
@@ -159,7 +159,7 @@
                     <h3 class="panel-title text-center">PNK Circulating Supply</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "{:,.2f}".format(pnkCircSupply) }}</h4>
+                <h4>{{ "{:,.2f}".format(dashboard['pnkCircSupply']) }}</h4>
                 </div>
             </div>
         </div>
@@ -170,7 +170,7 @@
                     <h3 class="panel-title text-center">PNK Staked in Courts</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "{:,.0f}".format(pnkStaked) }}</h4>
+                <h4>{{ "{:,.0f}".format(dashboard['tokenStaked']) }}</h4>
                 </div>
             </div>
         </div>
@@ -189,7 +189,7 @@
                     <h3 class="panel-title text-center">% Staked of Total Supply</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "%.2f"|format(pnkStakedPercent*100) }}%</h4>
+                <h4>{% if dashboard['pnkStakedPercent'] is not none%}{{ "%.2f"|format(dashboard['pnkStakedPercent']*100) }}% {%else%}None{%endif%}</h4>
                 </div>
             </div>
         </div>
@@ -200,7 +200,7 @@
                     <h3 class="panel-title text-center">% Staked of Circulating Supply</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "%.2f"|format(pnkStakedPercentSupply*100) }}%</h4>
+                <h4>{{ "%.2f"|format(dashboard['pnkStakedPercentSupply']*100) }}%</h4>
                 </div>
             </div>
         </div>
@@ -211,8 +211,8 @@
                     <h3 class="panel-title text-center">Fees Paid</h3>
                 </div>
                 <div class="panel-body text-center">
-                <!--<h4>{{ "{:,.3f}".format(fees_paid['eth']) }} ETH</h4> -->
-                <h4>Soon</h4>
+                <h4>{{ "{:,.3f}".format(dashboard['totalETHFees']) }} ETH</h4>
+                <!--<h4>Soon</h4>-->
                 </div>
                 <div class="panel-footer">
                     Fees paid to the coherent jurors in all the court
@@ -226,8 +226,8 @@
                     <h3 class="panel-title text-center">PNK Redistributed</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>Soon</h4>
-                <!--<h4>{{ "{:,.0f}".format(fees_paid['pnk']) }}</h4>-->
+                <!--<h4>Soon</h4>-->
+                <h4>{{ "{:,.0f}".format(dashboard['totalTokenRedistributed']) }}</h4>
                 </div>
                 <div class="panel-footer">
                     PNK transfered from incoherent jurors to coherent jurors of all the disputes
@@ -247,7 +247,7 @@
                     <h3 class="panel-title text-center">ETH Price</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>${{ "{:,.2f}".format(ethPrice) }}</h4>
+                <h4>${{ "{:,.2f}".format(dashboard['ethPrice']) }}</h4>
                 </div>
             </div>
         </div>
@@ -258,7 +258,7 @@
                     <h3 class="panel-title text-center">PNK in USD</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>${{ "{:,.3f}".format(pnkPrice) }}</h4>
+                <h4>${{ "{:,.3f}".format(dashboard['pnkPrice']) }}</h4>
                 </div>
             </div>
         </div>
@@ -269,7 +269,7 @@
                     <h3 class="panel-title text-center">PNK Vol in last 24 hs</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>${{ "{:,.2f}".format(pnkVol24) }}</h4>
+                <h4>${{ "{:,.2f}".format(dashboard['pnkVol24']) }}</h4>
                 </div>
             </div>
         </div>
@@ -280,7 +280,7 @@
                     <h3 class="panel-title text-center">PNK Price change in last 24 hs.</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "{:.2%}".format(pnkPctChange) }}</h4>
+                <h4>{{ "{:.2%}".format(dashboard['pnkPctChange']) }}</h4>
                 </div>
             </div>
         </div>
@@ -304,21 +304,20 @@
                         <tr class="active">
                             <th scope="col">Name</th>
                             <th scope="col">Id</th>
-                            {% for col in courtTable[0].keys() %}
+                            {% for col in dashboard['courtTable'][0].keys() %}
                             {% if col!='id' and col!='Name' %}<th scope="col">{{ col }}</th>{%endif%}
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                     {% set ns = namespace(mostActive=0) %} 
-                    {% for c, data in courtTable.items()|sort(attribute='id') %}
-                        {% if data['Disputes in the last 30 days'] > courtTable[ns.mostActive]['Disputes in the last 30 days']%}
+                    {% for c, data in dashboard['courtTable'].items()|sort(attribute='id') %}
+                        {% if data['Disputes in the last 30 days'] > dashboard['courtTable'][ns.mostActive]['Disputes in the last 30 days']%}
                             {% set ns.mostActive = c%}
                         {% endif%}
                     {% endfor%}
                     
-                    {% for courtID, data in courtTable|dictsort(false) %}
-                        {% if courtID == ns.mostActive %}<tr class="success">{%else%}<tr>{%endif%}
+                    {% for courtID, data in dashboard['courtTable']|dictsort(false) %}
                         <td class="text-right"><a href={{url_for('court', id=data['id'])}}>{{ data['Name'] }}</a></td>
                         <th scope="row"> {{ courtID }}</th>
                         

@@ -10,16 +10,15 @@ from datetime import datetime
 from flask import render_template, request
 
 from app import create_app
-from app.modules.oracles import CoinGecko
 from app.modules.plotters import jurorHistogram
 # from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
 #     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, \
 #     jurorHistogram
 from app.modules.kleros import get_all_court_chances
-from app.modules.subgraph import getCourtWithDisputes, getMostActiveCourt, \
-    getAdoption, getCourtName, getKlerosCounters, \
-    getDispute, getCourt, getActiveJurorsFromCourt, \
-    getCourtTable, getProfile, _wei2eth, getAllDisputes, getStatus
+from app.modules.subgraph import getCourtWithDisputes, \
+    getDashboard, getCourtName, getDispute, getStatus, \
+    getActiveJurorsFromCourt, getProfile, _wei2eth, \
+    getAllDisputes
 from app.modules.vagarish import get_evidences
 
 
@@ -59,51 +58,9 @@ def filter_wei_2_eth(gwei):
 
 @application.route('/')
 def index():
-    klerosCounters = getKlerosCounters()
-    drawnJurors = klerosCounters['drawnJurors']
-    retention = 0  # Juror.retention() / drawnJurors
-    adoption = getAdoption()
-    ruledCases = klerosCounters['closedDisputes']
-    openCases = klerosCounters['openDisputes']
-    mostActiveCourt = getMostActiveCourt()
-    if mostActiveCourt is not None:
-        mostActiveCourt = getCourtName(int(mostActiveCourt))
-    else:
-        mostActiveCourt = "No new cases in the last 7 days"
-    # PNK & ETH Information
-    coingecko = CoinGecko()
-    pnkInfo = coingecko.getCryptoInfo()
-    ethPrice = coingecko.getETHprice()
-    pnkPrice = pnkInfo['market_data']['current_price']['usd']
-    tokenSupply = pnkInfo['market_data']['total_supply']
-    pnkPctChange = pnkInfo['market_data']['price_change_24h']
-    pnkCircSupply = pnkInfo['market_data']['circulating_supply']
-    pnkVol24 = pnkInfo['market_data']['total_volume']['usd']
-    courtTable = getCourtTable()
-    pnkStaked = _wei2eth(klerosCounters['tokenStaked'])
-    activeJurors = klerosCounters['activeJurors']
+    dashboard = getDashboard()
     return render_template('main.html',
-                           last_update=datetime.now(),
-                           disputes=klerosCounters['disputesCount'],
-                           activeJurors=activeJurors,
-                           jurorsdrawn=drawnJurors,
-                           retention=retention,
-                           adoption=adoption,
-                           most_active_court=mostActiveCourt,
-                           cases_closed=ruledCases,
-                           cases_rulling=openCases,
-                           tokenSupply=tokenSupply,
-                           pnkStaked=pnkStaked,
-                           pnkStakedPercent=pnkStaked/tokenSupply,
-                           pnkStakedPercentSupply=pnkStaked/pnkCircSupply,
-                           ethPrice=ethPrice,
-                           pnkPrice=pnkPrice,
-                           pnkPctChange=pnkPctChange,
-                           pnkVol24=pnkVol24,
-                           pnkCircSupply=pnkCircSupply,
-                           fees_paid={'eth': 0,
-                                      'pnk': 0},
-                           courtTable=courtTable,
+                           dashboard=dashboard,
                            subgraph_status=getStatus()
                            )
 
@@ -149,7 +106,8 @@ def odds():
                            last_update=datetime.now(),
                            pnkStaked=pnkStaked,
                            n_votes=n_votes,
-                           courtChances=get_all_court_chances(pnkStaked, n_votes),
+                           courtChances=get_all_court_chances(pnkStaked,
+                                                              n_votes),
                            subgraph_status=getStatus())
 
 
@@ -196,10 +154,10 @@ def dispute():
                                    )
         dispute['evidences'] = get_evidences(id)
         return render_template('dispute.html',
-                            dispute=dispute,
-                            error=None,
-                            subgraph_status=getStatus()
-                            )
+                               dispute=dispute,
+                               error=None,
+                               subgraph_status=getStatus()
+                               )
 
 
 @application.route('/court/', methods=['GET'])
@@ -214,8 +172,8 @@ def court():
 
     jurors = getActiveJurorsFromCourt(id)
     sorted_jurors = sorted(jurors,
-                            key=lambda item: item['stake'],
-                            reverse=True)
+                           key=lambda item: item['stake'],
+                           reverse=True)
     juror_hist = jurorHistogram([juror['stake'] for juror in sorted_jurors])
     staked_in_this_court = sum(juror['stake'] for juror in sorted_jurors)
     return render_template('court.html',
@@ -240,7 +198,7 @@ def court():
 def profile(address):
     profile = getProfile(address)
     if profile is None:
-        profile = {'address':address}
+        profile = {'address': address}
         return render_template('profile.html',
                                profile=profile,
                                subgraph_status=getStatus()

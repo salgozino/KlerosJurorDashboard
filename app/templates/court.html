@@ -145,8 +145,7 @@
                     <h4>Fees paid</h4>
                 </div>
                 <div class="panel-body text-center">
-                    <!--{{ "%.3f ETH"|format(fees['eth']) }}-->
-                    Soon
+                    {{ "%.3f ETH"|format(court['totalETHFees']) }}
                 </div>
                 <div class="panel-footer">
                     Fees paid to the coherent jurors of this court
@@ -160,8 +159,7 @@
                     <h4>PNK redistributed</h4>
                 </div>
                 <div class="panel-body text-center">
-                    Soon
-                    <!--{{"{:,.2f} PNK".format(fees['pnk'])}}-->
+                    {{"{:,.2f} PNK".format(court['totalTokenRedistributed'])}}
                 </div>
                 <div class="panel-footer">
                     PNK transfered from incoherent jurors to coherent jurors
