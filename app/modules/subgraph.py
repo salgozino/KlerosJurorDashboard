@@ -435,7 +435,7 @@ class Subgraph():
             query = (
                 '{disputes(where:{disputeID_gt:'+str(initDispute)+'}){'
                 'id,subcourtID{id},currentRulling,ruled,startTime,'
-                'period,lastPeriodChange'
+                'period,lastPeriodChange,arbitrable'
                 '}}'
             )
             result = self._post_query(query)
@@ -480,6 +480,19 @@ class Subgraph():
         for vote in votes:
             vote = self._parseVote(vote)
         return votes
+
+    @staticmethod
+    def getArbitrableName(arbitrable):
+        file_path = 'app/lib/dapp_index.json'
+        arbitrable = str(arbitrable).lower()
+        if os.path.isfile(file_path):
+            with open(file_path) as jsonFile:
+                dapp_index = json.load(jsonFile)
+                if arbitrable in dapp_index.keys():
+                    if dapp_index[arbitrable] is not None:
+                        if 'Dapp name' in dapp_index[arbitrable]:
+                            return dapp_index[arbitrable]['Dapp name']
+        return arbitrable
 
     def getCourt(self, courtID):
         query = (
@@ -662,6 +675,32 @@ class Subgraph():
                         if 'name' in policies[courtID]:
                             return policies[courtID]['name']
         return str(courtID)
+
+    def getCourtTree(self):
+        query = (
+        '''{
+        courts{
+            subcourtID,
+            parent{id},
+            activeJurors,
+            tokenStaked,
+        }}'''
+        )
+        result = self._post_query(query)
+        if len(result['courts']) == 0:
+            return None
+        else:
+            courts = defaultdict()
+            for court in result['courts']:
+                _court = self._parseCourt(court)
+                courts[_court['subcourtID']] = {'parent': _court['parent'],
+                                                'activeJurors': _court[
+                                                    'activeJurors'],
+                                                'tokenStaked': _court[
+                                                    'tokenStaked'],
+                                                'name': self.getCourtName(
+                                                    _court['subcourtID'])}
+            return courts
 
     def getDashboard(self):
         dashboard = self.getKlerosCounters()

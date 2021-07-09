@@ -14,6 +14,8 @@ from app.modules.plotters import jurorHistogram
 # from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
 #     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, \
 #     jurorHistogram
+from app.modules.plotters import disputesGraph, disputesbyCourtGraph, \
+    disputesbyArbitratedGraph, treeMapGraph
 from app.modules.kleros import get_all_court_chances
 from app.modules.subgraph import Subgraph
 from app.modules.vagarish import get_evidences
@@ -69,13 +71,18 @@ def index():
 def graphsMaker():
     network = request.args.get('network', type=str)
     subgraph = Subgraph(network)
+    court_table = subgraph.getCourtTree()
+    disputes = subgraph.getAllDisputes()
+    treeMapJurors = treeMapGraph(court_table, 'activeJurors')
+    treeMapToken = treeMapGraph(court_table, 'tokenStaked')
     return render_template('graphs.html',
                            stakedPNKgraph=[],
-                           disputesgraph=[],
-                           disputeCourtgraph=[],
-                           disputeCreatorgraph=[],
-                           treemapJurorsGraph=[],
-                           treemapStakedGraph=[],
+                           disputesgraph=disputesGraph(disputes),
+                           disputeCourtgraph=disputesbyCourtGraph(disputes),
+                           disputeCreatorgraph=disputesbyArbitratedGraph(
+                               disputes),
+                           treemapJurorsGraph=treeMapJurors,
+                           treemapStakedGraph=treeMapToken,
                            subgraph_status=subgraph.getStatus(),
                            network=subgraph.network
                            )

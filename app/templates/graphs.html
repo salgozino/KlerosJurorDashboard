@@ -1,12 +1,13 @@
 {% extends "layout.html" %}
 
 {% block body%}
-<h3> Under construction </h3>
-<p><h5 style="display: inline;">Treemap Graphs</h5>  <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="In this graphs, the size of the boxes is proportional to the amount of Jurors or 'Total Staked'. The boxes positioning it's according the parenting of the different courts." aria-hidden="true"></span></p>
-<p></p>
+<p><h5 style="display: inline;">Treemap Graphs</h5>
+    <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="In this graphs, the size of the boxes is proportional to the amount of Jurors or 'Total Staked'. The boxes positioning it's according the parenting of the different courts." aria-hidden="true"></span></p>
+</br>
 <!-- Graph of TreemapJurors -->
 <div class="container">
     <div class="row">
+        <h5>Active jurors</h5>
         <div class="col-md-12" id="treemapJurorsGraph-id" style="min-height:150px; max-height:100%">
             <script>
                 var fig = {{treemapJurorsGraph | safe}};
@@ -19,6 +20,7 @@
 <!-- Graph of TreemapStaked -->
 <div class="container">
     <div class="row">
+        <h5>Token Staked</h5>
         <div class="col-md-12" id="treemapStakedGraph-id" style="min-height:150px; max-height:100%">
             <script>
                 var fig = {{treemapStakedGraph | safe}};
@@ -41,6 +43,7 @@
 </div>
 
 <!-- Graph of PNK Staked and Active Jurors -->
+<!--
 <div class="container">
     <div class="row">
         <div class="col-md-12" id="StakedPNKgraph-id" style="min-height:150px; max-height:100%">
@@ -51,6 +54,7 @@
         </div>
     </div>
 </div>
+-->
 
 <div class="container">
     <div class="row">
