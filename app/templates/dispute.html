@@ -4,7 +4,7 @@
     {% block header %}
      <!-- Dispute Selector -->
         <div class="row">
-            <form class="form-inline text-center" action="{{ url_for('dispute') }}" method="get">
+            <form class="form-inline text-center" action="{{ url_for('dispute', network=network) }}" method="get">
               <div class="form-group">
                 <label for="disputeIDInput">Dispute </label>
                 <input class="form-control box-shadow" id="id" name="id" type="int" value={{ dispute['disputeID'] }}>
@@ -38,13 +38,13 @@
             <td align="center">Creator</td>
           </tr>
           <tr class={{'success' if dispute['ruled'] }}>
-            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'])}}>{{dispute['subcourtID']|courtName}}</a></td>
+            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName}}</a></td>
             <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
             <td class="text-center">{{dispute['period']|capitalize}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] != 'Already Executed'%}UTC{%endif%}</td>
             <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
             <td class="text-center"><a href="https://etherscan.io/address/{{ dispute['arbitrable'] }}">{{dispute['arbitrable'][0:6] +'...'+ dispute['arbitrable'][-4:]}}</a></td>
-            <td class="text-center"><a href={{ url_for('profile', address=dispute['creator']) }}>{{dispute['creator'][0:6] +'...'+ dispute['creator'][-4:]}}</a></td>
+            <td class="text-center"><a href={{ url_for('profile', address=dispute['creator'], network=network) }}>{{dispute['creator'][0:6] +'...'+ dispute['creator'][-4:]}}</a></td>
           </tr>
         </table>
     </div>
@@ -96,7 +96,7 @@
             {% else %}
                 <tr>
             {% endif %}
-              <td><a href={{url_for('profile', address=v['address'])}}>{{v['address']}}</a></td>
+              <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
               <td align="right">{{ v['vote_str'] }}</td>
             </tr>
           {% endfor %}
@@ -119,7 +119,7 @@
               {{evidenceData['textContent']}}
             </div>
             <div class="panel-footer">
-              <div class="col text-left"><a href={{url_for('profile', address=evidenceData['byAddress'])}}>{{evidenceData['byAddress']}}</a></div>
+              <div class="col text-left"><a href={{url_for('profile', address=evidenceData['byAddress'], network=network)}}>{{evidenceData['byAddress']}}</a></div>
               <div class="col text-right">
               {%if evidenceData['fileIpfsPath']%}
               <a href="https://ipfs.kleros.io/{{evidenceData['fileIpfsPath']}}"><span class="glyphicon glyphicon-paperclip"></span></a>

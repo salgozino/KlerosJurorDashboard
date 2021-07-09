@@ -36,16 +36,17 @@
        otro elemento que se pueda ocultar al minimizar la barra -->
     <div class="collapse navbar-collapse navbar-ex1-collapse">
     <ul class="nav navbar-nav">
-        <li class="navbar-item"><a href="/">Klerosboard</a></li>
-        <li class="navbar-item"><a href="/graphs/">Graphic Statistics</a></li>
-        <li class="navbar-item"><a href="/odds/">Juror Odds!</a></li>
-        <li class="navbar-item"><a href="/court/">Court Explorer</a></li>
-        <li class="navbar-item"><a href="/dispute/">Dispute Scanner</a></li>
-        <li class="navbar-item"><a href="/kleros-map/">Kleros Community Map!</a></li>
+        <li class="navbar-item"><a href="/?network={{network}}">Klerosboard</a></li>
+        <li class="navbar-item"><a href="/graphs/?network={{network}}">Graphic Statistics</a></li>
+        <li class="navbar-item"><a href="/odds/?network={{network}}">Juror Odds!</a></li>
+        <li class="navbar-item"><a href="/court/?network={{network}}">Court Explorer</a></li>
+        <li class="navbar-item"><a href="/dispute/?network={{network}}">Dispute Scanner</a></li>
+        <li class="navbar-item"><a href="/kleros-map/?network={{network}}">Kleros Community Map!</a></li>
     </ul>
 
     <ul class="nav navbar-nav navbar-right">
-        <div style="margin-right: 10px; margin-left: 15px; margin-top: 5px; margin-bottom: 5px;"  class="container-fluid">
+        <div style="margin-right: 10px; margin-left: 15px; margin-top: 5px; margin-bottom: 5px;" class="navbar-text">Network: {{network}}</div>
+        <div style="margin-right: 10px; margin-left: 15px; margin-top: 5px; margin-bottom: 5px;">
             <a href="/support/" class="navbar-text"> <span class="glyphicon glyphicon-heart"></span> Support</a>
         </div>
     </ul>

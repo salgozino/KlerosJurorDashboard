@@ -15,10 +15,7 @@ from app.modules.plotters import jurorHistogram
 #     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, \
 #     jurorHistogram
 from app.modules.kleros import get_all_court_chances
-from app.modules.subgraph import getCourtWithDisputes, \
-    getDashboard, getCourtName, getDispute, getStatus, \
-    getActiveJurorsFromCourt, getProfile, _wei2eth, \
-    getAllDisputes
+from app.modules.subgraph import Subgraph
 from app.modules.vagarish import get_evidences
 
 
@@ -39,7 +36,7 @@ def timedelta(date):
 
 @application.template_filter()
 def courtName(courtID):
-    return getCourtName(courtID)
+    return Subgraph().getCourtName(courtID)
 
 
 @application.template_filter()
@@ -53,20 +50,25 @@ def timestamp2datetime(value):
 
 @application.template_filter()
 def filter_wei_2_eth(gwei):
-    return _wei2eth(gwei)
+    return Subgraph()._wei2eth(gwei)
 
 
-@application.route('/')
+@application.route('/', methods=['GET'])
 def index():
-    dashboard = getDashboard()
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
+    dashboard = subgraph.getDashboard()
     return render_template('main.html',
                            dashboard=dashboard,
-                           subgraph_status=getStatus()
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
                            )
 
 
 @application.route('/graphs/')
 def graphsMaker():
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
     return render_template('graphs.html',
                            stakedPNKgraph=[],
                            disputesgraph=[],
@@ -74,21 +76,25 @@ def graphsMaker():
                            disputeCreatorgraph=[],
                            treemapJurorsGraph=[],
                            treemapStakedGraph=[],
-                           subgraph_status=getStatus()
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
                            )
 
 
 @application.route('/support/')
 def support():
-    # Visitor().addVisit('support')
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
     return render_template('support.html',
-                           subgraph_status=getStatus()
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
                            )
 
 
 @application.route('/odds/', methods=['GET', 'POST'])
 def odds():
-    # Visitor().addVisit('odds')
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
     pnkStaked = 100000
     n_votes = 3
     if request.method == 'POST':
@@ -103,60 +109,74 @@ def odds():
             n_votes = 3
 
     return render_template('odds.html',
-                           last_update=datetime.now(),
                            pnkStaked=pnkStaked,
                            n_votes=n_votes,
                            courtChances=get_all_court_chances(pnkStaked,
-                                                              n_votes),
-                           subgraph_status=getStatus())
+                                                              n_votes,
+                                                              network),
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network)
 
 
 @application.route('/kleros-map/')
 def maps():
-    # Visitor().addVisit('map')
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
     return render_template('kleros-map.html',
-                           subgraph_status=getStatus()
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
                            )
 
 
 @application.route('/visitorMetrics/')
 def visitorMetrics():
-    # visitor = Visitor()
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
     return render_template('visitors.html',
                            home=0,
                            odds=0,
                            map=0,
                            support=0,
-                           subgraph_status=getStatus()
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
                            )
 
 
 @application.route('/dispute/', methods=['GET'])
 def dispute():
     id = request.args.get('id', type=int)
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
     if id is None:
-        disputes = getAllDisputes()
+        disputes = subgraph.getAllDisputes()
         return render_template('allDisputes.html',
                                error=None,
                                disputes=disputes,
-                               subgraph_status=getStatus()
+                               subgraph_status=subgraph.getStatus(),
+                               network=subgraph.network
                                )
 
     else:
-        dispute = getDispute(id)
+        dispute = subgraph.getDispute(id)
         if dispute is None:
             error_msg = ("Error trying to reach the dispute data."
                          "This Dispute exist?"
                          )
             return render_template('dispute.html',
                                    error=error_msg,
-                                   subgraph_status=getStatus()
+                                   subgraph_status=subgraph.getStatus(),
+                                   network=subgraph.network
                                    )
-        dispute['evidences'] = get_evidences(id)
+        if network == 'mainnet':
+            dispute['evidences'] = get_evidences(id)
+        else:
+            # there is no evidence provider in other networks
+            dispute['evidences'] = []
         return render_template('dispute.html',
                                dispute=dispute,
                                error=None,
-                               subgraph_status=getStatus()
+                               subgraph_status=subgraph.getStatus(),
+                               network=subgraph.network
                                )
 
 
@@ -165,12 +185,14 @@ def court():
     id = request.args.get('id', type=int)
     if id is None:
         id = 0
-    court = getCourtWithDisputes(id)
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
+    court = subgraph.getCourtWithDisputes(id)
     if court is None:
         return "Error!, court not found"
     disputes = court['disputes']
 
-    jurors = getActiveJurorsFromCourt(id)
+    jurors = subgraph.getActiveJurorsFromCourt(id)
     sorted_jurors = sorted(jurors,
                            key=lambda item: item['stake'],
                            reverse=True)
@@ -188,33 +210,39 @@ def court():
                            fees={'eth': 0, 'pnk': 0},
                            min_stake=court['minStake'],
                            vote_stake=court['voteStake'],
-                           last_update=datetime.now(),
                            current_juror_page=0,
-                           subgraph_status=getStatus()
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
                            )
 
 
 @application.route('/profile/<string:address>', methods=['GET'])
 def profile(address):
-    profile = getProfile(address)
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
+    profile = subgraph.getProfile(address)
     if profile is None:
         profile = {'address': address}
         return render_template('profile.html',
                                profile=profile,
-                               subgraph_status=getStatus()
+                               subgraph_status=subgraph.getStatus(),
+                               network=subgraph.network
                                )
     else:
         return render_template('profile.html',
                                profile=profile,
-                               subgraph_status=getStatus()
+                               subgraph_status=subgraph.getStatus(),
+                               network=subgraph.network
                                )
 
 
 @application.errorhandler(404)
 def not_found(e):
-    # Visitor().addVisit('unknown')
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
     return render_template("404.html",
-                           subgraph_status=getStatus()
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
                            )
 
 

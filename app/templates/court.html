@@ -4,7 +4,7 @@
     {% block header %}
      <!-- Court Selector -->
         <div class="row">
-            <form class="form-inline text-center" action="{{ url_for('court') }}" method="get">
+            <form class="form-inline text-center" action="{{ url_for('court', network=network) }}" method="get">
               <div class="form-group">
                 <label for="disputeIDInput">Court </label>
                 <input class="form-control box-shadow" id="id" name="id" type="int" value={{ court.id }}>
@@ -27,7 +27,7 @@
                 <div class="panel-heading text-center">
                     <h4>Parent Court</h4>
                 </div>
-                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=court['parent'])}}>{{court['parent']|courtName}}</a></li></ul>{% endif %}
+                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=court['parent'], network=network)}}>{{court['parent']|courtName}}</a></li></ul>{% endif %}
             </div>
         </div>
 
@@ -39,7 +39,7 @@
                 {% if court['childs']|length > 0 %}
                     <ul class="list-group">
                     {% for child in court['childs']%}
-                        <li class="list-group-item"><a href={{url_for('court', id=child)}}>{{ child|courtName }}</a></li>
+                        <li class="list-group-item"><a href={{url_for('court', id=child, network=network)}}>{{ child|courtName }}</a></li>
                     {% endfor %}
                     </ul>
                 {% else%}
@@ -99,7 +99,7 @@
         </div>
         
         <div class="col-lg-3">
-            <div class="panel panel-default">
+            <div class="panel <panel-default">
                 <div class="panel-heading">
                     <h4>Ruled Cases</h4>
                 </div>
@@ -243,7 +243,7 @@
             <tbody>
                 {% for juror in jurors: %}
                 <tr>
-                    <td class="text-center"><a href={{url_for('profile', address=juror['address'])}}>{{juror['address']}}</a></td>
+                    <td class="text-center"><a href={{url_for('profile', address=juror['address'], network=network)}}>{{juror['address']}}</a></td>
                     <td class="text-center">{{ "{:0,.2f}".format(juror['stake']) }}</td>
                 </tr>
                 {% endfor %}
@@ -279,7 +279,7 @@
           <tbody>
           {% for dispute in disputes|sort(attribute='id', reverse=True): %}
           <tr class={{'success' if dispute['ruled'] else 'warning'}}>
-            <td class="text-center"><a href={{url_for('dispute', id=dispute['id'])}}>{{dispute['id']}}</a></td>
+            <td class="text-center"><a href={{url_for('dispute', id=dispute['id'], network=network)}}>{{dispute['id']}}</a></td>
             <td class="text-center">{{dispute['period']}}</td>
             <td class="text-center">{{dispute['currentRulling']}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute['lastPeriodChange']|timestamp2datetime}}</span> UTC</td>

@@ -318,7 +318,7 @@
                     {% endfor%}
                     
                     {% for courtID, data in dashboard['courtTable']|dictsort(false) %}
-                        <td class="text-right"><a href={{url_for('court', id=data['id'])}}>{{ data['Name'] }}</a></td>
+                        <td class="text-right"><a href={{url_for('court', id=data['id'], network=network)}}>{{ data['Name'] }}</a></td>
                         <th scope="row"> {{ courtID }}</th>
                         
                         {% for col, value in data.items() %}

@@ -18,7 +18,7 @@
               <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
               {% for dispute in profile['disputesAsCreator']|sort(attribute='timestamp', reverse=True): %}
               <tr>
-                <td><a href={{ url_for('dispute', id= dispute['id']) }}>Dispute {{dispute['id']}}</a></td>
+                <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
                 <td>{{ dispute['startTime']|timestamp2datetime }}</td>
                 <td><a href="https://etherscan.io/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
               </tr>
@@ -33,7 +33,7 @@
               <tr class="info"><td>Court</td><td>Amount</td><td>TxID</td></tr>
               {% for stake in profile['currentStakes']|sort(attribute='stake', reverse=True): %}
                 <tr>
-                  <td><a href={{url_for('court', id=stake['court'])}}>{{stake['court']|courtName}}</td>
+                  <td><a href={{url_for('court', id=stake['court'], network=network)}}>{{stake['court']|courtName}}</td>
                   <td>{{"{:,.2f}".format(stake['stake'])}}</td>
                   <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid']}}</a></td>
                 </tr>
@@ -62,7 +62,7 @@
                   {% else %}
                       <tr class='danger'>
                   {% endif %}
-                  <td><a href="{{ url_for('dispute',id=v['dispute']['id']) }}">Dispute {{ v['dispute']['id']}}</a></td>
+                  <td><a href="{{ url_for('dispute',id=v['dispute']['id'], network=network) }}">Dispute {{ v['dispute']['id']}}</a></td>
                   <td>{{v['roundNumber']}}</td>
                   <td>{{ "Ruled" if v['dispute']['ruled'] else "Ongoing"}}</td>
                   <td>{{ v['vote_str'] }}</td>
