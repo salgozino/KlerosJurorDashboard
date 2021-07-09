@@ -14,11 +14,13 @@ from app.modules.plotters import jurorHistogram
 # from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
 #     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, \
 #     jurorHistogram
+from app.modules.plotters import disputesGraph, disputesbyCourtGraph, \
+    disputesbyArbitratedGraph, treeMapGraph
 from app.modules.kleros import get_all_court_chances
-from app.modules.subgraph import getCourtWithDisputes, \
+from app.modules.subgraph import getCourtTable, getCourtWithDisputes, \
     getDashboard, getCourtName, getDispute, getStatus, \
     getActiveJurorsFromCourt, getProfile, _wei2eth, \
-    getAllDisputes
+    getAllDisputes, getCourtTree
 from app.modules.vagarish import get_evidences
 
 
@@ -67,13 +69,18 @@ def index():
 
 @application.route('/graphs/')
 def graphsMaker():
+    court_table = getCourtTree()
+    disputes = getAllDisputes()
+    treeMapJurors = treeMapGraph(court_table, 'activeJurors')
+    treeMapToken = treeMapGraph(court_table, 'tokenStaked')
     return render_template('graphs.html',
                            stakedPNKgraph=[],
-                           disputesgraph=[],
-                           disputeCourtgraph=[],
-                           disputeCreatorgraph=[],
-                           treemapJurorsGraph=[],
-                           treemapStakedGraph=[],
+                           disputesgraph=disputesGraph(disputes),
+                           disputeCourtgraph=disputesbyCourtGraph(disputes),
+                           disputeCreatorgraph=disputesbyArbitratedGraph(
+                               disputes),
+                           treemapJurorsGraph=treeMapJurors,
+                           treemapStakedGraph=treeMapToken,
                            subgraph_status=getStatus()
                            )
 

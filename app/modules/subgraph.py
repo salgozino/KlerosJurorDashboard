@@ -426,7 +426,7 @@ def getAllDisputes():
         query = (
             '{disputes(where:{id_gt:'+str(initDispute)+'}){'
             'id,subcourtID{id},currentRulling,ruled,startTime,'
-            'period,lastPeriodChange'
+            'period,lastPeriodChange,arbitrable'
             '}}'
         )
         result = requests.post(subgraph_node, json={'query': query})
@@ -468,6 +468,19 @@ def getAllVotesFromJuror(address):
     for vote in votes:
         vote = _parseVote(vote)
     return votes
+
+
+def getArbitrableName(arbitrable):
+    file_path = 'app/lib/dapp_index.json'
+    arbitrable = str(arbitrable).lower()
+    if os.path.isfile(file_path):
+        with open(file_path) as jsonFile:
+            dapp_index = json.load(jsonFile)
+            if arbitrable in dapp_index.keys():
+                if dapp_index[arbitrable] is not None:
+                    if 'Dapp name' in dapp_index[arbitrable]:
+                        return dapp_index[arbitrable]['Dapp name']
+    return arbitrable
 
 
 def getCourt(courtID):
@@ -658,6 +671,33 @@ def getCourtName(courtID):
                     if 'name' in policies[courtID]:
                         return policies[courtID]['name']
     return str(courtID)
+
+
+def getCourtTree():
+    query = (
+        '''{
+        courts{
+            subcourtID,
+            parent{id},
+            activeJurors,
+            tokenStaked,
+        }}'''
+    )
+    result = requests.post(subgraph_node, json={'query': query})
+    if len(result.json()['data']['courts']) == 0:
+        return None
+    else:
+        courts = defaultdict()
+        for court in result.json()['data']['courts']:
+            _court = _parseCourt(court)
+            courts[_court['subcourtID']] = {'parent': _court['parent'],
+                                            'activeJurors': _court[
+                                                'activeJurors'],
+                                            'tokenStaked': _court[
+                                                'tokenStaked'],
+                                            'name': getCourtName(
+                                                _court['subcourtID'])}
+        return courts
 
 
 def getDashboard():
