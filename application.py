@@ -37,8 +37,8 @@ def timedelta(date):
 
 
 @application.template_filter()
-def courtName(courtID):
-    return Subgraph().getCourtName(courtID)
+def courtName(courtID, network=None):
+    return Subgraph(network).getCourtName(courtID)
 
 
 @application.template_filter()
@@ -77,10 +77,11 @@ def graphsMaker():
     treeMapToken = treeMapGraph(court_table, 'tokenStaked')
     return render_template('graphs.html',
                            stakedPNKgraph=[],
-                           disputesgraph=disputesGraph(disputes),
-                           disputeCourtgraph=disputesbyCourtGraph(disputes),
+                           disputesgraph=disputesGraph(disputes, network),
+                           disputeCourtgraph=disputesbyCourtGraph(disputes,
+                                                                  network),
                            disputeCreatorgraph=disputesbyArbitratedGraph(
-                               disputes),
+                               disputes, network),
                            treemapJurorsGraph=treeMapJurors,
                            treemapStakedGraph=treeMapToken,
                            subgraph_status=subgraph.getStatus(),

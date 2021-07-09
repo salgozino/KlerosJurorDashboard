@@ -3,7 +3,7 @@ import os
 import logging
 import sys
 
-from app.modules.subgraph import readPolicy, getCourtPolicy, getKlerosCounters
+from app.modules.subgraph import Subgraph
 
 logger = logging.getLogger(__name__)
 
@@ -17,19 +17,21 @@ in the lib folder
 if __name__ == '__main__':
     if not os.path.isdir('app/lib'):
         os.mkdir('app/lib')
-    
-    kc = getKlerosCounters()
-    try:
-        courtsCount = kc['courtsCount']
-    except KeyError:
-        logger.error('Error trying to read courtsCount from KlerosCounters')
-        sys.exit()
-    
-    policies = {}
-    for courtID in range(courtsCount):
-        policy = getCourtPolicy(courtID)
-        policies.update({courtID:policy})
-    print(policies)
-    with open('app/lib/court_policies.json', 'w') as f:
-        json.dump(policies, f)
 
+    networks = ['mainnet',  'xdai']
+    for network in networks:
+        subgraph = Subgraph(network)
+        kc = subgraph.getKlerosCounters()
+        try:
+            courtsCount = kc['courtsCount']
+        except KeyError:
+            logger.error('Error trying to read courtsCount from KlerosCounters')
+            sys.exit()
+
+        policies = {}
+        for courtID in range(courtsCount):
+            policy = subgraph.getCourtPolicy(courtID)
+            policies.update({courtID: policy})
+
+        with open(f'app/lib/court_policies_{network}.json', 'w') as f:
+            json.dump(policies, f)

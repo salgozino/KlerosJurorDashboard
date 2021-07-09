@@ -157,7 +157,7 @@ def stakesJurorsGraph(courts=['0', '2', '8', '9'], language='en'):
 """
 
 
-def disputesbyCourtGraph(disputes, language="en"):
+def disputesbyCourtGraph(disputes, network=None, language="en"):
     if 'en' == language:
         title = 'Disputes by Courts'
     else:
@@ -165,7 +165,7 @@ def disputesbyCourtGraph(disputes, language="en"):
     fig = go.Figure()
     df = pd.DataFrame(disputes)
     data = df.groupby(df.subcourtID)['id'].count()
-    data.index = data.index.map(Subgraph.getCourtName)
+    data.index = data.index.map(Subgraph(network).getCourtName)
     data = data.to_dict()
     fig.add_trace(go.Pie(labels=list(data.keys()),
                          values=list(data.values()),
@@ -180,14 +180,14 @@ def disputesbyCourtGraph(disputes, language="en"):
     return json.dumps(fig, cls=PlotlyJSONEncoder)
 
 
-def disputesbyArbitratedGraph(disputes, language="en"):
+def disputesbyArbitratedGraph(disputes, network=None, language="en"):
     if 'en' == language:
         title = 'Disputes by dApp'
     else:
         title = 'Disputas por dApp'
     fig = go.Figure()
     df = pd.DataFrame(disputes)
-    df.arbitrable = df.arbitrable.map(Subgraph.getArbitrableName)
+    df.arbitrable = df.arbitrable.map(Subgraph(network).getArbitrableName)
     data = df.groupby(df.arbitrable)['id'].count()
     data = data.to_dict()
     print(data.values())

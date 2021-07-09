@@ -673,9 +673,8 @@ class Subgraph():
                 parsed_courts.append(self._parseCourt(court))
             return parsed_courts
 
-    @staticmethod
-    def getCourtName(courtID):
-        file_path = 'app/lib/court_policies.json'
+    def getCourtName(self, courtID):
+        file_path = f'app/lib/court_policies_{self.network}.json'
         courtID = str(courtID)
         if os.path.isfile(file_path):
             with open(file_path) as jsonFile:
