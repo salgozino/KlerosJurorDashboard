@@ -18,6 +18,7 @@ class Subgraph():
     def __init__(self, network=None):
         self.logger = logging.getLogger(__name__)
         self.network = network if network is not None else 'mainnet'
+        self.subgraph_name = 'salgozino/klerosboard' if self.network == 'mainnet' else 'salgozino/sarasa'
         try:
             self.subgraph_id_mainnet = os.environ['SUBGRAPH_ID']
         except KeyError:
@@ -33,6 +34,7 @@ class Subgraph():
 
         # Node definitions
         self.subgraph_node = 'https://api.thegraph.com/subgraphs/id/'
+        self.index_node = 'https://api.thegraph.com/index-node/graphql'
         if self.network == 'mainnet':
             self.subgraph_node += self.subgraph_id_mainnet
         elif self.network == 'xdai':
@@ -44,17 +46,26 @@ class Subgraph():
     def _calculateVoteStake(minStake, alpha):
         return float(alpha)*(10**-4)*float(minStake)
 
-    @staticmethod
-    def _getBlockNumberbefore(days=30):
+    def _getBlockNumberbefore(self, days=30):
         """
         Get the block number of n days ago. By default, 30 days.
         Now, it's simple considering an average time of 17 seconds.
         This should be improved
         """
         # TODO!, improve this function!
-        averageBlockTime = 15  # in seconds
-        currentBlockNumber = web3Node.web3.eth.blockNumber
-        return int(currentBlockNumber - days*24*60*60/averageBlockTime)
+        if self.network == 'xdai':
+            query = '{indexingStatusForCurrentVersion(subgraphName: "' + \
+                self.subgraph_name + '"){' + \
+                'chains{chainHeadBlock{number},latestBlock{number}}}}'
+            response = requests.post(self.index_node, json={'query': query})
+            currentBlockNumber = int(response.json()['data'][
+                'indexingStatusForCurrentVersion']['chains'][0]['chainHeadBlock']['number'])
+            averageBlockTime = 15  # in seconds
+            return int(currentBlockNumber - days*24*60*60/averageBlockTime)
+        else:
+            averageBlockTime = 15  # in seconds
+            currentBlockNumber = web3Node.web3.eth.blockNumber
+            return int(currentBlockNumber - days*24*60*60/averageBlockTime)
 
     @staticmethod
     def _getRoundNumFromID(roundID):
@@ -361,7 +372,6 @@ class Subgraph():
                 timePeriods,
             }}'''
         )
-        
         result = self._post_query(query)
         if result is None:
             return result
@@ -678,14 +688,14 @@ class Subgraph():
 
     def getCourtTree(self):
         query = (
-        '''{
-        courts{
-            subcourtID,
-            parent{id},
-            activeJurors,
-            tokenStaked,
-        }}'''
-        )
+            '''{
+            courts{
+                subcourtID,
+                parent{id},
+                activeJurors,
+                tokenStaked,
+            }}'''
+            )
         result = self._post_query(query)
         if len(result['courts']) == 0:
             return None
