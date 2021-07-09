@@ -654,8 +654,9 @@ def getCourtName(courtID):
         with open(file_path) as jsonFile:
             policies = json.load(jsonFile)
             if courtID in policies.keys():
-                if 'name' in policies[courtID]:
-                    return policies[courtID]['name']
+                if policies[courtID] is not None:
+                    if 'name' in policies[courtID]:
+                        return policies[courtID]['name']
     return str(courtID)
 
 
@@ -878,46 +879,28 @@ def getStatus():
     """
     query = """
     {
-    indexingStatusForCurrentVersion(subgraphName: "salgozino/klerosboard") {
-        synced
-        health
-        fatalError {
-        message
-        block {
+        _meta{
+            block {
             number
-            hash
-        }
-        handler
-        }
-        chains {
-        chainHeadBlock {
-            number
-        }
-        latestBlock {
-            number
-        }
-        }
-        }
+            }
+            deployment
+         }
     }
     """
-    result = _post_query(query=query, subgraph_node=subgraph_index_node)
-    if result is None:
-        return {'status': ' Updated',
-                'last_block': 0,
-                'deployment': 0,
-                'error': 'Error querying the index-node for status'}
-    result = result['indexingStatusForCurrentVersion']
-    last_block_number = int(result['chains'][0]['chainHeadBlock']['number'])
-    subgraph_block_number = int(result['chains'][0]['latestBlock']['number'])
+    result = requests.post(subgraph_node, json={'query': query}).json()
+    last_block_number = web3Node.web3.eth.blockNumber
+    meta = result['data']['_meta']
+    subgraph_block_number = int(meta['block']['number'])
+    subgraph_id = meta['deployment']
     if abs(last_block_number - subgraph_block_number) < 20:
         # ~ 5 min of delay allowed
-        return {'status': ' Updated',
-                'last_block': subgraph_block_number,
-                'error': result['fatalError']}
+        return {'status':'Updated',
+                'last_block':subgraph_block_number,
+                'deployment':subgraph_id}
     else:
-        return {'status': 'Updating',
-                'last_block': subgraph_block_number,
-                'error': result['fatalError']}
+        return {'status':'Updating',
+               'last_block':subgraph_block_number,
+               'deployment':subgraph_id}
 
 
 def getTimePeriods(courtID):
