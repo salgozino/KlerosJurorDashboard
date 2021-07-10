@@ -17,7 +17,7 @@ except TypeError:
 class Subgraph():
     def __init__(self, network=None):
         self.logger = logging.getLogger(__name__)
-        self.network = network if network is not None else 'mainnet'
+        self.network = network.lower() if network is not None else 'mainnet'
         if self.network != 'mainnet':
             raise Exception('Others network besides mainnet are not '
                             'implemented yet')
