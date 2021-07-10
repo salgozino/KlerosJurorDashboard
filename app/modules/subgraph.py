@@ -199,9 +199,13 @@ class Subgraph():
     def _parseProfile(self, profile):
         keys = profile.keys()
         if 'numberOfDisputesAsJuror' in keys:
-            profile['numberOfDisputesAsJuror'] = profile[
+            profile['numberOfDisputesAsJuror'] = int(profile[
                 'numberOfDisputesAsJuror'
-                ]
+                ])
+        if 'numberOfDisputesAsCreator' in keys:
+            profile['numberOfDisputesAsCreator'] = int(profile[
+                'numberOfDisputesAsCreator'
+                ])
         if 'currentStakes' in keys:
             for stake in profile['currentStakes']:
                 stake = self._parseCourtStake(stake)
@@ -231,12 +235,10 @@ class Subgraph():
             for dispute in profile['disputesAsCreator']:
                 disputes_as_creator.append(self._parseDispute(dispute))
             profile['disputesAsCreator'] = disputes_as_creator
-            print(profile['disputesAsCreator'])
         return profile
 
     def _parseVote(self, vote):
         keys = vote.keys()
-        print(vote)
         if 'address' in keys:
             vote['address'] = vote['address']['id']
         if 'choice' in keys:
@@ -319,6 +321,23 @@ class Subgraph():
                 'id': court['subcourtID'],
                 'Name': self.getCourtName(court['subcourtID'])
                 }
+
+    def getActiveJurorsFromCourt(self, courtID):
+        query = (
+            '{'
+            'courtStakes(where:{court:"'+str(courtID)+'",stake_gt:0}, '
+            'first:1000){'
+            '    stake,'
+            '    juror {id}'
+            '}}'
+        )
+
+        result = self._post_query(query)
+        if result is None:
+            return []
+        else:
+            courtStakes = result['courtStakes']
+            return [self._parseCourtStake(cs) for cs in courtStakes]
 
     def getAdoption(self):
         "return the number of new jurors in the last 30 days"
@@ -449,7 +468,6 @@ class Subgraph():
                 '}}'
             )
             result = self._post_query(query)
-            print(result)
             if result is None:
                 break
             else:
@@ -490,6 +508,26 @@ class Subgraph():
         for vote in votes:
             vote = self._parseVote(vote)
         return votes
+
+    def getAllJurors(self):
+        skipJurors = 0
+        profiles = []
+        while True:
+            query = (
+                '{jurors(skip:'+str(skipJurors)+', first:1000, orderBy:id,'
+                'orderDirection:asc){id,totalStaked,numberOfDisputesAsJuror'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentProfiles = result['jurors']
+                profiles.extend(currentProfiles)
+                skipJurors += len(currentProfiles)
+
+        parsed_disputes = [self._parseProfile(profile) for profile in profiles]
+        return parsed_disputes
 
     @staticmethod
     def getArbitrableName(arbitrable):
@@ -782,23 +820,6 @@ class Subgraph():
             dispute = result['disputes'][0]
             return self._parseDispute(dispute)
 
-    def getActiveJurorsFromCourt(self, courtID):
-        query = (
-            '{'
-            'courtStakes(where:{court:"'+str(courtID)+'",stake_gt:0}, '
-            'first:1000){'
-            '    stake,'
-            '    juror {id}'
-            '}}'
-        )
-
-        result = self._post_query(query)
-        if result is None:
-            return []
-        else:
-            courtStakes = result['courtStakes']
-            return [self._parseCourtStake(cs) for cs in courtStakes]
-
     def getKlerosCounters(self):
         query = '''{
         klerosCounters {
@@ -898,8 +919,17 @@ class Subgraph():
         return self._parseProfile(profile_data)
 
     def getRetention(self):
-        # TODO!
-        return None
+        jurors = self.getAllJurors()
+        drawnJurors = []
+        still_active_juror = 0
+        for juror in jurors:
+            if juror['numberOfDisputesAsJuror'] > 0:
+                drawnJurors.append(juror)
+                if juror['totalStaked'] > 0:
+                    still_active_juror += 1
+
+        return still_active_juror/len(drawnJurors) if len(drawnJurors) > 0 \
+            else None
 
     def getStakedByJuror(self, address):
         query = (
