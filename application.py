@@ -220,7 +220,8 @@ def court():
                            vote_stake=court['voteStake'],
                            current_juror_page=0,
                            subgraph_status=subgraph.getStatus(),
-                           network=subgraph.network
+                           network=subgraph.network,
+                           court_list=subgraph.getCourtList()
                            )
 
 
