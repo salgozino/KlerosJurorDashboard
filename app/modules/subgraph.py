@@ -18,9 +18,9 @@ class Subgraph():
     def __init__(self, network=None):
         self.logger = logging.getLogger(__name__)
         self.network = network.lower() if network is not None else 'mainnet'
-        if self.network != 'mainnet':
-            raise Exception('Others network besides mainnet are not '
-                            'implemented yet')
+        # if self.network != 'mainnet':
+        #     raise Exception('Others network besides mainnet are not '
+        #                     'implemented yet')
         if self.network == 'mainnet':
             self.subgraph_name = 'salgozino/klerosboard'
         else:
