@@ -33,7 +33,7 @@
     {% endblock %}
 
     {% block content %}
-    {% if court.id is not none %}
+    {% if court['subcourtID'] is not none %}
 
     <h3>Court #{{court['subcourtID']}}: {{court['subcourtID']|courtName(network)}}</h3>
     {%if network=='xdai'%}
@@ -49,7 +49,7 @@
                 <div class="panel-heading text-center">
                     <h4>Parent Court</h4>
                 </div>
-                {% if parent %}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=court['parent'], network=network)}}>{{court['parent']|courtName}}</a></li></ul>{% endif %}
+                {% if court['parent'] is not none%}<ul class="list-group"><li class="list-group-item"><a href={{url_for('court', id=court['parent'], network=network)}}>{{court['parent']|courtName}}</a></li></ul>{% endif %}
             </div>
         </div>
 
