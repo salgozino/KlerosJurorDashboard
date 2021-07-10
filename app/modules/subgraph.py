@@ -89,8 +89,6 @@ class Subgraph():
                 court['parent'] = int(court['parent']['id'])
             else:
                 court['parent'] = None
-        else:
-            court['parent'] = None
         if 'activeJurors' in keys:
             court['activeJurors'] = int(court['activeJurors'])
         if 'minStake' in keys:
@@ -638,6 +636,19 @@ class Subgraph():
             for court in result['courts']:
                 courts.append(self._parseCourt(court))
             return courts
+
+    def getCourtList(self):
+        query = (
+            '''{
+            courts{
+                subcourtID,
+            }}'''
+        )
+        result = self._post_query(query)
+        if result is None:
+            return []
+        else:
+            return [self._parseCourt(court) for court in result['courts']]
 
     def getCourtPolicy(self, courtID):
         policy = self.readPolicy(courtID)
