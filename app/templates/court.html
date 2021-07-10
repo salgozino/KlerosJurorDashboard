@@ -7,10 +7,26 @@
             <form class="form-inline text-center" action="{{ url_for('court', network=network) }}" method="get">
               <div class="form-group">
                 <label for="disputeIDInput">Court </label>
-                <input class="form-control box-shadow" id="id" name="id" type="int" value={{ court.id }}>
+                {% if court_list|length > 0%}
+                    {% if request.args.get('id') is none%}
+                        {% set id = 0 %}
+                    {% else %}
+                        {% set id = request.args.get('id')|int %}
+                    {% endif %}
+                <select class="form-control"  id="id" name="id" type="int" autocomplete="off">
+                    {% for court in court_list|sort(attribute='subcourtID') %}  
+                    <option {%if id==court['subcourtID'] %}selected{%endif%} label={{court['subcourtID']|courtName(network)}}>
+                        {{court['subcourtID']}}
+                    </option>
+                    {% endfor %}
+                  </select>
+                {% else %}
+                <input class="form-control box-shadow" id="id" name="id" type="int" value={{ court['subcourtID'] }}>
+                {% endif %}
               </div>
               <button type="submit" class="btn btn-default">Refresh</button>
             </form>
+            
         </div>
         <br></br>
     {% endblock %}
