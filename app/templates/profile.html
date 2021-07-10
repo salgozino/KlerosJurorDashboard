@@ -8,10 +8,48 @@
         </div>
       </div>
     {% endblock %}
-
+    {%if network=='xdai'%}
+        {% set reward_currency =  'xDai'  %}
+    {%else%}
+        {% set reward_currency =  'ETH'  %}
+    {%endif%}
+    <div class="row">
+      <div class="col-lg-3"><!-- centering div --></div>
+      <div class="col-lg-3">
+        {%if profile['ethRewards'] >= 0%}
+        <div class="panel panel-success">
+        {%else %}
+        <div class="panel panel-warning">
+        {%endif%}
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Fees Rewad</h3>
+            </div>
+            <div class="panel-body text-center">
+              {%if network == 'xdai'%}
+              <h4>{{ "{:.2f}".format(profile['ethRewards']) }} {{reward_currency}}</h4>
+              {%else%}
+              <h4>{{ "{:.3f}".format(profile['ethRewards']) }} {{reward_currency}}</h4>
+              {%endif%}
+            </div>
+        </div>
+      </div>
+      <div class="col-lg-3">
+        {%if profile['tokenRewards'] >= 0%}
+        <div class="panel panel-success">
+        {%else %}
+        <div class="panel panel-warning">
+        {%endif%}
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Token Reward</h3>
+            </div>
+            <div class="panel-body text-center">
+              <h4>{{ "{:.2f}".format(profile['tokenRewards']) }}</h4>
+            </div>
+        </div>
+      </div>
+    </div>
     {% if profile.keys()|length > 1 %}
       {% block content %}
-      
           <h2>Disputes Created</h2>
           <div class="mb-5">
             <table class="table table-bordered responsive table-sm table-condensed">
@@ -30,45 +68,52 @@
           <div class="mb-5">
             <h4>Total Staked: {{"{:,.2f} PNK".format(profile['totalStaked'])}}</h4>
             <table class="table table-bordered responsive table-sm table-condensed">
-              <tr class="info"><td>Court</td><td>Amount</td><td>TxID</td></tr>
+              <tr class="info">
+                <td>Court</td>
+                <td>Amount</td>
+                <td>Date</td>
+                <td>TxID</td>
+              </tr>
               {% for stake in profile['currentStakes']|sort(attribute='stake', reverse=True): %}
                 <tr>
                   <td><a href={{url_for('court', id=stake['court'], network=network)}}>{{stake['court']|courtName(network)}}</td>
                   <td>{{"{:,.2f}".format(stake['stake'])}}</td>
-                  <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid']}}</a></td>
+                  <td>{{stake['timestamp']|timestamp2datetime}}</td>
+                  <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid'][:6]}}...{{stake['txid'][-4:]}}</a></td>
                 </tr>
               {% endfor %}
             </table>
           </div>
 
           <h2>Votes</h2>
-          <div class="mb-5">
-            <h4>Number of votes drawn: {{profile['votes']|length}}</h4>
-            <!-- Commented until a fix for this counter will be found
-              <h4>Number of disputes as juror: {{numberOfDisputesAsJuror}}</h4>
-            -->
-            <h4>Coherency: {%if profile['coherency'] is not none%}{{"{:.2%}".format(profile['coherency'])}}{%else%}-{%endif%}</h4>
-            <div class="table-responsive" style="max-height:250px; overflow-y:auto">
-              <table class="table table-bordered table-condensed table-hover">
-              <tr class="info">
-                <td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td>
-              </tr>
-              {% for v in profile['votes']|sort(attribute='id', reverse=True): %}
-                  {% set winner = v['dispute']['currentRulling'] if v['dispute']['ruled'] else none %}
-                  {%if winner is none %}
-                      <tr class='active'>
-                  {% elif winner == v['choice'] %}
-                      <tr class='success'>
-                  {% else %}
-                      <tr class='danger'>
-                  {% endif %}
-                  <td><a href="{{ url_for('dispute',id=v['dispute']['id'], network=network) }}">Dispute {{ v['dispute']['id']}}</a></td>
-                  <td>{{v['roundNumber']}}</td>
-                  <td>{{ "Ruled" if v['dispute']['ruled'] else "Ongoing"}}</td>
-                  <td>{{ v['vote_str'] }}</td>
+          
+          <div class="row">
+            <div class="mb-5">
+              <h4>Number of votes drawn: {{profile['votes']|length}}</h4>
+              <h4>Number of disputes as juror: {{profile['numberOfDisputesAsJuror']}}</h4>
+              <h4>Coherency: {%if profile['coherency'] is not none%}{{"{:.2%}".format(profile['coherency'])}}{%else%}-{%endif%}</h4>
+              <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+                <table class="table table-bordered table-condensed table-hover">
+                <tr class="info">
+                  <td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td>
                 </tr>
-              {% endfor %}
-            </table>
+                {% for v in profile['votes']|sort(attribute='id', reverse=True): %}
+                    {% set winner = v['dispute']['currentRulling'] if v['dispute']['ruled'] else none %}
+                    {%if winner is none %}
+                        <tr class='active'>
+                    {% elif winner == v['choice'] %}
+                        <tr class='success'>
+                    {% else %}
+                        <tr class='danger'>
+                    {% endif %}
+                    <td><a href="{{ url_for('dispute',id=v['dispute']['id'], network=network) }}">Dispute {{ v['dispute']['id']}}</a></td>
+                    <td>{{v['roundNumber']}}</td>
+                    <td>{{ "Ruled" if v['dispute']['ruled'] else "Ongoing"}}</td>
+                    <td>{{ v['vote_str'] }}</td>
+                  </tr>
+                {% endfor %}
+              </table>
+            </div>
           </div>
       {% endblock %}
     {%endif%}

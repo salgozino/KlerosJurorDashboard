@@ -235,6 +235,11 @@ class Subgraph():
             for dispute in profile['disputesAsCreator']:
                 disputes_as_creator.append(self._parseDispute(dispute))
             profile['disputesAsCreator'] = disputes_as_creator
+
+        if 'ethRewards' in keys:
+            profile['ethRewards'] = self._wei2eth(profile['ethRewards'])
+        if 'tokenRewards' in keys:
+            profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
         return profile
 
     def _parseVote(self, vote):
@@ -484,30 +489,18 @@ class Subgraph():
         return parsed_disputes
 
     def getAllVotesFromJuror(self, address):
-        initDispute = 0
-        votes = []
-        while True:
-            query = ('{votes(where:{address:"' +
-                     str(address)+'",dispute_gt:"' +
-                     str(initDispute) +
-                     '"}){'
-                     'dispute{id,currentRulling,ruled,startTime},choice,voted'
-                     ',round{id}'
-                     '}}'
-                     )
-            result = self._post_query(query)
+        query = ('{votes(where:{address:"' +
+                 str(address)+'"},first:1000){' +
+                 'dispute{id,currentRulling,ruled,startTime},choice,voted'
+                 ',round{id}'
+                 '}}'
+                 )
+        result = self._post_query(query)
 
-            if result is None:
-                break
-            elif len(result['votes']) == 0:
-                break
-            else:
-                currentVotes = result['votes']
-                votes.extend(currentVotes)
-                initDispute = int(currentVotes[-1]['dispute']['id'])
-        for vote in votes:
-            vote = self._parseVote(vote)
-        return votes
+        if result is None:
+            return []
+        votes = result['votes']
+        return [self._parseVote(vote) for vote in votes]
 
     def getAllJurors(self):
         skipJurors = 0
@@ -908,6 +901,7 @@ class Subgraph():
             '   numberOfDisputesAsJuror,'
             '   numberOfDisputesCreated,'
             '   disputesAsCreator{id,currentRulling,startTime,ruled,txid}'
+            '   ethRewards, tokenRewards'
             '}}'
         )
         result = self._post_query(query)
