@@ -354,8 +354,9 @@ class Subgraph():
         )
         current_result = self._post_query(query)
         if current_result is None:
-            return 0
-        result = current_result['klerosCounters'][0]
+            result = {'activeJurors': 0, 'inactiveJurors': 0}
+        else:
+            result = current_result['klerosCounters'][0]
 
         bn = self._getBlockNumberbefore(30)
         query = (
@@ -368,7 +369,7 @@ class Subgraph():
         if before_result is not None:
             old_result = before_result['klerosCounters'][0]
         else:
-            return 0
+            old_result = {'activeJurors': 0, 'inactiveJurors': 0}
         newTotal = int(result['activeJurors']) + int(result['inactiveJurors'])
         oldTotal = int(old_result['activeJurors']) + int(old_result[
             'inactiveJurors'])
