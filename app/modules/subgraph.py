@@ -18,7 +18,13 @@ class Subgraph():
     def __init__(self, network=None):
         self.logger = logging.getLogger(__name__)
         self.network = network if network is not None else 'mainnet'
-        self.subgraph_name = 'salgozino/klerosboard' if self.network == 'mainnet' else 'salgozino/sarasa'
+        if self.network != 'mainnet':
+            raise Exception('Others network besides mainnet are not '
+                            'implemented yet')
+        if self.network == 'mainnet':
+            self.subgraph_name = 'salgozino/klerosboard'
+        else:
+            self.subgraph_name = 'salgozino/sarasa'
         try:
             self.subgraph_id_mainnet = os.environ['SUBGRAPH_ID']
         except KeyError:

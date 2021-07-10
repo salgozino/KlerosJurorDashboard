@@ -254,5 +254,15 @@ def not_found(e):
                            )
 
 
+@application.errorhandler(Exception)
+def error_exception(e):
+    subgraph = Subgraph()
+    return render_template("500_generic.html",
+                           error=e,
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
+                           )
+
+
 if __name__ == "__main__":
     application.run(debug=True)

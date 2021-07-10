@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block body%}
+
+<div class="col-xs-4 col-xs-offset-4 text-center padding-bottom">
+    <p>Ups!, It's seems there is an error in your request.</p>
+    <p>Error: {{error}}</p>
+    <img alt="athenea-kleros" class="img-responsive img-rounded" src="{{ url_for('static', filename='images/404-athenea.jpg') }}" >
+    </br>
+    <button><a href='/'>Return to home</a></button>
+    
+</div>
+
+{% endblock %}
