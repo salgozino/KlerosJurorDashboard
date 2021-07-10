@@ -724,7 +724,10 @@ class Subgraph():
         # PNK & ETH Information
         coingecko = CoinGecko()
         pnkInfo = coingecko.getCryptoInfo()
-        dashboard['ethPrice'] = coingecko.getETHprice()
+        if self.network == 'xdai':
+            dashboard['ethPrice'] = 1
+        else:
+            dashboard['ethPrice'] = coingecko.getETHprice()
         dashboard['pnkPrice'] = pnkInfo['market_data']['current_price']['usd']
         dashboard['tokenSupply'] = pnkInfo['market_data']['total_supply']
         dashboard['pnkPctChange'] = pnkInfo['market_data']['price_change_24h']

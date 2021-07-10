@@ -18,7 +18,12 @@
     {% block content %}
     {% if court.id is not none %}
 
-    <h3>Court #{{court['subcourtID']}}: {{court['subcourtID']|courtName}}</h3>
+    <h3>Court #{{court['subcourtID']}}: {{court['subcourtID']|courtName(network)}}</h3>
+    {%if network=='xdai'%}
+        {% set reward_currency =  'xDai'  %}
+    {%else%}
+        {% set reward_currency =  'ETH'  %}
+    {%endif%}
     <!-- Court Numbers -->
     <div class="row">
         
@@ -39,7 +44,7 @@
                 {% if court['childs']|length > 0 %}
                     <ul class="list-group">
                     {% for child in court['childs']%}
-                        <li class="list-group-item"><a href={{url_for('court', id=child, network=network)}}>{{ child|courtName }}</a></li>
+                        <li class="list-group-item"><a href={{url_for('court', id=child, network=network)}}>{{ child|courtName(network) }}</a></li>
                     {% endfor %}
                     </ul>
                 {% else%}
@@ -54,7 +59,7 @@
                     <h4>Court Reward</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{"{:,.3f} ETH".format(court['feeForJuror'])}}
+                    {{"{:,.3f}".format(court['feeForJuror'])}} {{reward_currency}}
                 </div>
             </div>
         </div>
@@ -99,7 +104,7 @@
         </div>
         
         <div class="col-lg-3">
-            <div class="panel <panel-default">
+            <div class="panel panel-default">
                 <div class="panel-heading">
                     <h4>Ruled Cases</h4>
                 </div>
@@ -145,7 +150,7 @@
                     <h4>Fees paid</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{ "%.3f ETH"|format(court['totalETHFees']) }}
+                    {{ "%.3f"|format(court['totalETHFees']) }} {{reward_currency}}
                 </div>
                 <div class="panel-footer">
                     Fees paid to the coherent jurors of this court

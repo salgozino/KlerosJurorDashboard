@@ -21,7 +21,10 @@ def get_all_court_chances(pnkStaked, n_votes=3, network='mainnet'):
     courts = Subgraph(network).getCourtTable()
     courtChances = {}
     pnkPrice = CoinGecko().getPNKprice()
-    ethPrice = CoinGecko().getETHprice()
+    if network == 'xdai':
+        ethPrice = 1.
+    else:
+        ethPrice = CoinGecko().getETHprice()
     for c in courts.keys():
         rewardETH = courts[c]['Fee For Juror']
         rewardUSD = rewardETH * ethPrice
@@ -36,7 +39,7 @@ def get_all_court_chances(pnkStaked, n_votes=3, network='mainnet'):
         else:
             chances = 1/odds
             share = pnkStaked/totalStaked
-
+        reward_currency = 'xDAI' if network == 'xdai' else 'ETH'
         courtChances[courts[c]['Name']] = {
                     'Jurors': activeJurors,
                     'Total Staked': totalStaked,
@@ -45,7 +48,7 @@ def get_all_court_chances(pnkStaked, n_votes=3, network='mainnet'):
                         'Disputes in the last 30 days'],
                     'Odds': odds,
                     'Chances': chances,
-                    'Reward (ETH)': rewardETH,
+                    f'Reward ({reward_currency})': rewardETH,
                     'Reward (USD)': rewardUSD,
                     'Vote Stake (PNK)': voteStakePNK,
                     'Vote Stake (USD)': voteStakeUSD,
