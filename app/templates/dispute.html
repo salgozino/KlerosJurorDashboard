@@ -68,7 +68,7 @@
     </div>
     {% for r in dispute['rounds']: %}
     <div class="table-responsive">
-        <h4>Round {{r.round_num}}</H4>
+        <h4>Round {{r['round_num']}}</H4>
         <table class="table table-bordered">
           <tr class="text-center info">
             <td style="width:25% !important">Yes</td>
@@ -87,7 +87,7 @@
     <div class="table-responsive">
         <table class="table table-bordered table-condensed">
           <tr class="info">
-            <td class="">Round {{r['id'].split('-')[1]}}</td>
+            <td class="">Round {{r['round_num']}}</td>
             <td align="center">Vote</td>
           </tr>
           {% for v in r['votes'] %}
