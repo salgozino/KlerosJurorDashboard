@@ -36,7 +36,7 @@ class Subgraph():
         except KeyError:
             print("No SUBGRAPH_ID_XDAI found, using hardcoded value")
             self.subgraph_id_xdai = \
-                'QmRFz59GrYSySK9p1Sn9CcYz5DHV1CFLwvpNSx6VdFHYms'
+                'QmRwVy48VVFUJyokHpdvQURFGFCsDRwi4B17XXr8d6c3YY'
 
         # Node definitions
         self.subgraph_node = 'https://api.thegraph.com/subgraphs/id/'
@@ -121,6 +121,22 @@ class Subgraph():
             court['childs'] = childs
         return court
 
+    def _parseCourtStake(self, courtStake):
+        keys = courtStake.keys()
+        if 'stake' in keys:
+            courtStake['stake'] = self._wei2eth(courtStake['stake'])
+        if 'court' in keys:
+            courtID = int(courtStake['court']['id'])
+            courtStake['court'] = courtID
+        if 'juror' in keys:
+            courtStake['address'] = courtStake['juror']['id']
+        if 'timestamp' in keys:
+            courtStake['timestamp'] = int(courtStake['timestamp'])
+            courtStake['date'] = datetime.fromtimestamp(
+                courtStake['timestamp']
+                )
+        return courtStake
+
     def _parseDispute(self, dispute, timePeriods=None):
         # get a query response from one dispute and return parsed the votes
         # and values in the correct format. if the timePeriods of a court are
@@ -184,22 +200,6 @@ class Subgraph():
                 kc[key] = int(value)
         return kc
 
-    def _parseCourtStake(self, courtStake):
-        keys = courtStake.keys()
-        if 'stake' in keys:
-            courtStake['stake'] = self._wei2eth(courtStake['stake'])
-        if 'court' in keys:
-            courtID = int(courtStake['court']['id'])
-            courtStake['court'] = courtID
-        if 'juror' in keys:
-            courtStake['address'] = courtStake['juror']['id']
-        if 'timestamp' in keys:
-            courtStake['timestamp'] = int(courtStake['timestamp'])
-            courtStake['date'] = datetime.fromtimestamp(
-                courtStake['timestamp']
-                )
-        return courtStake
-
     def _parseProfile(self, profile):
         keys = profile.keys()
         if 'numberOfDisputesAsJuror' in keys:
@@ -251,7 +251,8 @@ class Subgraph():
         if 'address' in keys:
             vote['address'] = vote['address']['id']
         if 'choice' in keys:
-            vote['choice'] = int(vote['choice'])
+            if vote['choice'] is not None:
+                vote['choice'] = int(vote['choice'])
         if 'dispute' in keys:
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
@@ -304,6 +305,8 @@ class Subgraph():
         currently it's just fixed to Refuse, Yes, No or Pending
         """
         if voted:
+            if choice is None:
+                return 'Vote not revealed yet'
             vote_map = {0: 'Refuse to Arbitrate',
                         1: 'Yes',
                         2: 'No'}
@@ -814,7 +817,7 @@ class Subgraph():
             '        id,'
             '        winningChoice,'
             '        startTime,'
-            '        votes{,'
+            '        votes{'
             '            address{id},'
             '            choice,'
             '            voted,'
