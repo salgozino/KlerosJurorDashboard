@@ -65,13 +65,13 @@ class Subgraph():
                 'chains{chainHeadBlock{number},latestBlock{number}}}}'
             response = requests.post(self.index_node, json={'query': query})
             currentBlockNumber = int(response.json()['data'][
-                'indexingStatusForCurrentVersion']['chains'][0]['chainHeadBlock']['number'])
-            averageBlockTime = 15  # in seconds
-            return int(currentBlockNumber - days*24*60*60/averageBlockTime)
+                'indexingStatusForCurrentVersion']['chains'][0][
+                    'chainHeadBlock']['number'])
+            averageBlockTime = 5  # in seconds
         else:
             averageBlockTime = 15  # in seconds
             currentBlockNumber = web3Node.web3.eth.blockNumber
-            return int(currentBlockNumber - days*24*60*60/averageBlockTime)
+        return int(currentBlockNumber - days*24*60*60/averageBlockTime)
 
     @staticmethod
     def _getRoundNumFromID(roundID):
@@ -908,7 +908,7 @@ class Subgraph():
         "return the most active court in the last days, by default, a week"
         old_courts_data = self.getCourtDisputesNumberBefore(7)
         courts_data = self.getCourtDisputesNumber()
-        if (courts_data is None) or (old_courts_data is None):
+        if (courts_data is None) and (old_courts_data is None):
             return None
 
         max_dispute_number = 0
@@ -916,9 +916,11 @@ class Subgraph():
         for court in courts_data:
             courtID = court['subcourtID']
             oldDisputesNum = 0
-            for oldcourt in old_courts_data:
-                if courtID == oldcourt['subcourtID']:
-                    oldDisputesNum = int(oldcourt['disputesNum'])
+            if old_courts_data is not None:
+                for oldcourt in old_courts_data:
+                    if courtID == oldcourt['subcourtID']:
+                        oldDisputesNum = int(oldcourt['disputesNum'])
+                        break
             DisputesNum = int(court['disputesNum'])
             delta = DisputesNum - oldDisputesNum
             if delta > max_dispute_number:
