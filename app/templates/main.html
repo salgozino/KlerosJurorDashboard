@@ -348,6 +348,8 @@
                             {%elif col == 'Name'%}
                             {%elif col == 'Fee For Juror'%}
                                 <td class="text-right">{{ "{:,.3f}".format(value) }}</td>
+                                {%elif col == 'Fee For Juror USD'%}
+                                <td class="text-right">${{ "{:,.2f}".format(value) }}</td>
                             {%elif col != 'id'%}
                                 <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
                             {%endif%}

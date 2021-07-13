@@ -328,7 +328,7 @@ class Subgraph():
     def _wei2eth(gwei):
         return float(gwei)*10**-18
 
-    def court2table(self, court, pnkUSDPrice):
+    def court2table(self, court, pnkUSDPrice, rewardUSDPrice):
         """
         Fields of the Table used in the main view of klerosboard
         """
@@ -336,6 +336,7 @@ class Subgraph():
                 'Total Staked': court['tokenStaked'],
                 'Min Stake': court['minStake'],
                 'Fee For Juror': court['feeForJuror'],
+                'Fee For Juror USD': court['feeForJuror']*rewardUSDPrice,
                 'Vote Stake': court['voteStake'],
                 'Open Disputes': court['disputesOngoing'],
                 'Min Stake in USD': court['minStake']*pnkUSDPrice,
@@ -679,15 +680,18 @@ class Subgraph():
         courtsInfo = {}
         oldcourtsDisputes = {}
         courts = self.getAllCourts()
-        pnkUSDprice = CoinGecko().getPNKprice()
-
+        cg = CoinGecko()
+        pnkUSDprice = cg.getPNKprice()
+        rewardUSDprice = cg.getETHprice() if self.network == 'mainnet' else 1.0
         oldCourts = self.getCourtDisputesNumberBefore(30)
         if oldCourts is not None:
             for court in oldCourts:
                 oldcourtsDisputes[court['subcourtID']] = court['disputesNum']
         for court in courts:
             courtID = court['subcourtID']
-            courtsInfo[courtID] = self.court2table(court, pnkUSDprice)
+            courtsInfo[courtID] = self.court2table(court,
+                                                   pnkUSDprice,
+                                                   rewardUSDprice)
             if oldCourts is not None:
                 diff = courtsInfo[courtID]['Total Disputes'] - \
                         oldcourtsDisputes[courtID]
