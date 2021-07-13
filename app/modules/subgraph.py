@@ -165,6 +165,10 @@ class Subgraph():
                                                           )
         if 'startTime' in keys:
             dispute['startTime'] = int(dispute['startTime'])
+        if 'numberOfChoices' in keys:
+            dispute['numberOfChoices'] = int(dispute['numberOfChoices'])
+        else:
+            dispute['numberOfChoices'] = None
         if 'rounds' in keys:
             vote_count = {}
             # initialize a dict with 0 as default value
@@ -175,7 +179,7 @@ class Subgraph():
                 vote_count[round['id']] = defaultdict(int)
                 votes = round['votes']
                 for vote in votes:
-                    vote = self._parseVote(vote)
+                    vote = self._parseVote(vote, dispute['numberOfChoices'])
                     vote_count[round['id']][vote['vote_str']] += 1
                     if vote['address'].lower() not in unique_jurors:
                         unique_vote_count[vote['vote_str']] += 1
@@ -220,7 +224,7 @@ class Subgraph():
         profile['ruled_cases'] = 0
         if 'votes' in keys:
             for vote in profile['votes']:
-                vote = self._parseVote(vote)
+                vote = self._parseVote(vote, vote['dispute']['numberOfChoices'])
                 if vote['dispute']['ruled']:
                     if vote['dispute']['currentRulling'] == vote['choice']:
                         profile['coherent_votes'] = profile['coherent_votes'] \
@@ -246,7 +250,7 @@ class Subgraph():
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
         return profile
 
-    def _parseVote(self, vote):
+    def _parseVote(self, vote, number_of_choices=None):
         keys = vote.keys()
         if 'address' in keys:
             vote['address'] = vote['address']['id']
@@ -256,10 +260,12 @@ class Subgraph():
         if 'dispute' in keys:
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
-        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):
+
+        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):      
             vote['vote_str'] = self._vote_mapping(vote['choice'],
                                                   vote['voted'],
-                                                  vote['dispute'])
+                                                  vote['dispute'],
+                                                  number_of_choices)
         if 'round' in keys:
             if 'id' in vote['round'].keys():
                 vote['roundNumber'] = self._getRoundNumFromID(vote[
@@ -298,7 +304,7 @@ class Subgraph():
             return None
 
     @staticmethod
-    def _vote_mapping(choice, voted, dispute=None):
+    def _vote_mapping(choice, voted, dispute=None, number_of_choices=2):
         """
         Return the text of the vote choice.
         TODO!, use the metaEvidence of the dispute,
@@ -307,6 +313,10 @@ class Subgraph():
         if voted:
             if choice is None:
                 return 'Vote not revealed yet'
+            if number_of_choices is None:
+                return str(choice)
+            if int(number_of_choices) > 2:
+                return str(choice)
             vote_map = {0: 'Refuse to Arbitrate',
                         1: 'Yes',
                         2: 'No'}
@@ -499,8 +509,8 @@ class Subgraph():
     def getAllVotesFromJuror(self, address):
         query = ('{votes(where:{address:"' +
                  str(address)+'"},first:1000){' +
-                 'dispute{id,currentRulling,ruled,startTime},choice,voted'
-                 ',round{id}'
+                 'dispute{id,currentRulling,ruled,startTime,numberOfChoices},'
+                 'choice,voted,round{id}'
                  '}}'
                  )
         result = self._post_query(query)
@@ -508,7 +518,8 @@ class Subgraph():
         if result is None:
             return []
         votes = result['votes']
-        return [self._parseVote(vote) for vote in votes]
+        return [self._parseVote(vote, vote['dispute']['numberOfChoices'])
+                for vote in votes]
 
     def getAllJurors(self):
         skipJurors = 0
@@ -812,6 +823,7 @@ class Subgraph():
             '    currentRulling,'
             '    lastPeriodChange'
             '    period,'
+            '    numberOfChoices,'
             '    txid,'
             '    rounds{,'
             '        id,'
@@ -871,6 +883,7 @@ class Subgraph():
             '    subcourtID{id},'
             '    currentRulling,'
             '    lastPeriodChange'
+            '    numberOfChoices'
             '    period,'
             '    txid,'
             '    rounds{,'
@@ -921,7 +934,8 @@ class Subgraph():
             '   totalStaked,'
             '   numberOfDisputesAsJuror,'
             '   numberOfDisputesCreated,'
-            '   disputesAsCreator{id,currentRulling,startTime,ruled,txid}'
+            '   disputesAsCreator{id,currentRulling,startTime,ruled,txid,'
+            '   numberOfChoices}'
             '   ethRewards, tokenRewards'
             '}}'
         )
