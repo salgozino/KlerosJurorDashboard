@@ -58,7 +58,6 @@ def filter_wei_2_eth(gwei):
 @application.route('/', methods=['GET'])
 def index():
     network = request.args.get('network', type=str)
-    print(network)
     subgraph = Subgraph(network)
     dashboard = subgraph.getDashboard()
     return render_template('main.html',

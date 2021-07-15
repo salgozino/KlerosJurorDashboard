@@ -2,7 +2,7 @@ import {getUrlParameter} from './getUrlParameter.js'
 
 $(function(){
     var network = getUrlParameter('network')
-    console.log('Loading court table, please wait')
+    console.log(network)
     $.ajax({
         url: '/_getAdoption',
         data: {"network": network},
@@ -13,7 +13,7 @@ $(function(){
         },
         error: function(error){
             console.log(error);
-            $('#adoptionValue').html('Eror loading adoption');
+            $('#adoptionValue').html('Eror loading data');
         }
     });
 });

@@ -45,7 +45,7 @@ $(function(){
         },
         error: function(error){
             console.log(error);
-            $('#courtTableBody').html('<tr><td>Error loading the table, please refresh the site</td></tr>');
+            $('#courtTableBody').html('<tr><td>Error loading the table</td></tr>');
         }
     });
 });

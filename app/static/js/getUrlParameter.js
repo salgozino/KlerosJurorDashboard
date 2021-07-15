@@ -11,5 +11,5 @@ export var getUrlParameter = function getUrlParameter(sParam) {
             return typeof sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
         }
     }
-    return false;
+    return null;
 };
