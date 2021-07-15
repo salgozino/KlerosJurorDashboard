@@ -22,7 +22,6 @@ $(function(){
             });
             $.each(response, function () {
                 if (this.id == mostActiveID){
-                    console.log()
                     tableHTML +='<tr class="success">';
                 } else {
                     tableHTML += '<tr>'

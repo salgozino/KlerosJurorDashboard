@@ -7,7 +7,6 @@ $(function(){
         data: {"network": network},
         type: 'GET',
         success: function(response, network){
-            console.log(response)
             $('#retentionValue').html('<h4>'+parseFloat(response*100).toFixed(2)+'%</h4>');
         },
         error: function(error){
