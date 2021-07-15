@@ -7,7 +7,7 @@ import os
 import logging
 from datetime import datetime
 
-from flask import render_template, request
+from flask import render_template, request, jsonify
 
 from app import create_app
 from app.modules.plotters import jurorHistogram
@@ -58,6 +58,7 @@ def filter_wei_2_eth(gwei):
 @application.route('/', methods=['GET'])
 def index():
     network = request.args.get('network', type=str)
+    print(network)
     subgraph = Subgraph(network)
     dashboard = subgraph.getDashboard()
     return render_template('main.html',
@@ -245,6 +246,30 @@ def profile(address):
                                )
 
 
+@application.route('/_getCourtTable')
+def getCourtTable():
+    network = request.args.get('network', None, type=str)
+    return jsonify(Subgraph(network).getCourtTable())
+
+
+@application.route('/_getAdoption')
+def getAdoption():
+    network = request.args.get('network', None, type=str)
+    return jsonify(Subgraph(network).getAdoption())
+
+
+@application.route('/_getRetention')
+def getRetention():
+    network = request.args.get('network', None, type=str)
+    return jsonify(Subgraph(network).getRetention())
+
+
+@application.route('/_getMostActiveCourt')
+def getMostActiveCourt():
+    network = request.args.get('network', None, type=str)
+    return jsonify(Subgraph(network).getMostActiveCourt())
+
+
 @application.errorhandler(404)
 def not_found(e):
     network = request.args.get('network', type=str)
@@ -254,7 +279,7 @@ def not_found(e):
                            network=subgraph.network
                            )
 
-
+"""
 @application.errorhandler(Exception)
 def error_exception(e):
     subgraph = Subgraph()
@@ -263,7 +288,7 @@ def error_exception(e):
                            subgraph_status=subgraph.getStatus(),
                            network=subgraph.network
                            )
-
+"""
 
 if __name__ == "__main__":
     application.run(debug=True)
