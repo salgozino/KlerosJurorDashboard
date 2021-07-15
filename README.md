@@ -16,8 +16,7 @@ To deploy klerosboard locally you need to follow the next steps:
 0) Clone de repo
 1) Create a virtualenv and pip install all the requirements
 2) Create the following enviromental variables:
- * SUBGRAPH_ID=[check node ID in https://thegraph.com/legacy-explorer/subgraph/salgozino/klerosboard for mainnet]
- * SUBGRAPH_ID_XDAI=[check node ID in https://thegraph.com/legacy-explorer/subgraph/salgozino/klerosboard for xDai]
  * INFURA_NODE=[your_infura_node]
+ 
  * FLASK_APP=application
 3) flask run
