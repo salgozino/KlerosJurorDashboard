@@ -2,7 +2,7 @@ import {getUrlParameter} from './getUrlParameter.js'
 
 $(function(){
     var network = getUrlParameter('network')
-
+    if (network == null ) network = 'mainnet'
     $.ajax({
         url: '/_getMostActiveCourt',
         data: {"network": network},
