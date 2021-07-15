@@ -19,35 +19,16 @@ class Subgraph():
         self.logger = logging.getLogger(__name__)
         self.network = network.lower() if network is not None else 'mainnet'
         self.network = 'mainnet' if self.network == '' else self.network
-        # if self.network != 'mainnet':
-        #     raise Exception('Others network besides mainnet are not '
-        #                     'implemented yet')
-        if self.network == 'mainnet':
-            self.subgraph_name = 'salgozino/klerosboard'
-        else:
-            self.subgraph_name = 'salgozino/sarasa'
-        try:
-            self.subgraph_id_mainnet = os.environ['SUBGRAPH_ID']
-        except KeyError:
-            print("No SUBGRAPH_ID found, using hardcoded value")
-            self.subgraph_id_mainnet = \
-                'QmTTcbUgfcCXRKYvk7Yt23ys1fxNv1JuJLkasV57PATQts'
-        try:
-            self.subgraph_id_xdai = os.environ['SUBGRAPH_ID_XDAI']
-        except KeyError:
-            print("No SUBGRAPH_ID_XDAI found, using hardcoded value")
-            self.subgraph_id_xdai = \
-                'QmRwVy48VVFUJyokHpdvQURFGFCsDRwi4B17XXr8d6c3YY'
+
+        self.subgraph_node = 'https://api.thegraph.com/subgraphs/name/'
+        self.index_node = 'https://api.thegraph.com/index-node/graphql'
 
         # Node definitions
-        self.subgraph_node = 'https://api.thegraph.com/subgraphs/id/'
-        self.index_node = 'https://api.thegraph.com/index-node/graphql'
-        if self.network == 'mainnet':
-            self.subgraph_node += self.subgraph_id_mainnet
-        elif self.network == 'xdai':
-            self.subgraph_node += self.subgraph_id_xdai
+        if self.network == 'xdai':
+            self.subgraph_name = 'salgozino/klerosboard-xdai'
         else:
-            self.logger.raiseExceptions("Network not supported")        
+            self.subgraph_name = 'salgozino/klerosboard'
+        self.subgraph_node += self.subgraph_name
 
     @staticmethod
     def _calculateVoteStake(minStake, alpha):
