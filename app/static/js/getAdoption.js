@@ -2,9 +2,10 @@ import {getUrlParameter} from './getUrlParameter.js'
 
 $(function(){
     var network = getUrlParameter('network')
+    if (network == null ) network = 'mainnet'
     $.ajax({
         url: '/_getAdoption',
-        data: {"network": network},
+        data: {"network": network}, 
         type: 'GET',
         success: function(response, network){
             $('#adoptionValue').html('<h4>'+response+'</h4>');
