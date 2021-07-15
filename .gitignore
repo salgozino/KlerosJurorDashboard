@@ -1,13 +1,16 @@
+env/
 *.log
-venv/
+.env
+venv/*
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
-
+manage.py
+tester.py
+migrations/
+tester_updateCourt.py
+jurors_hist.py
 __pycache__*
 .vscode*
-
-node_modules/
-
 subgraph_tester.py
