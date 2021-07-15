@@ -10,10 +10,17 @@
     <link href="{{ url_for('static', filename='css/sticky-footer.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/map.css') }}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
 
     <!-- Plotly JS -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
+    <!-- BootstrapJS -->
+    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+
     <title>Klerosboard 2.0!</title>
   </head>
   
@@ -82,9 +89,6 @@
     </div>
     
     
-    <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-
     <footer class="footer">
         <div class="container">
             <div class="text-center padding-top text-muted">Made with <span class="glyphicon glyphicon-heart"></span> to the Kleros Community | 
