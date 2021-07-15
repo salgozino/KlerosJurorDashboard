@@ -18,6 +18,7 @@ class Subgraph():
     def __init__(self, network=None):
         self.logger = logging.getLogger(__name__)
         self.network = network.lower() if network is not None else 'mainnet'
+        self.network = 'mainnet' if self.network == '' else self.network
         # if self.network != 'mainnet':
         #     raise Exception('Others network besides mainnet are not '
         #                     'implemented yet')
@@ -780,14 +781,14 @@ class Subgraph():
 
     def getDashboard(self):
         dashboard = self.getKlerosCounters()
-        dashboard['retention'] = self.getRetention()
-        dashboard['adoption'] = self.getAdoption()
-        mostActiveCourt = self.getMostActiveCourt()
-        if mostActiveCourt is not None:
-            mostActiveCourt = self.getCourtName(int(mostActiveCourt))
-        else:
-            mostActiveCourt = "No new cases in the last 7 days"
-        dashboard['mostActiveCourt'] = mostActiveCourt
+        # dashboard['retention'] = self.getRetention()
+        # dashboard['adoption'] = self.getAdoption()
+        # mostActiveCourt = self.getMostActiveCourt()
+        # if mostActiveCourt is not None:
+        #     mostActiveCourt = self.getCourtName(int(mostActiveCourt))
+        # else:
+        #     mostActiveCourt = "No new cases in the last 7 days"
+        # dashboard['mostActiveCourt'] = mostActiveCourt
         # PNK & ETH Information
         coingecko = CoinGecko()
         pnkInfo = coingecko.getCryptoInfo()
@@ -811,7 +812,7 @@ class Subgraph():
                 dashboard['tokenSupply']
         else:
             dashboard['pnkStakedPercent'] = None
-        dashboard['courtTable'] = self.getCourtTable()
+        # dashboard['courtTable'] = self.getCourtTable()
         return dashboard
 
     def getDispute(self, disputeNumber):
@@ -930,7 +931,10 @@ class Subgraph():
             if delta > max_dispute_number:
                 max_dispute_number = delta
                 court_bussiest = int(courtID)
-        return court_bussiest
+        if court_bussiest is not None:
+            return self.getCourtName(int(court_bussiest))
+        else:
+            return None
 
     def getProfile(self, address):
         query = (
