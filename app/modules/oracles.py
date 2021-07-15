@@ -3,6 +3,7 @@ import urllib
 import os
 import json
 
+
 class CMC():
     """
     Class for interaction with CoinMarketCap and get the ETH and PNK prices.
@@ -14,7 +15,8 @@ class CMC():
             self.api_key = os.environ['CMC_KEY']
         except KeyError:
             print("NO OS CMC_KEY VARIABLE FOUND")
-            self.api_key = json.load(open('app/lib/coinmarketcap.json', 'r'))['api_key']
+            self.api_key = json.load(open('app/lib/coinmarketcap.json',
+                                          'r'))['api_key']
 
     def getCryptoInfo(self, id=3581):
         parameters = {'id': id}
@@ -23,7 +25,8 @@ class CMC():
           'Accept-Enconding': 'deflate, gzip',
           'X-CMC_PRO_API_KEY': self.api_key,
         }
-        url = self.api_url + 'quotes/latest?' + urllib.parse.urlencode(parameters)
+        url = self.api_url + 'quotes/latest?' + urllib.parse.urlencode(
+                parameters)
         response = requests.get(url, headers=headers)
         return response.json()['data'][str(id)]
 
@@ -74,7 +77,7 @@ class CoinGecko():
         pnkId = "kleros"
         response = self.getCryptoInfo(id=pnkId)
         return response['market_data']['current_price']['usd']
-    
+
     def getPNKPctChange(self):
         pnkId = "kleros"
         response = self.getCryptoInfo(id=pnkId)
@@ -84,7 +87,7 @@ class CoinGecko():
         pnkId = "kleros"
         response = self.getCryptoInfo(id=pnkId)
         return response['market_data']['total_volume']['usd']
-    
+
     def getPNKcircSupply(self):
         pnkId = "kleros"
         response = self.getCryptoInfo(id=pnkId)

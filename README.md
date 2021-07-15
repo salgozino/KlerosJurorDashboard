@@ -10,3 +10,13 @@ This Dashboard was inspired by the Kleroscan tool developed by Marc Zeller, visi
 I would like to thank all the Kleros team for the support in the development, specially to William George who helps me with the mathematics.
 
 For more information about Kleros visit [kleros.io](kleros.io)
+
+# Local Deployment
+To deploy klerosboard locally you need to follow the next steps:
+0) Clone de repo
+1) Create a virtualenv and pip install all the requirements
+2) Create the following enviromental variables:
+ * INFURA_NODE=[your_infura_node]
+ 
+ * FLASK_APP=application
+3) flask run

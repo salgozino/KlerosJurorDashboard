@@ -1,6 +1,11 @@
 {% extends "layout.html" %}
 
+
 {% block body%}
+<script src="{{ url_for('static', filename='js/getCourtTable.js') }}" type="module"></script>
+<script src="{{ url_for('static', filename='js/getAdoption.js') }}" type="module"></script>
+<script src="{{ url_for('static', filename='js/getRetention.js') }}" type="module"></script>
+<script src="{{ url_for('static', filename='js/getMostActive.js') }}" type="module"></script>
 <div class="container">
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -18,8 +23,10 @@
 <!-- Cases Metrics -->
 {%if network=='xdai'%}
     {% set reward_currency =  'xDai'  %}
+    {% set jurors_anual_reward = 1000000 * 12 * 0.0 %}
 {%else%}
     {% set reward_currency =  'ETH'  %}
+    {% set jurors_anual_reward = 1000000 * 12 * 1.0%}
 {%endif%}
 
 <div class="container">
@@ -42,8 +49,8 @@
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Most Active Courts</h3>
                 </div>
-                <div class="panel-body text-center">
-                <h4>{{ dashboard['mostActiveCourt'] }}</h4>
+                <div class="panel-body text-center" id="mostActiveValue">
+                <h4> Loading data</h4>
                 </div>
                 <div class="panel-footer">
                 The court with more cases in the last 7 days.
@@ -119,8 +126,9 @@
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Retention</h3>
                 </div>
-                <div class="panel-body text-center">
-                <h4>{%if dashboard['retention'] is not none%}{{ "%.2f"|format(dashboard['retention']*100) }}%{%else%}Soon{%endif%}</h4>
+                <div class="panel-body text-center" id="retentionValue">
+                
+                <h4> Loading data... </h4>
                 </div>
                 <div class="panel-footer">
                 Number of Jurors that keep staking after the first vote.
@@ -133,8 +141,8 @@
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Adoption</h3>
                 </div>
-                <div class="panel-body text-center">
-                    <h4>{% if dashboard['adoption'] is not none%}{{ "%.0f"|format(dashboard['adoption']) }}{%else%}Soon{%endif%}</h4>
+                <div class="panel-body text-center" id="adoptionValue">
+                    <h4>Loading adoption...</h4>
                 </div>
                 <div class="panel-footer">
                 Number of new Jurors staked in the last month
@@ -187,7 +195,7 @@
                     <h3 class="panel-title text-center">Staking Reward</h3>
                 </div>
                 <div class="panel-body text-center">
-                <h4>{{ "{:.2%}".format(1000000*12/dashboard['tokenStaked']) }} APY</h4>
+                <h4>{{ "{:.2%}".format(jurors_anual_reward/dashboard['tokenStaked']) }} APY</h4>
                 </div>
                 <div class="panel-footer text-center">
                     assuming all month staked. More info 
@@ -320,45 +328,30 @@
                     <h2 class="panel-title text-center">Courts Statistics</h3>
                 </div>
                 
-                <table class="table table-hover ">
+                <table class="table table-hover " id="courtTable">
                     <thead>
-                        <tr class="active">
-                            <th scope="col">Name</th>
-                            <th scope="col">Id</th>
-                            {% for col in dashboard['courtTable'][0].keys() %}
-                            {% if col!='id' and col!='Name' %}<th scope="col">{{ col }}</th>{%endif%}
-                            {% endfor %}
-                        </tr>
+                      <tr class="active">
+                        <th scope="col">Name</th>
+                        <th scope="col">Id</th>
+                        <th scope="col">Total Staked</th>
+                        <th scope="col">Jurors</th>
+                        <th scope="col">Fee For Juror</th>
+                        <th scope="col">Min Stake</th>
+                        <th scope="col">Min Stake in USD</th>
+                        <th scope="col">Vote Stake</th>
+                        <th scope="col">Total Disputes</th>
+                        <th scope="col">Disputes in the last 30 days</th>
+                        <th scope="col">Open Disputes</th>
+                      </tr>
                     </thead>
-                    <tbody>
-                    {% set ns = namespace(mostActive=0) %} 
-                    {% for c, data in dashboard['courtTable'].items()|sort(attribute='id') %}
-                        {% if data['Disputes in the last 30 days'] > dashboard['courtTable'][ns.mostActive]['Disputes in the last 30 days']%}
-                            {% set ns.mostActive = c%}
-                        {% endif%}
-                    {% endfor%}
-                    
-                    {% for courtID, data in dashboard['courtTable']|dictsort(false) %}
-                        <td class="text-right"><a href={{url_for('court', id=data['id'], network=network)}}>{{ data['Name'] }}</a></td>
-                        <th scope="row"> {{ courtID }}</th>
-                        
-                        {% for col, value in data.items() %}
-                            {% if col == 'Min Stake in USD' %}
-                                <td class="text-right">${{ "{:,.2f}".format(value) }}</td>
-                            {%elif col == 'Name'%}
-                            {%elif col == 'Fee For Juror'%}
-                                <td class="text-right">{{ "{:,.3f}".format(value) }}</td>
-                            {%elif col != 'id'%}
-                                <td class="text-right">{{ "{:,.0f}".format(value) }}</td>
-                            {%endif%}
-                        {% endfor %}
-                        </tr>
-                    {% endfor %}
+                    <tbody id="courtTableBody">
+                      <tr><td>Loading table...</td></tr>
                     </tbody>
-                </table>
+                  </table>
             </div>
         </div>
     </div>
 </div>
+
 
 {% endblock %}

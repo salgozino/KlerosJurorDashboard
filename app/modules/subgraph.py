@@ -18,35 +18,17 @@ class Subgraph():
     def __init__(self, network=None):
         self.logger = logging.getLogger(__name__)
         self.network = network.lower() if network is not None else 'mainnet'
-        if self.network != 'mainnet':
-            raise Exception('Others network besides mainnet are not '
-                            'implemented yet')
-        if self.network == 'mainnet':
-            self.subgraph_name = 'salgozino/klerosboard'
-        else:
-            self.subgraph_name = 'salgozino/sarasa'
-        try:
-            self.subgraph_id_mainnet = os.environ['SUBGRAPH_ID']
-        except KeyError:
-            print("No SUBGRAPH_ID found, using hardcoded value")
-            self.subgraph_id_mainnet = \
-                'QmTTcbUgfcCXRKYvk7Yt23ys1fxNv1JuJLkasV57PATQts'
-        try:
-            self.subgraph_id_xdai = os.environ['SUBGRAPH_ID_XDAI']
-        except KeyError:
-            print("No SUBGRAPH_ID_XDAI found, using hardcoded value")
-            self.subgraph_id_xdai = \
-                'QmRFz59GrYSySK9p1Sn9CcYz5DHV1CFLwvpNSx6VdFHYms'
+        self.network = 'mainnet' if self.network == '' else self.network
+
+        self.subgraph_node = 'https://api.thegraph.com/subgraphs/name/'
+        self.index_node = 'https://api.thegraph.com/index-node/graphql'
 
         # Node definitions
-        self.subgraph_node = 'https://api.thegraph.com/subgraphs/id/'
-        self.index_node = 'https://api.thegraph.com/index-node/graphql'
-        if self.network == 'mainnet':
-            self.subgraph_node += self.subgraph_id_mainnet
-        elif self.network == 'xdai':
-            self.subgraph_node += self.subgraph_id_xdai
+        if self.network == 'xdai':
+            self.subgraph_name = 'salgozino/klerosboard-xdai'
         else:
-            self.logger.raiseExceptions("Network not supported")        
+            self.subgraph_name = 'salgozino/klerosboard'
+        self.subgraph_node += self.subgraph_name
 
     @staticmethod
     def _calculateVoteStake(minStake, alpha):
@@ -65,13 +47,13 @@ class Subgraph():
                 'chains{chainHeadBlock{number},latestBlock{number}}}}'
             response = requests.post(self.index_node, json={'query': query})
             currentBlockNumber = int(response.json()['data'][
-                'indexingStatusForCurrentVersion']['chains'][0]['chainHeadBlock']['number'])
-            averageBlockTime = 15  # in seconds
-            return int(currentBlockNumber - days*24*60*60/averageBlockTime)
+                'indexingStatusForCurrentVersion']['chains'][0][
+                    'chainHeadBlock']['number'])
+            averageBlockTime = 5  # in seconds
         else:
             averageBlockTime = 15  # in seconds
             currentBlockNumber = web3Node.web3.eth.blockNumber
-            return int(currentBlockNumber - days*24*60*60/averageBlockTime)
+        return int(currentBlockNumber - days*24*60*60/averageBlockTime)
 
     @staticmethod
     def _getRoundNumFromID(roundID):
@@ -121,6 +103,22 @@ class Subgraph():
             court['childs'] = childs
         return court
 
+    def _parseCourtStake(self, courtStake):
+        keys = courtStake.keys()
+        if 'stake' in keys:
+            courtStake['stake'] = self._wei2eth(courtStake['stake'])
+        if 'court' in keys:
+            courtID = int(courtStake['court']['id'])
+            courtStake['court'] = courtID
+        if 'juror' in keys:
+            courtStake['address'] = courtStake['juror']['id']
+        if 'timestamp' in keys:
+            courtStake['timestamp'] = int(courtStake['timestamp'])
+            courtStake['date'] = datetime.fromtimestamp(
+                courtStake['timestamp']
+                )
+        return courtStake
+
     def _parseDispute(self, dispute, timePeriods=None):
         # get a query response from one dispute and return parsed the votes
         # and values in the correct format. if the timePeriods of a court are
@@ -149,6 +147,10 @@ class Subgraph():
                                                           )
         if 'startTime' in keys:
             dispute['startTime'] = int(dispute['startTime'])
+        if 'numberOfChoices' in keys:
+            dispute['numberOfChoices'] = int(dispute['numberOfChoices'])
+        else:
+            dispute['numberOfChoices'] = None
         if 'rounds' in keys:
             vote_count = {}
             # initialize a dict with 0 as default value
@@ -159,7 +161,7 @@ class Subgraph():
                 vote_count[round['id']] = defaultdict(int)
                 votes = round['votes']
                 for vote in votes:
-                    vote = self._parseVote(vote)
+                    vote = self._parseVote(vote, dispute['numberOfChoices'])
                     vote_count[round['id']][vote['vote_str']] += 1
                     if vote['address'].lower() not in unique_jurors:
                         unique_vote_count[vote['vote_str']] += 1
@@ -184,22 +186,6 @@ class Subgraph():
                 kc[key] = int(value)
         return kc
 
-    def _parseCourtStake(self, courtStake):
-        keys = courtStake.keys()
-        if 'stake' in keys:
-            courtStake['stake'] = self._wei2eth(courtStake['stake'])
-        if 'court' in keys:
-            courtID = int(courtStake['court']['id'])
-            courtStake['court'] = courtID
-        if 'juror' in keys:
-            courtStake['address'] = courtStake['juror']['id']
-        if 'timestamp' in keys:
-            courtStake['timestamp'] = int(courtStake['timestamp'])
-            courtStake['date'] = datetime.fromtimestamp(
-                courtStake['timestamp']
-                )
-        return courtStake
-
     def _parseProfile(self, profile):
         keys = profile.keys()
         if 'numberOfDisputesAsJuror' in keys:
@@ -220,7 +206,7 @@ class Subgraph():
         profile['ruled_cases'] = 0
         if 'votes' in keys:
             for vote in profile['votes']:
-                vote = self._parseVote(vote)
+                vote = self._parseVote(vote, vote['dispute']['numberOfChoices'])
                 if vote['dispute']['ruled']:
                     if vote['dispute']['currentRulling'] == vote['choice']:
                         profile['coherent_votes'] = profile['coherent_votes'] \
@@ -246,19 +232,22 @@ class Subgraph():
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
         return profile
 
-    def _parseVote(self, vote):
+    def _parseVote(self, vote, number_of_choices=None):
         keys = vote.keys()
         if 'address' in keys:
             vote['address'] = vote['address']['id']
         if 'choice' in keys:
-            vote['choice'] = int(vote['choice'])
+            if vote['choice'] is not None:
+                vote['choice'] = int(vote['choice'])
         if 'dispute' in keys:
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
-        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):
+
+        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):      
             vote['vote_str'] = self._vote_mapping(vote['choice'],
                                                   vote['voted'],
-                                                  vote['dispute'])
+                                                  vote['dispute'],
+                                                  number_of_choices)
         if 'round' in keys:
             if 'id' in vote['round'].keys():
                 vote['roundNumber'] = self._getRoundNumFromID(vote[
@@ -297,13 +286,19 @@ class Subgraph():
             return None
 
     @staticmethod
-    def _vote_mapping(choice, voted, dispute=None):
+    def _vote_mapping(choice, voted, dispute=None, number_of_choices=2):
         """
         Return the text of the vote choice.
         TODO!, use the metaEvidence of the dispute,
         currently it's just fixed to Refuse, Yes, No or Pending
         """
         if voted:
+            if choice is None:
+                return 'Vote not revealed yet'
+            if number_of_choices is None:
+                return str(choice)
+            if int(number_of_choices) > 2:
+                return str(choice)
             vote_map = {0: 'Refuse to Arbitrate',
                         1: 'Yes',
                         2: 'No'}
@@ -315,7 +310,7 @@ class Subgraph():
     def _wei2eth(gwei):
         return float(gwei)*10**-18
 
-    def court2table(self, court, pnkUSDPrice):
+    def court2table(self, court, pnkUSDPrice, rewardUSDPrice):
         """
         Fields of the Table used in the main view of klerosboard
         """
@@ -323,6 +318,7 @@ class Subgraph():
                 'Total Staked': court['tokenStaked'],
                 'Min Stake': court['minStake'],
                 'Fee For Juror': court['feeForJuror'],
+                'Fee For Juror USD': court['feeForJuror']*rewardUSDPrice,
                 'Vote Stake': court['voteStake'],
                 'Open Disputes': court['disputesOngoing'],
                 'Min Stake in USD': court['minStake']*pnkUSDPrice,
@@ -496,8 +492,8 @@ class Subgraph():
     def getAllVotesFromJuror(self, address):
         query = ('{votes(where:{address:"' +
                  str(address)+'"},first:1000){' +
-                 'dispute{id,currentRulling,ruled,startTime},choice,voted'
-                 ',round{id}'
+                 'dispute{id,currentRulling,ruled,startTime,numberOfChoices},'
+                 'choice,voted,round{id}'
                  '}}'
                  )
         result = self._post_query(query)
@@ -505,7 +501,8 @@ class Subgraph():
         if result is None:
             return []
         votes = result['votes']
-        return [self._parseVote(vote) for vote in votes]
+        return [self._parseVote(vote, vote['dispute']['numberOfChoices'])
+                for vote in votes]
 
     def getAllJurors(self):
         skipJurors = 0
@@ -665,15 +662,18 @@ class Subgraph():
         courtsInfo = {}
         oldcourtsDisputes = {}
         courts = self.getAllCourts()
-        pnkUSDprice = CoinGecko().getPNKprice()
-
+        cg = CoinGecko()
+        pnkUSDprice = cg.getPNKprice()
+        rewardUSDprice = cg.getETHprice() if self.network == 'mainnet' else 1.0
         oldCourts = self.getCourtDisputesNumberBefore(30)
         if oldCourts is not None:
             for court in oldCourts:
                 oldcourtsDisputes[court['subcourtID']] = court['disputesNum']
         for court in courts:
             courtID = court['subcourtID']
-            courtsInfo[courtID] = self.court2table(court, pnkUSDprice)
+            courtsInfo[courtID] = self.court2table(court,
+                                                   pnkUSDprice,
+                                                   rewardUSDprice)
             if oldCourts is not None:
                 diff = courtsInfo[courtID]['Total Disputes'] - \
                         oldcourtsDisputes[courtID]
@@ -762,14 +762,14 @@ class Subgraph():
 
     def getDashboard(self):
         dashboard = self.getKlerosCounters()
-        dashboard['retention'] = self.getRetention()
-        dashboard['adoption'] = self.getAdoption()
-        mostActiveCourt = self.getMostActiveCourt()
-        if mostActiveCourt is not None:
-            mostActiveCourt = self.getCourtName(int(mostActiveCourt))
-        else:
-            mostActiveCourt = "No new cases in the last 7 days"
-        dashboard['mostActiveCourt'] = mostActiveCourt
+        # dashboard['retention'] = self.getRetention()
+        # dashboard['adoption'] = self.getAdoption()
+        # mostActiveCourt = self.getMostActiveCourt()
+        # if mostActiveCourt is not None:
+        #     mostActiveCourt = self.getCourtName(int(mostActiveCourt))
+        # else:
+        #     mostActiveCourt = "No new cases in the last 7 days"
+        # dashboard['mostActiveCourt'] = mostActiveCourt
         # PNK & ETH Information
         coingecko = CoinGecko()
         pnkInfo = coingecko.getCryptoInfo()
@@ -793,7 +793,7 @@ class Subgraph():
                 dashboard['tokenSupply']
         else:
             dashboard['pnkStakedPercent'] = None
-        dashboard['courtTable'] = self.getCourtTable()
+        # dashboard['courtTable'] = self.getCourtTable()
         return dashboard
 
     def getDispute(self, disputeNumber):
@@ -809,12 +809,13 @@ class Subgraph():
             '    currentRulling,'
             '    lastPeriodChange'
             '    period,'
+            '    numberOfChoices,'
             '    txid,'
             '    rounds{,'
             '        id,'
             '        winningChoice,'
             '        startTime,'
-            '        votes{,'
+            '        votes{'
             '            address{id},'
             '            choice,'
             '            voted,'
@@ -868,6 +869,7 @@ class Subgraph():
             '    subcourtID{id},'
             '    currentRulling,'
             '    lastPeriodChange'
+            '    numberOfChoices'
             '    period,'
             '    txid,'
             '    rounds{,'
@@ -892,7 +894,7 @@ class Subgraph():
         "return the most active court in the last days, by default, a week"
         old_courts_data = self.getCourtDisputesNumberBefore(7)
         courts_data = self.getCourtDisputesNumber()
-        if (courts_data is None) or (old_courts_data is None):
+        if (courts_data is None) and (old_courts_data is None):
             return None
 
         max_dispute_number = 0
@@ -900,15 +902,20 @@ class Subgraph():
         for court in courts_data:
             courtID = court['subcourtID']
             oldDisputesNum = 0
-            for oldcourt in old_courts_data:
-                if courtID == oldcourt['subcourtID']:
-                    oldDisputesNum = int(oldcourt['disputesNum'])
+            if old_courts_data is not None:
+                for oldcourt in old_courts_data:
+                    if courtID == oldcourt['subcourtID']:
+                        oldDisputesNum = int(oldcourt['disputesNum'])
+                        break
             DisputesNum = int(court['disputesNum'])
             delta = DisputesNum - oldDisputesNum
             if delta > max_dispute_number:
                 max_dispute_number = delta
                 court_bussiest = int(courtID)
-        return court_bussiest
+        if court_bussiest is not None:
+            return self.getCourtName(int(court_bussiest))
+        else:
+            return None
 
     def getProfile(self, address):
         query = (
@@ -918,7 +925,8 @@ class Subgraph():
             '   totalStaked,'
             '   numberOfDisputesAsJuror,'
             '   numberOfDisputesCreated,'
-            '   disputesAsCreator{id,currentRulling,startTime,ruled,txid}'
+            '   disputesAsCreator{id,currentRulling,startTime,ruled,txid,'
+            '   numberOfChoices}'
             '   ethRewards, tokenRewards'
             '}}'
         )

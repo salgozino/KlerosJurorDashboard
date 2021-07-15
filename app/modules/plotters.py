@@ -104,16 +104,17 @@ def stakesJurorsGraph(courts=['0', '2', '8', '9'], language='en'):
 
     t0 = time.time()
     dataEvolution = StakesEvolution.getEvolution()
-    logger.debug(f"StakesEvolution.getEvolution takes {time.time()-t0} seconds")
+    logger.debug(f"StakesEvolution.getEvolution takes {time.time()-t0} secs")
     t0 = time.time()
     for courtID in range(Court().ncourts):
         if courtID in dataEvolution.keys():
             courtdf = pd.DataFrame(dataEvolution[courtID])
             courtdf.timestamp = pd.to_datetime(courtdf.timestamp)
             dfStaked = pd.concat([dfStaked,
-                                  courtdf[['timestamp', 'staked']].set_index('timestamp').rename(
-                                               columns={'staked': str(courtID)}
-                                               )
+                                  courtdf[['timestamp', 'staked']]
+                                  .set_index('timestamp').rename(
+                                    columns={'staked': str(courtID)}
+                                    )
                                   ],
                                  axis=1,
                                  ignore_index=False)
@@ -131,7 +132,8 @@ def stakesJurorsGraph(courts=['0', '2', '8', '9'], language='en'):
         fig.append_trace(trace, row=1, col=1)
 
     # for courtID in range(0,Court().ncourts):
-    #     jurors = pd.DataFrame(StakesEvolution.getEvolutionByCourt(int(courtID)))[['jurors','timestamp']]
+    #     jurors = pd.DataFrame(StakesEvolution.getEvolutionByCourt(
+    #               int(courtID)))[['jurors','timestamp']]
     #     jurors.columns = [str(courtID), 'timestamp']
     #     jurors.timestamp = pd.to_datetime(jurors.timestamp)
     #     jurors.set_index('timestamp', inplace=True)
@@ -219,7 +221,11 @@ def treeMapGraph(courtTable, key="Jurors"):
             parents=parents,
             values=values,
             branchvalues="total",
-            hovertemplate='<b>%{label}</b><br>'+key+': %{value}<br>Percentage of Parent Court: %{percentParent:.2%}<br>Percentage of General Court: %{percentRoot:.2%}<br>'
+            hovertemplate='<b>%{label}</b>'
+                          '<br>' + key + ': %{value}'
+                          '<br>Percentage of Parent Court: '
+                          '%{percentParent:.2%}<br>Percentage of General '
+                          'Court: %{percentRoot:.2%}<br>'
         )
     )
     fig['layout'].update(height=300,

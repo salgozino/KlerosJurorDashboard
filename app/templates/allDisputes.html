@@ -8,22 +8,43 @@
         <h4>Disputes in evidence phase: {{disputes|selectattr("period", "equalto", "evidence")|list|length}}</h4>
       </div>
     </div>
-
       
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered table-hover">
           <tr class="info">
             <td align="center">Court</td>
             <td align="center">Dispute Number</td>
-            <td align="center">Dispute Status</td>
             <td align="center">Time remaining in this period</td>
           </tr>
           {% for dispute in disputes|selectattr("period", "equalto", "evidence") |sort(attribute='id', reverse=True): %}
           <tr class='warning'>
             <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
             <td class="text-center"><a href={{url_for('dispute', id=dispute['id'], network=network)}}>{{dispute['id']}}</a></td>
-            <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
-            <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
+            <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']|timedelta}}</span></td>
+          </tr>
+          {% endfor %}
+        </table>
+    </div>
+
+    <!-- Voting Phase disputes -->
+    <div class="row">
+      <div class="col">
+        <h4>Disputes in commit phase: {{disputes|selectattr("period", "equalto", "commit")|list|length}}</h4>
+      </div>
+    </div>
+
+    <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+        <table class="table table-bordered table-hover">
+          <tr class="info">
+            <td align="center">Court</td>
+            <td align="center">Dispute Number</td>
+            <td align="center">Time remaining in this period</td>
+          </tr>
+          {% for dispute in disputes|selectattr("period", "equalto", "commit") |sort(attribute='id', reverse=True): %}
+          <tr class='warning'>
+            <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
+            <td class="text-center"><a href={{url_for('dispute', id=dispute['id'], network=network)}}>{{dispute['id']}}</a></td>
+            <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']|timedelta}}</span></td>
           </tr>
           {% endfor %}
         </table>
@@ -36,21 +57,18 @@
       </div>
     </div>
 
-      
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered table-hover">
           <tr class="info">
             <td align="center">Court</td>
             <td align="center">Dispute Number</td>
-            <td align="center">Dispute Status</td>
             <td align="center">Time remaining in this period</td>
           </tr>
           {% for dispute in disputes|selectattr("period", "equalto", "vote") |sort(attribute='id', reverse=True): %}
           <tr class='warning'>
             <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
             <td class="text-center"><a href={{url_for('dispute', id=dispute['id'], network=network)}}>{{dispute['id']}}</a></td>
-            <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
-            <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
+            <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']|timedelta}}</span></td>
           </tr>
           {% endfor %}
         </table>
@@ -69,7 +87,6 @@
         <tr class="info">
           <td align="center">Court</td>
           <td align="center">Dispute Number</td>
-          <td align="center">Dispute Status</td>
           <td align="center">Current Ruling</td>
           <td align="center">Time remaining in this period</td>
         </tr>
@@ -77,7 +94,6 @@
         <tr class='warning'>
           <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
           <td class="text-center"><a href={{url_for('dispute', id=dispute['id'], network=network)}}>{{dispute['id']}}</a></td>
-          <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
           <td class="text-center">{{dispute['currentRulling']}}</td>
           <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
         </tr>
@@ -98,15 +114,13 @@
         <tr class="info">
           <td align="center">Court</td>
           <td align="center">Dispute Number</td>
-          <td align="center">Dispute Status</td>
-          <td align="center">Dispute Ruling</td>
+            <td align="center">Dispute Ruling</td>
           <td align="center">Time remaining in this period</td>
         </tr>
         {% for dispute in disputes|selectattr("period", "equalto", "execution") |sort(attribute='id', reverse=True): %}
         <tr class='success'>
           <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']}}</a></td>
           <td class="text-center"><a href={{url_for('dispute', id=dispute['id'], network=network)}}>{{dispute['id']}}</a></td>
-          <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
           <td class="text-center">{{dispute['currentRulling']}}</td>
           <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
         </tr>
