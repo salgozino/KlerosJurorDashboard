@@ -11,9 +11,6 @@ from flask import render_template, request, jsonify
 
 from app import create_app
 from app.modules.plotters import jurorHistogram
-# from app.modules.plotters import disputesGraph, stakesJurorsGraph, \
-#     disputesbyCourtGraph, disputesbyArbitratedGraph, treeMapGraph, \
-#     jurorHistogram
 from app.modules.plotters import disputesGraph, disputesbyCourtGraph, \
     disputesbyArbitratedGraph, treeMapGraph
 from app.modules.kleros import get_all_court_chances
@@ -22,8 +19,8 @@ from app.modules.vagarish import get_evidences
 
 
 # Elastic Beanstalk initalization
-settings_module = os.environ.get('CONFIG_MODULE')
-application = create_app(settings_module)
+# settings_module = os.environ.get('CONFIG_MODULE')
+application = create_app()
 
 logger = logging.getLogger(__name__)
 
