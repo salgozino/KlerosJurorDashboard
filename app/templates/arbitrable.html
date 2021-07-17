@@ -4,7 +4,7 @@
     {% block header %}
       <div class="row">
         <div class="col">
-          <h3>{% block title %}Arbitrable {{ arbitrable['id'] }}</h3><h6><a href="https://etherscan.io/address/{{ arbitrable['id'] }}">view on etherscan</a></h6>{% endblock %}
+          <h3>{% block title %}Arbitrable: {{ arbitrable['id']|arbitrableName(network) }}</h3><h6><a href="https://etherscan.io/address/{{ arbitrable['id'] }}">view on etherscan</a></h6>{% endblock %}
         </div>
       </div>
     {% endblock %}

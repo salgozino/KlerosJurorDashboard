@@ -579,9 +579,8 @@ class Subgraph():
             return result
         return self._parseArbitrable(result['arbitrables'][0])
 
-    @staticmethod
-    def getArbitrableName(arbitrable):
-        file_path = 'app/lib/dapp_index.json'
+    def getArbitrableName(self, arbitrable):
+        file_path = f'app/lib/dapp_index_{self.network}.json'
         arbitrable = str(arbitrable).lower()
         if os.path.isfile(file_path):
             with open(file_path) as jsonFile:
