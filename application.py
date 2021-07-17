@@ -3,16 +3,14 @@
 Flask Application which runs the web server!.
 Here all the website is created.
 """
-import os
 import logging
 from datetime import datetime
 
 from flask import render_template, request, jsonify
 
 from app import create_app
-from app.modules.plotters import jurorHistogram
 from app.modules.plotters import disputesGraph, disputesbyCourtGraph, \
-    disputesbyArbitratedGraph, treeMapGraph
+    disputesbyArbitratedGraph, treeMapGraph, jurorHistogram
 from app.modules.kleros import get_all_court_chances
 from app.modules.subgraph import Subgraph
 from app.modules.vagarish import get_evidences
@@ -36,6 +34,11 @@ def timedelta(date):
 @application.template_filter()
 def courtName(courtID, network=None):
     return Subgraph(network).getCourtName(courtID)
+
+
+@application.template_filter()
+def arbitrableName(address, network=None):
+    return Subgraph(network).getArbitrableName(address)
 
 
 @application.template_filter()
@@ -229,14 +232,48 @@ def profile(address):
     profile = subgraph.getProfile(address)
     if profile is None:
         profile = {'address': address}
-        return render_template('profile.html',
-                               profile=profile,
+    return render_template('profile.html',
+                           profile=profile,
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
+                           )
+
+
+"""
+@application.route('/arbitrable', methods=['GET'])
+def all_arbitrables():
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
+    print('sin stirng')
+    arbitrables = subgraph.getAllArbitrables()
+    return render_template('allArbitrables.html',
+                           arbitrables=arbitrables,
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
+                           )
+
+"""
+
+
+@application.route('/arbitrable/', defaults={'address': ""})
+@application.route('/arbitrable/<string:address>', methods=['GET'])
+def arbitrable(address):
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
+    if address is None or address == "":
+        arbitrables = subgraph.getAllArbitrables()
+        return render_template('allArbitrables.html',
+                               arbitrables=arbitrables,
                                subgraph_status=subgraph.getStatus(),
                                network=subgraph.network
                                )
+
     else:
-        return render_template('profile.html',
-                               profile=profile,
+        arbitrable = subgraph.getArbitrable(address)
+        if arbitrable is None:
+            arbitrable = {'id': address}
+        return render_template('arbitrable.html',
+                               arbitrable=arbitrable,
                                subgraph_status=subgraph.getStatus(),
                                network=subgraph.network
                                )
@@ -274,6 +311,7 @@ def not_found(e):
                            subgraph_status=subgraph.getStatus(),
                            network=subgraph.network
                            )
+
 
 """
 @application.errorhandler(Exception)
