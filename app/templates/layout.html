@@ -85,6 +85,13 @@
   </header>
   
     <body>
+    {%if network=='xdai'%}
+        {% set reward_currency =  'xDai'  %}
+        {% set block_explorer =  'https://blockscout.com/xdai/mainnet'  %}
+    {%else%}
+        {% set reward_currency =  'ETH'  %}
+        {% set block_explorer =  'https://etherscan.io'  %}
+    {%endif%}
     <div class="container" style="padding-right:30px;padding-left:30px">
         {% block body %}{% endblock %}
     </div>

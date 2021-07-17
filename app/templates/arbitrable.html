@@ -1,69 +1,67 @@
 {% extends 'layout.html' %}
 
 {% block body%}
-    {% block header %}
-      <div class="row">
-        <div class="col">
-          <h3>{% block title %}Arbitrable: {{ arbitrable['id']|arbitrableName(network) }}</h3><h6><a href="https://etherscan.io/address/{{ arbitrable['id'] }}">view on etherscan</a></h6>{% endblock %}
-        </div>
+  {% block header %}
+    <div class="row">
+      <div class="col">
+        <h4>Arbitrable: {{arbitrable['id']|arbitrableName}}</h4>
+        <h6><a href="{{block_explorer}}/address/{{arbitrable['id']}}">view on block explorer</a></h6>
       </div>
-    {% endblock %}
+    </div>
+  {% endblock %}
 
 
-    {% block content %}
-   
-    {%if network=='xdai'%}
-    {% set reward_currency =  'xDai'  %}
-    {%else%}
-        {% set reward_currency =  'ETH'  %}
-    {%endif%}
-
-      <div class="row">
-        <div class="col-lg-3"><!-- centering div --></div>
-        <div class="col-lg-3">
-            <div class="panel panel-info">
-              <div class="panel-heading">
-                  <h3 class="panel-title text-center">Fees Generated</h3>
-              </div>
-              <div class="panel-body text-center">
-                {%if network == 'xdai'%}
+  {% block content %}
+    <div class="row">
+      <div class="col-lg-3"><!-- centering div --></div>
+      <div class="col-lg-3">
+          <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Fees Generated</h3>
+            </div>
+            <div class="panel-body text-center">
+              {%if network == 'xdai'%}
                 <h4>{{ "{:.2f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
-                {%else%}
+              {%else%}
                 <h4>{{ "{:.3f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
-                {%endif%}
-              </div>
+              {%endif%}
+            </div>
+          </div>
+      </div>
+      <div class="col-lg-3">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Disputes Created</h3>
+            </div>
+            <div class="panel-body text-center">
+              <h4>{{arbitrable['numberOfDisputes']}}</h4>
             </div>
         </div>
-        <div class="col-lg-3">
-          <div class="panel panel-info">
-              <div class="panel-heading">
-                  <h3 class="panel-title text-center">Disputes Created</h3>
-              </div>
-              <div class="panel-body text-center">
-                <h4>{{arbitrable['numberOfDisputes']}}</h4>
-              </div>
-          </div>
-        </div>
       </div>
-      
-      <h2>Disputes Created</h2>
-      <div class="mb-5">
-        <table class="table table-bordered responsive table-sm table-condensed table-hover">
-          <tr class="info"><td>Dispute</td><td>Creation Date</td><td>TxID</td></tr>
-          {% for dispute in arbitrable['disputes']|sort(attribute='timestamp', reverse=True): %}
+    </div>
+    
+    <h2>Disputes Created</h2>
+    <div class="mb-5">
+      <table class="table table-bordered responsive table-sm table-condensed table-hover">
+        <tr class="info">
+          <td>Dispute</td>
+          <td>Creation Date</td>
+          <td>TxID</td>
+        </tr>
+        {% for dispute in arbitrable['disputes']|sort(attribute='timestamp', reverse=True): %}
           {% if dispute['ruled']%}
-          <tr class="success">
+            <tr class="success">
           {% else %}
-          <tr>
+            <tr>
           {% endif %}
             <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
             <td>{{ dispute['startTime']|timestamp2datetime }}</td>
-            <td><a href="https://etherscan.io/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
+            <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
           </tr>
-          {% endfor %}
-        </table>
-      </div>
-  
-      
+        {% endfor %}
+      </table>
+    </div>
+
+    
   {% endblock %}
 {% endblock %}
