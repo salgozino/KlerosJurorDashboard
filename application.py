@@ -271,7 +271,10 @@ def arbitrable(address):
     else:
         arbitrable = subgraph.getArbitrable(address)
         if arbitrable is None:
-            arbitrable = {'id': address}
+            arbitrable = {'id': address,
+                          'numberOfDisputes': 0,
+                          'ethFees': 0.,
+                          'disputes': []}
         return render_template('arbitrable.html',
                                arbitrable=arbitrable,
                                subgraph_status=subgraph.getStatus(),
