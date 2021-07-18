@@ -239,22 +239,6 @@ def profile(address):
                            )
 
 
-"""
-@application.route('/arbitrable', methods=['GET'])
-def all_arbitrables():
-    network = request.args.get('network', type=str)
-    subgraph = Subgraph(network)
-    print('sin stirng')
-    arbitrables = subgraph.getAllArbitrables()
-    return render_template('allArbitrables.html',
-                           arbitrables=arbitrables,
-                           subgraph_status=subgraph.getStatus(),
-                           network=subgraph.network
-                           )
-
-"""
-
-
 @application.route('/arbitrable/', defaults={'address': ""})
 @application.route('/arbitrable/<string:address>', methods=['GET'])
 def arbitrable(address):
