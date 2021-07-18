@@ -41,14 +41,14 @@
     </div>
     
     <h2>Disputes Created</h2>
-    <div class="mb-5">
-      <table class="table table-bordered responsive table-sm table-condensed table-hover">
+    <div class="table-responsive" style="max-height:300px; overflow-y:auto">
+      <table class="table table-bordered table-sm table-condensed table-hover">
         <tr class="info">
           <td>Dispute</td>
           <td>Creation Date</td>
           <td>TxID</td>
         </tr>
-        {% for dispute in arbitrable['disputes']|sort(attribute='timestamp', reverse=True): %}
+        {% for dispute in arbitrable['disputes']|sort(attribute='startTime', reverse=True): %}
           {% if dispute['ruled']%}
             <tr class="success">
           {% else %}
