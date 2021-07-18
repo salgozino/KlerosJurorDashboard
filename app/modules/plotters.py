@@ -192,7 +192,6 @@ def disputesbyArbitratedGraph(disputes, network=None, language="en"):
     df.arbitrable = df.arbitrable.map(Subgraph(network).getArbitrableName)
     data = df.groupby(df.arbitrable)['id'].count()
     data = data.to_dict()
-    print(data.values())
     fig.add_trace(go.Pie(labels=list(data.keys()),
                          values=list(data.values()),
                          showlegend=False)

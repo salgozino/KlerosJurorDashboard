@@ -510,7 +510,7 @@ class Subgraph():
             query = (
                 '{disputes(where:{disputeID_gt:'+str(initDispute)+'}){'
                 'id,subcourtID{id},currentRulling,ruled,startTime,'
-                'period,lastPeriodChange,arbitrable'
+                'period,lastPeriodChange,arbitrable{id}'
                 '}}'
             )
             result = self._post_query(query)
