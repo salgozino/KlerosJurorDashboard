@@ -2,23 +2,38 @@
 
 {% block body%}
     
-    <div class="table-responsive" style="max-height:250px; overflow-y:auto">
-        <table class="table table-bordered table-hover">
+  <div class="row">
+  <div class="container">
+    <div class="table-responsive" style="max-height:65rem; overflow-y:auto" >
+        <table class="table table-bordered table-hover" id="sortTable">
+          <thead>
           <tr class="info">
-            <td align="center">Arbitrable</td>
-            <td align="center">Arbitrable Name</td>
-            <td align="center">Disputes Created</td>
-            <td align="center">Fees generated</td>
+            <th align="center">Arbitrable</td>
+            <th align="center">Name</td>
+            <th align="center">Disputes Created</td>
+            <th align="center">Fees generated</td>
           </tr>
+        </thead>
           {% for arbitrable in arbitrables|sort(attribute='id', reverse=True): %}
           <tr>
-            <td class="text-center"><a href={{url_for('arbitrable', address=arbitrable['id'], network=network)}}>{{arbitrable['id']}}</a></td>
-            <td class="text-center">{{arbitrable['id']|arbitrableName(network)}}</td>
-            <td class="text-center">{{arbitrable['disputesCount']}}</td>
-            <td class="text-center">{{"{:.3f}".format(arbitrable['ethFees'])}} {{reward_currency}} </td>
+            <td class="text-center" data-table-header="Arbitrable"><a href={{url_for('arbitrable', address=arbitrable['id'], network=network)}}>{{arbitrable['id'][:6]}}...{{arbitrable['id'][-4:]}}</a></td>
+            <td class="text-center" data-table-header="Name">{{arbitrable['id']|arbitrableName(network)}}</td>
+            <td class="text-center" data-table-header="Disputes Created">{{arbitrable['disputesCount']}}</td>
+            <td class="text-center" data-table-header="Fees generated">{{"{:.3f}".format(arbitrable['ethFees'])}} {{reward_currency}} </td>
           </tr>
           {% endfor %}
         </table>
     </div>
-        
+    <script>
+      $(document).ready(function() {
+        $("#sortTable").DataTable({
+            columnDefs : [
+          { type : 'float', targets : [3] }
+      ],  
+        });
+      });
+
+    </script>
+</div>
+</div>
 {% endblock %}
