@@ -28,9 +28,16 @@ class Subgraph():
             self.subgraph_name = 'salgozino/klerosboard-xdai'
         elif self.network == 'test':
             self.subgraph_name = 'salgozino/sarasa'
+        elif self.network == 'test2':
+            self.subgraph_name = 'QmNfgPucEX5ra6DrwmLbuSV4uVbYz' \
+                                 + 'GCUM1ycEPuu1YbgxB'
         else:
             self.subgraph_name = 'salgozino/klerosboard'
-        self.subgraph_node += self.subgraph_name
+        if self.network == 'test2':
+            self.subgraph_node = 'https://api.thegraph.com/subgraphs/id/' \
+                                  + self.subgraph_name
+        else:
+            self.subgraph_node += self.subgraph_name
 
     @staticmethod
     def _calculateVoteStake(minStake, alpha):
@@ -65,9 +72,9 @@ class Subgraph():
         if arbitrable is None:
             return None
         keys = arbitrable.keys()
-        if 'numberOfDisputes' in keys:
-            arbitrable['numberOfDisputes'] = int(
-                                                arbitrable['numberOfDisputes'])
+        if 'disputesCount' in keys:
+            arbitrable['disputesCount'] = int(
+                                                arbitrable['disputesCount'])
         if 'ethFees' in keys:
             arbitrable['ethFees'] = self._wei2eth(arbitrable['ethFees'])
         if 'disputes' in keys:
@@ -401,7 +408,7 @@ class Subgraph():
             query = (
                 '{arbitrables(where:{id_gt:"'+str(initArbitrable)+'"},'
                 'orderBy:id, orderDirection:asc, first:1000){'
-                'id,numberOfDisputes,ethFees'
+                'id,disputesCount,ethFees'
                 '}}'
             )
             result = self._post_query(query)
@@ -569,9 +576,15 @@ class Subgraph():
         query = (
             '{arbitrables(where:{id:"'+str(address).lower()+'"}) {'
             '   id,'
-            '   numberOfDisputes,'
+            '   disputesCount,'
+            '   openDisputes,'
+            '   closedDisputes,'
+            '   evidencePhaseDisputes,'
+            '   commitPhaseDisputes,'
+            '   votingPhaseDisputes,'
+            '   appealPhaseDisputes,'
             '   ethFees,'
-            '   disputes{id, period, startTime, ruled, txid}'
+            '   disputes{id, period, startTime, ruled, currentRulling, txid}'
             '}}'
         )
         result = self._post_query(query)
@@ -580,7 +593,10 @@ class Subgraph():
         return self._parseArbitrable(result['arbitrables'][0])
 
     def getArbitrableName(self, arbitrable):
-        file_path = f'app/lib/dapp_index_{self.network}.json'
+        if self.network == 'test2':
+            file_path = 'app/lib/dapp_index_mainnet.json'
+        else:
+            file_path = f'app/lib/dapp_index_{self.network}.json'
         arbitrable = str(arbitrable).lower()
         if os.path.isfile(file_path):
             with open(file_path) as jsonFile:

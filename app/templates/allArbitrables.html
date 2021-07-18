@@ -14,7 +14,7 @@
           <tr>
             <td class="text-center"><a href={{url_for('arbitrable', address=arbitrable['id'], network=network)}}>{{arbitrable['id']}}</a></td>
             <td class="text-center">{{arbitrable['id']|arbitrableName(network)}}</td>
-            <td class="text-center">{{arbitrable['numberOfDisputes']}}</td>
+            <td class="text-center">{{arbitrable['disputesCount']}}</td>
             <td class="text-center">{{"{:.3f}".format(arbitrable['ethFees'])}} {{reward_currency}} </td>
           </tr>
           {% endfor %}
