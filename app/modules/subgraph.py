@@ -26,18 +26,10 @@ class Subgraph():
         # Node definitions
         if self.network == 'xdai':
             self.subgraph_name = 'salgozino/klerosboard-xdai'
-        elif self.network == 'test':
-            self.subgraph_name = 'salgozino/sarasa'
-        elif self.network == 'test2':
-            self.subgraph_name = 'QmNfgPucEX5ra6DrwmLbuSV4uVbYz' \
-                                 + 'GCUM1ycEPuu1YbgxB'
         else:
             self.subgraph_name = 'salgozino/klerosboard'
-        if self.network == 'test2':
-            self.subgraph_node = 'https://api.thegraph.com/subgraphs/id/' \
-                                  + self.subgraph_name
-        else:
-            self.subgraph_node += self.subgraph_name
+
+        self.subgraph_node += self.subgraph_name
 
     @staticmethod
     def _calculateVoteStake(minStake, alpha):
