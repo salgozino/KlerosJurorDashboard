@@ -1,0 +1,124 @@
+{% extends 'layout.html' %}
+
+{% block body%}
+  {% block header %}
+    <div class="row">
+      <div class="col">
+        <h2>Arbitrable: {{arbitrable['id']|arbitrableName(network)}}</h2>
+        <a href="{{block_explorer}}/address/{{arbitrable['id']}}">view {{arbitrable['id']}} in block explorer</a>
+      </div>
+    </div>
+  {% endblock %}
+
+
+  {% block content %}
+    <div class="row">
+      <div class="col-lg-3"><!-- centering div -->
+      </div>
+      <div class="col-lg-3">
+          <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Fees Generated</h3>
+            </div>
+            <div class="panel-body text-center">
+              {%if network == 'xdai'%}
+                <h4>{{ "{:.2f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
+              {%else%}
+                <h4>{{ "{:.3f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
+              {%endif%}
+            </div>
+          </div>
+      </div>
+      <div class="col-lg-3">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Disputes Created</h3>
+            </div>
+            <div class="panel-body text-center">
+              <h4>{{arbitrable['disputesCount']}}</h4>
+            </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-1"><!--Centering div --></div>
+      <div class="col-lg-2">
+          <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Open Disputes</h3>
+            </div>
+            <div class="panel-body text-center">
+                <h4>{{ arbitrable['openDisputes']}}</h4>
+            </div>
+          </div>
+      </div>
+      <div class="col-lg-2">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Evidence Phase Disputes</h3>
+            </div>
+            <div class="panel-body text-center">
+              <h4>{{arbitrable['evidencePhaseDisputes']}}</h4>
+            </div>
+        </div>
+      </div>
+      <div class="col-lg-2">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+              <h3 class="panel-title text-center">Commit Phase Disputes</h3>
+          </div>
+          <div class="panel-body text-center">
+              <h4>{{ arbitrable['commitPhaseDisputes']}}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+              <h3 class="panel-title text-center">Voting Phase Disputes</h3>
+          </div>
+          <div class="panel-body text-center">
+              <h4>{{ arbitrable['votingPhaseDisputes']}}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2">
+        <div class="panel panel-info">
+          <div class="panel-heading">
+              <h3 class="panel-title text-center">Appeal Phase Disputes</h3>
+          </div>
+          <div class="panel-body text-center">
+              <h4>{{ arbitrable['appealPhaseDisputes']}}</h4>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    
+    <h2>Disputes Created</h2>
+    <div class="table-responsive" style="max-height:300px; overflow-y:auto">
+      <table class="table table-bordered table-sm table-condensed table-hover">
+        <tr class="info">
+          <td>Dispute</td>
+          <td>Creation Date</td>
+          <td>Current Result</td>
+          <td>TxID</td>
+        </tr>
+        {% for dispute in arbitrable['disputes']|sort(attribute='startTime', reverse=True): %}
+          {% if dispute['ruled']%}
+            <tr class="success">
+          {% else %}
+            <tr>
+          {% endif %}
+            <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
+            <td>{{ dispute['startTime']|timestamp2datetime }}</td>
+            <td>{{dispute['currentRulling']}}</td>
+            <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid'][:6]}}...{{dispute['txid'][-4:]}}</a></td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    
+  {% endblock %}
+{% endblock %}

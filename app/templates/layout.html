@@ -8,6 +8,7 @@
     <!-- Bootstrap CSS -->
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/sticky-footer.css') }}" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/map.css') }}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     
@@ -18,6 +19,7 @@
     
     <!-- jQuery -->
     <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
+    
     <!-- BootstrapJS -->
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
 
@@ -48,6 +50,7 @@
                 <li class="navbar-item"><a href="/odds/?network={{network}}">Juror Odds!</a></li>
                 <li class="navbar-item"><a href="/court/?network={{network}}">Court Explorer</a></li>
                 <li class="navbar-item"><a href="/dispute/?network={{network}}">Dispute Scanner</a></li>
+                <li class="navbar-item"><a href="/arbitrable/?network={{network}}">Arbitrables Explorer</a></li>
                 <li class="navbar-item"><a href="/kleros-map/?network={{network}}">Kleros Community Map!</a></li>
             </ul>
 
@@ -84,6 +87,13 @@
   </header>
   
     <body>
+    {%if network=='xdai'%}
+        {% set reward_currency =  'xDai'  %}
+        {% set block_explorer =  'https://blockscout.com/xdai/mainnet'  %}
+    {%else%}
+        {% set reward_currency =  'ETH'  %}
+        {% set block_explorer =  'https://etherscan.io'  %}
+    {%endif%}
     <div class="container" style="padding-right:30px;padding-left:30px">
         {% block body %}{% endblock %}
     </div>
@@ -97,5 +107,10 @@
             </div>
         </div>
     </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
+
     </body>
 </html>

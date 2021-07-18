@@ -43,7 +43,7 @@
             <td class="text-center">{{dispute['period']|capitalize}}</td>
             <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] != 'Already Executed'%}UTC{%endif%}</td>
             <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
-            <td class="text-center"><a href="https://etherscan.io/address/{{ dispute['arbitrable'] }}">{{dispute['arbitrable'][0:6] +'...'+ dispute['arbitrable'][-4:]}}</a></td>
+            <td class="text-center"><a href={{url_for('arbitrable', address=dispute['arbitrable'], network=network)}}>{{dispute['arbitrable']|arbitrableName(network)}}</a></td>
             <td class="text-center"><a href={{ url_for('profile', address=dispute['creator'], network=network) }}>{{dispute['creator'][0:6] +'...'+ dispute['creator'][-4:]}}</a></td>
           </tr>
         </table>

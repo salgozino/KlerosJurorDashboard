@@ -4,16 +4,11 @@
     {% block header %}
       <div class="row">
         <div class="col">
-          <h3>{% block title %}Juror {{ profile['id'] }}</h3><h6><a href="https://etherscan.io/address/{{ profile['id'] }}">view on etherscan</a></h6>{% endblock %}
+          <h3>{% block title %}Juror {{ profile['id'] }}</h3><h6><a href="{{block_explorer}}/address/{{ profile['id'] }}">view on block explorer</a></h6>{% endblock %}
         </div>
       </div>
     {% endblock %}
 
-    {%if network=='xdai'%}
-        {% set reward_currency =  'xDai'  %}
-    {%else%}
-        {% set reward_currency =  'ETH'  %}
-    {%endif%}
 
     {% block content %}
     <div class="row">
@@ -60,7 +55,7 @@
             <tr>
               <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
               <td>{{ dispute['startTime']|timestamp2datetime }}</td>
-              <td><a href="https://etherscan.io/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
+              <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
             </tr>
             {% endfor %}
           </table>
@@ -81,7 +76,7 @@
                 <td><a href={{url_for('court', id=stake['court'], network=network)}}>{{stake['court']|courtName(network)}}</td>
                 <td>{{"{:,.2f}".format(stake['stake'])}}</td>
                 <td>{{stake['timestamp']|timestamp2datetime}}</td>
-                <td><a href="https://etherscan.io/tx/{{ stake['txid'] }}">{{stake['txid'][:6]}}...{{stake['txid'][-4:]}}</a></td>
+                <td><a href="{{block_explorer}}/tx/{{ stake['txid'] }}">{{stake['txid'][:6]}}...{{stake['txid'][-4:]}}</a></td>
               </tr>
             {% endfor %}
           </table>

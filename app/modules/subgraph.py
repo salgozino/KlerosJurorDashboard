@@ -28,6 +28,7 @@ class Subgraph():
             self.subgraph_name = 'salgozino/klerosboard-xdai'
         else:
             self.subgraph_name = 'salgozino/klerosboard'
+
         self.subgraph_node += self.subgraph_name
 
     @staticmethod
@@ -58,6 +59,20 @@ class Subgraph():
     @staticmethod
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
+
+    def _parseArbitrable(self, arbitrable):
+        if arbitrable is None:
+            return None
+        keys = arbitrable.keys()
+        if 'disputesCount' in keys:
+            arbitrable['disputesCount'] = int(
+                                                arbitrable['disputesCount'])
+        if 'ethFees' in keys:
+            arbitrable['ethFees'] = self._wei2eth(arbitrable['ethFees'])
+        if 'disputes' in keys:
+            arbitrable['disputes'] = [self._parseDispute(dispute)
+                                      for dispute in arbitrable['disputes']]
+        return arbitrable
 
     def _parseCourt(self, court):
         # get a query of a courts and parse values to the correct format
@@ -140,6 +155,9 @@ class Subgraph():
             dispute['lastPeriodChange'] = int(dispute['lastPeriodChange'])
         if 'creator' in keys:
             dispute['creator'] = dispute['creator']['id']
+        if 'arbitrable' in keys:
+            if 'id' in dispute['arbitrable'].keys():
+                dispute['arbitrable'] = dispute['arbitrable']['id']
         if ('period' in keys) and ('subcourtID' in keys):
             dispute['periodEnds'] = self.getWhenPeriodEnd(dispute,
                                                           subcourtID,
@@ -375,6 +393,28 @@ class Subgraph():
             'inactiveJurors'])
         return newTotal-oldTotal
 
+    def getAllArbitrables(self):
+        initArbitrable = ""
+        arbitrables = []
+        while True:
+            query = (
+                '{arbitrables(where:{id_gt:"'+str(initArbitrable)+'"},'
+                'orderBy:id, orderDirection:asc, first:1000){'
+                'id,disputesCount,ethFees'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentarbitrables = result['arbitrables']
+                arbitrables.extend(currentarbitrables)
+                if len(currentarbitrables) < 1000:
+                    break
+                initArbitrable = currentarbitrables[-1]['id']
+        return [self._parseArbitrable(arbitrable)
+                for arbitrable in arbitrables]
+
     def getAllCourts(self):
         query = (
             '''{
@@ -524,9 +564,31 @@ class Subgraph():
         parsed_disputes = [self._parseProfile(profile) for profile in profiles]
         return parsed_disputes
 
-    @staticmethod
-    def getArbitrableName(arbitrable):
-        file_path = 'app/lib/dapp_index.json'
+    def getArbitrable(self, address):
+        query = (
+            '{arbitrables(where:{id:"'+str(address).lower()+'"}) {'
+            '   id,'
+            '   disputesCount,'
+            '   openDisputes,'
+            '   closedDisputes,'
+            '   evidencePhaseDisputes,'
+            '   commitPhaseDisputes,'
+            '   votingPhaseDisputes,'
+            '   appealPhaseDisputes,'
+            '   ethFees,'
+            '   disputes{id, period, startTime, ruled, currentRulling, txid}'
+            '}}'
+        )
+        result = self._post_query(query)
+        if result is None:
+            return result
+        return self._parseArbitrable(result['arbitrables'][0])
+
+    def getArbitrableName(self, arbitrable):
+        if self.network == 'test2':
+            file_path = 'app/lib/dapp_index_mainnet.json'
+        else:
+            file_path = f'app/lib/dapp_index_{self.network}.json'
         arbitrable = str(arbitrable).lower()
         if os.path.isfile(file_path):
             with open(file_path) as jsonFile:
@@ -802,7 +864,7 @@ class Subgraph():
             'disputes(where:{id:"'+str(disputeNumber)+'"}) {'
             '    id,'
             '    disputeID,'
-            '    arbitrable,'
+            '    arbitrable{id},'
             '    ruled,'
             '    creator{id},'
             '    subcourtID{id},'
@@ -842,6 +904,7 @@ class Subgraph():
             votingPhaseDisputes
             evidencePhaseDisputes
             courtsCount
+            numberOfArbitrables
             activeJurors
             inactiveJurors
             drawnJurors
