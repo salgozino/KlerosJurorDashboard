@@ -46,6 +46,7 @@
         <tr class="info">
           <td>Dispute</td>
           <td>Creation Date</td>
+          <td>Current Result</td>
           <td>TxID</td>
         </tr>
         {% for dispute in arbitrable['disputes']|sort(attribute='startTime', reverse=True): %}
@@ -56,6 +57,7 @@
           {% endif %}
             <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
             <td>{{ dispute['startTime']|timestamp2datetime }}</td>
+            <td>{{dispute['currentRulling']}}</td>
             <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
           </tr>
         {% endfor %}
