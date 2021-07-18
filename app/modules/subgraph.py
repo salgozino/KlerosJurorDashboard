@@ -904,6 +904,7 @@ class Subgraph():
             votingPhaseDisputes
             evidencePhaseDisputes
             courtsCount
+            numberOfArbitrables
             activeJurors
             inactiveJurors
             drawnJurors

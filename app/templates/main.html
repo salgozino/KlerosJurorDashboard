@@ -22,14 +22,15 @@
 <!-- First Line Metrics -->
 <!-- Cases Metrics -->
 {%if network=='xdai'%}
-    {% set jurors_anual_reward = 1000000 * 12 * 0.0 %}
+    {% set jurors_anual_reward = 1000000 * 12 * 0. %}
 {%else%}
-    {% set jurors_anual_reward = 1000000 * 12 * 1.0%}
+    {% set jurors_anual_reward = 1000000 * 12 * 1.%}
 {%endif%}
 
 <div class="container">
     <div class="row">
-        <div class="col-lg-3">
+        <div class="col-lg-1"><!--Centering div--></div>
+        <div class="col-lg-2">
             <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Disputes</h3>
@@ -42,7 +43,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3">
+        <div class="col-lg-2">
             <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Most Active Courts</h3>
@@ -56,7 +57,7 @@
             </div>
         </div>
 
-        <div class="col-lg-3">
+        <div class="col-lg-2">
             <div class="panel panel-success">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Cases already Closed</h3>
@@ -70,7 +71,7 @@
             </div>
         </div>
 
-        <div class="col-lg-3">
+        <div class="col-lg-2">
             <div class="panel panel-warning">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Cases under ruling</h3>
@@ -80,6 +81,20 @@
                 </div>
                 <div class="panel-footer">
                 Number of open cases.
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-2">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Arbitrables</h3>
+                </div>
+                <div class="panel-body text-center">
+                <h4>{{ dashboard['numberOfArbitrables'] }}</h4>
+                </div>
+                <div class="panel-footer">
+                Number of smart contracts which have interacted with the courts.
                 </div>
             </div>
         </div>
