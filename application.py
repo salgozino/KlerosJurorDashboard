@@ -175,7 +175,7 @@ def dispute():
                                    subgraph_status=subgraph.getStatus(),
                                    network=subgraph.network
                                    )
-        if network == 'mainnet':
+        if subgraph.network == 'mainnet':
             dispute['evidences'] = get_evidences(id)
         else:
             # there is no evidence provider in other networks
