@@ -31,6 +31,10 @@ class Subgraph():
         else:
             self.subgraph_name = 'salgozino/klerosboard'
         self.subgraph_node += self.subgraph_name
+        if network == 'test':
+            self.subgraph_node = 'https://api.thegraph.com/' \
+                + 'subgraphs/id/QmPmGC6YiUCyPt4sHLbTPNisAHg596ThCSZsSfEM8khWNc'
+            self.subgraph_name = 'salgozino/test'
 
     @staticmethod
     def _calculateVoteStake(minStake, alpha):
@@ -170,6 +174,10 @@ class Subgraph():
             dispute['numberOfChoices'] = int(dispute['numberOfChoices'])
         else:
             dispute['numberOfChoices'] = None
+        if 'TokenAndETHShifts' in keys:
+            dispute['TokenAndETHShifts'] = [self._parseTransfer(transfer)
+                                            for transfer in dispute[
+                                                'TokenAndETHShifts']]
         if 'rounds' in keys:
             vote_count = {}
             # initialize a dict with 0 as default value
@@ -250,6 +258,23 @@ class Subgraph():
         if 'tokenRewards' in keys:
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
         return profile
+
+    def _parseTransfer(self, transfer):
+        keys = transfer.keys()
+        if 'ETHAmount' in keys:
+            transfer['ETHAmount'] = self._wei2eth(transfer['ETHAmount'])
+        if 'tokenAmount' in keys:
+            transfer['tokenAmount'] = self._wei2eth(transfer['tokenAmount'])            
+        if 'disputeId' in keys:
+            if 'id' in transfer['disputeId'].keys():
+                transfer['disputeId'] = int(transfer['disputeId']['id'])
+            if 'disputeId' in transfer['disputeId'].keys():
+                transfer['disputeId'] = int(transfer['disputeId']['disputeId'])
+        if 'timestamp' in keys:
+            transfer['timestamp'] = int(transfer['timestamp'])
+        if 'blocknumber' in keys:
+            transfer['blocknumber'] = int(transfer['blocknumber'])
+        return transfer
 
     def _parseVote(self, vote, number_of_choices=None):
         keys = vote.keys()
@@ -529,6 +554,28 @@ class Subgraph():
                                                       courtTimePeriods[
                                                           subcourtID]))
         return parsed_disputes
+
+    def getAllTransfers(self):
+        init_transfer = ""
+        transfers = []
+        while True:
+            query = ('{tokenAndETHShifts(where:{id_gt:"' + str(init_transfer)
+                     + '"}, orderBy:id, orderDirection:asc, first:1000){'
+                     '    ETHAmount,'
+                     '    tokenAmount,'
+                     '    blockNumber,'
+                     '}}')
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                current_transfers = result['tokenAndETHShifts']
+                transfers.extend(current_transfers)
+                if len(current_transfers) < 1000:
+                    break
+                init_transfer = current_transfers[-1]['id']
+        return [self._parseTransfer(transfer)
+                for transfer in transfers]
 
     def getAllVotesFromJuror(self, address):
         query = ('{votes(where:{address:"' +
@@ -1145,6 +1192,48 @@ class Subgraph():
                     total += self._wei2eth(courtStake['stake'])
                 skip += len(courtStakes)
         return total
+
+    def getTransfersFromArbitrable(self, address):
+        query = ('{arbitrables(where: {id: "'+str(address)+'"}) {'
+                 + '''
+                    disputes {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        court_disputes = result['courts'][0]
+        for dispute in court_disputes['disputes']:
+            dispute = self._parseDispute(dispute)
+        return court_disputes
+
+    def getTransfersFromCourt(self, courtID):
+        query = ('{courts(where: {id: "'+str(courtID)+'"}) {'
+                 + '''
+                    disputes {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        court_disputes = result['courts'][0]
+        for dispute in court_disputes['disputes']:
+            dispute = self._parseDispute(dispute)
+        return court_disputes
 
     def getWhenPeriodEnd(self, dispute, courtID, timesPeriods=None):
         """
