@@ -58,7 +58,7 @@
             <div class="panel-body text-center" id="feesUSD">
               <h4>Loading data...</h4>
               <script type="text/javascript">
-                  let address = {{profile['id']}};
+                  let address = {{ profile['id']|tojson }};
               </script>
               <script src="{{ url_for('static', filename='js/getProfileUSD.js') }}" type="module"></script>
               

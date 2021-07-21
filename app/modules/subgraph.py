@@ -63,6 +63,8 @@ class Subgraph():
 
     @staticmethod
     def _getTotalUSDThroughTransfers(transfers):
+        if len(transfers) == 0:
+            return 0
         df_transfers = pd.DataFrame(transfers)
         df_transfers['date'] = pd.to_datetime(df_transfers['timestamp'],
                                               unit='s')
