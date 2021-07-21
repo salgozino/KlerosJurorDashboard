@@ -61,6 +61,7 @@ class Subgraph():
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
 
+    @staticmethod
     def _getTotalUSDThroughTransfers(transfers):
         df_transfers = pd.DataFrame(transfers)
         df_transfers['date'] = pd.to_datetime(df_transfers['timestamp'],
@@ -200,6 +201,9 @@ class Subgraph():
             dispute['numberOfChoices'] = int(dispute['numberOfChoices'])
         else:
             dispute['numberOfChoices'] = None
+        if 'TokenAndETHShifts' in keys:
+            for transfer in dispute['TokenAndETHShifts']:
+                transfer = self._parseTransfer(transfer)
         if 'rounds' in keys:
             vote_count = {}
             # initialize a dict with 0 as default value
@@ -281,6 +285,18 @@ class Subgraph():
         if 'tokenRewards' in keys:
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
         return profile
+
+    def _parseTransfer(self, transfer):
+        keys = transfer.keys()
+        if 'ETHAmount' in keys:
+            transfer['ETHAmount'] = self._wei2eth(transfer['ETHAmount'])
+        if 'tokenAmount' in keys:
+            transfer['tokenAmount'] = self._wei2eth(transfer['tokenAmount'])
+        if 'timestamp' in keys:
+            transfer['timestamp'] = int(transfer['timestamp'])
+        if 'blocknumber' in keys:
+            transfer['blocknumber'] = int(transfer['blocknumber'])
+        return transfer
 
     def _parseVote(self, vote, number_of_choices=None):
         keys = vote.keys()
@@ -1195,6 +1211,7 @@ class Subgraph():
                             ETHAmount,
                             tokenAmount,
                             blockNumber,
+                            timestamp
                         }
                     }
                     }
@@ -1218,6 +1235,7 @@ class Subgraph():
                             ETHAmount,
                             tokenAmount,
                             blockNumber,
+                            timestamp
                         }
                     }
                     }
@@ -1241,6 +1259,7 @@ class Subgraph():
                             ETHAmount,
                             tokenAmount,
                             blockNumber,
+                            timestamp
                         }
                     }
                     }
