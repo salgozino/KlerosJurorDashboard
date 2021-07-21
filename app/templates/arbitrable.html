@@ -11,7 +11,7 @@
 
 
     {% block content %}
-   
+
     {%if network=='xdai'%}
     {% set reward_currency =  'xDai'  %}
     {%else%}
@@ -19,8 +19,7 @@
     {%endif%}
 
       <div class="row">
-        <div class="col-lg-3"><!-- centering div --></div>
-        <div class="col-lg-3">
+        <div class="col-lg-4">
             <div class="panel panel-info">
               <div class="panel-heading">
                   <h3 class="panel-title text-center">Fees Generated</h3>
@@ -34,13 +33,28 @@
               </div>
             </div>
         </div>
-        <div class="col-lg-3">
+        <div class="col-lg-4">
+          <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Fees Generated in USD</h3>
+            </div>
+            <div class="panel-body text-center" id="feesUSD">
+              <h4>Loading data...</h4>
+              <script type="text/javascript">
+                let address = {{ arbitrable['id']|tojson }};
+                console.log(address)
+              </script>
+              <script src="{{ url_for('static', filename='js/getArbitrableUSD.js') }}" type="module"></script>
+            </div>
+          </div>
+      </div>
+        <div class="col-lg-4">
           <div class="panel panel-info">
               <div class="panel-heading">
                   <h3 class="panel-title text-center">Disputes Created</h3>
               </div>
               <div class="panel-body text-center">
-                <h4>{{arbitrable['numberOfDisputes']}}</h4>
+                <h4>{{arbitrable['disputesCount']}}</h4>
               </div>
           </div>
         </div>
