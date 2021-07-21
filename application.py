@@ -327,6 +327,13 @@ def getUSDProfile(address):
     return jsonify(subgraph.getUSDThroughProfile(address))
 
 
+@application.route('/_getTotalUSD')
+def getTotalUSD():
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getTotalUSD())
+
+
 @application.errorhandler(404)
 def not_found(e):
     network = request.args.get('network', type=str)

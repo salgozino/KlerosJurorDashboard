@@ -88,7 +88,24 @@
 
     </div>
 </div>
-
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Total Fees in USD</h3>
+                </div>
+                <div class="panel-body text-center" id='feesUSD'>
+                <h4>Loading data...</h4>
+                <script src="{{ url_for('static', filename='js/getTotalUSD.js') }}" type="module"></script>
+                </div>
+                <div class="panel-footer">
+                Number of open cases.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Second Line Metrics -->
 <!-- Jurors metrics -->
 <div class="container">
