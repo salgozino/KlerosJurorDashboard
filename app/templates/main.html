@@ -30,7 +30,7 @@
 <div class="container">
     <div class="row">
         <div class="col-lg-1"><!--Centering div--></div>
-        <div class="col-lg-2">
+        <div class="col-lg-3">
             <div class="panel panel-info">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Disputes</h3>
@@ -43,21 +43,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-2">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title text-center">Most Active Courts</h3>
-                </div>
-                <div class="panel-body text-center" id="mostActiveValue">
-                <h4> Loading data</h4>
-                </div>
-                <div class="panel-footer">
-                The court with more cases in the last 7 days.
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-2">
+        <div class="col-lg-3">
             <div class="panel panel-success">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Cases already Closed</h3>
@@ -71,7 +57,7 @@
             </div>
         </div>
 
-        <div class="col-lg-2">
+        <div class="col-lg-3">
             <div class="panel panel-warning">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Cases under ruling</h3>
@@ -85,7 +71,28 @@
             </div>
         </div>
         
-        <div class="col-lg-2">
+        
+
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-1"></div>
+        <div class="col-lg-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Most Active Court</h3>
+                </div>
+                <div class="panel-body text-center" id="mostActiveValue">
+                <h4> Loading data</h4>
+                </div>
+                <div class="panel-footer">
+                The court with more cases in the last 7 days.
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
             <div class="panel panel-warning">
                 <div class="panel-heading">
                     <h3 class="panel-title text-center">Arbitrables</h3>
@@ -98,10 +105,22 @@
                 </div>
             </div>
         </div>
-
+        <div class="col-lg-3">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-center">Total Fees in USD</h3>
+                </div>
+                <div class="panel-body text-center" id='feesUSD'>
+                <h4>Loading data...</h4>
+                <script src="{{ url_for('static', filename='js/getTotalUSD.js') }}" type="module"></script>
+                </div>
+                <div class="panel-footer">
+                Total USD paid in fees to the coherent jurors.
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
 <!-- Second Line Metrics -->
 <!-- Jurors metrics -->
 <div class="container">

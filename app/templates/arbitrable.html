@@ -10,49 +10,58 @@
     </div>
   {% endblock %}
 
+    {% block content %}
 
-  {% block content %}
-    <div class="row">
-      <div class="col-lg-3"><!-- centering div -->
-      </div>
-      <div class="col-lg-3">
+    {%if network=='xdai'%}
+    {% set reward_currency =  'xDai'  %}
+    {%else%}
+        {% set reward_currency =  'ETH'  %}
+    {%endif%}
+
+      <div class="row">
+        <div class="col-lg-4">
           <div class="panel panel-info">
-            <div class="panel-heading">
-                <h3 class="panel-title text-center">Fees Generated</h3>
-            </div>
-            <div class="panel-body text-center">
-              {%if network == 'xdai'%}
-                <h4>{{ "{:.2f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
-              {%else%}
-                <h4>{{ "{:.3f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
-              {%endif%}
-            </div>
-          </div>
-      </div>
-      <div class="col-lg-3">
-        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title text-center">Disputes Created</h3>
             </div>
             <div class="panel-body text-center">
               <h4>{{arbitrable['disputesCount']}}</h4>
             </div>
+          </div>
         </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-1"><!--Centering div --></div>
-      <div class="col-lg-2">
+        <div class="col-lg-4">
           <div class="panel panel-info">
             <div class="panel-heading">
-                <h3 class="panel-title text-center">Open Disputes</h3>
+                <h3 class="panel-title text-center">Fees Generated</h3>
             </div>
             <div class="panel-body text-center">
-                <h4>{{ arbitrable['openDisputes']}}</h4>
+              {%if network == 'xdai'%}
+              <h4>{{ "{:.2f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
+            {%else%}
+              <h4>{{ "{:.3f}".format(arbitrable['ethFees']) }} {{ reward_currency }}</h4>
+            {%endif%}
+          </div>
+        </div>
+      </div>
+        <div class="col-lg-4">
+          <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Fees Generated in USD</h3>
+            </div>
+            <div class="panel-body text-center" id="feesUSD">
+              <h4>Loading data...</h4>
+              <script type="text/javascript">
+                let address = {{ arbitrable['id']|tojson }};
+                console.log(address)
+              </script>
+              <script src="{{ url_for('static', filename='js/getArbitrableUSD.js') }}" type="module"></script>
             </div>
           </div>
+        </div>
       </div>
-      <div class="col-lg-2">
+
+      <div class="row">
+      <div class="col-lg-3">
         <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title text-center">Evidence Phase Disputes</h3>
@@ -62,7 +71,7 @@
             </div>
         </div>
       </div>
-      <div class="col-lg-2">
+      <div class="col-lg-3">
         <div class="panel panel-info">
           <div class="panel-heading">
               <h3 class="panel-title text-center">Commit Phase Disputes</h3>
@@ -72,7 +81,7 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-2">
+      <div class="col-lg-3">
         <div class="panel panel-info">
           <div class="panel-heading">
               <h3 class="panel-title text-center">Voting Phase Disputes</h3>
@@ -82,7 +91,7 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-2">
+      <div class="col-lg-3">
         <div class="panel panel-info">
           <div class="panel-heading">
               <h3 class="panel-title text-center">Appeal Phase Disputes</h3>
