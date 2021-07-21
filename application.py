@@ -303,6 +303,30 @@ def getMostActiveCourt():
     return jsonify(Subgraph(network).getMostActiveCourt())
 
 
+@application.route('/_getUSDThroughArbitrable/<string:address>',
+                   methods=['GET'])
+def getUSDArbitrable(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getUSDThroughArbitrable(address))
+
+
+@application.route('/_getUSDThroughCourt/<int:courtId>',
+                   methods=['GET'])
+def getUSDCourt(courtId):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getUSDThroughCourt(courtId))
+
+
+@application.route('/_getUSDThroughProfile/<string:address>',
+                   methods=['GET'])
+def getUSDProfile(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getUSDThroughProfile(address))
+
+
 @application.errorhandler(404)
 def not_found(e):
     network = request.args.get('network', type=str)
