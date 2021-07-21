@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from collections import defaultdict
+import pandas as pd
 
 from app.modules.oracles import CoinGecko
 from app.modules.web3_node import web3Node
@@ -26,15 +27,10 @@ class Subgraph():
         # Node definitions
         if self.network == 'xdai':
             self.subgraph_name = 'salgozino/klerosboard-xdai'
-        elif self.network == 'test':
-            self.subgraph_name = 'salgozino/sarasa'
         else:
             self.subgraph_name = 'salgozino/klerosboard'
+
         self.subgraph_node += self.subgraph_name
-        if network == 'test':
-            self.subgraph_node = 'https://api.thegraph.com/' \
-                + 'subgraphs/id/QmPmGC6YiUCyPt4sHLbTPNisAHg596ThCSZsSfEM8khWNc'
-            self.subgraph_name = 'salgozino/test'
 
     @staticmethod
     def _calculateVoteStake(minStake, alpha):
@@ -65,13 +61,43 @@ class Subgraph():
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
 
+    def _getTotalUSDThroughTransfers(transfers):
+        df_transfers = pd.DataFrame(transfers)
+        df_transfers['date'] = pd.to_datetime(df_transfers['timestamp'],
+                                              unit='s')
+        oldest_timestamp = df_transfers['timestamp'].min()
+        # group by day with the sum of ETH transfers
+        df_transfers = df_transfers.groupby(
+                        by=df_transfers['date'].dt.date)['ETHAmount'].sum()
+        if len(df_transfers) > 1:
+            now = datetime.now()
+            days_to_oldest = timedelta(seconds=now.timestamp()
+                                       - oldest_timestamp).days + 2
+            historic_price = CoinGecko().getETHhistoricPrice(days_to_oldest)
+            df_price = pd.DataFrame(historic_price,
+                                    columns=['timestamp',
+                                             'eth_price'])
+            df_price['timestamp'] = df_price['timestamp'] / 1000
+            df_price['date'] = pd.to_datetime(
+                df_price['timestamp'], unit='s').dt.date
+            df_price.set_index('date', inplace=True)
+            df_price = df_price[~df_price.index.duplicated(keep='first')]
+            df = pd.concat([df_transfers, df_price], axis=1)
+            df.dropna(axis=0, how='any', inplace=True)
+            df['usd_amount'] = df['ETHAmount'] * df['eth_price']
+            eth_amount = df['usd_amount'].sum()
+        else:
+            eth_price = CoinGecko().getETHoldPrice(oldest_timestamp)
+            eth_amount = df_transfers.values[0] * eth_price
+        return eth_amount
+
     def _parseArbitrable(self, arbitrable):
         if arbitrable is None:
             return None
         keys = arbitrable.keys()
-        if 'numberOfDisputes' in keys:
-            arbitrable['numberOfDisputes'] = int(
-                                                arbitrable['numberOfDisputes'])
+        if 'disputesCount' in keys:
+            arbitrable['disputesCount'] = int(
+                                                arbitrable['disputesCount'])
         if 'ethFees' in keys:
             arbitrable['ethFees'] = self._wei2eth(arbitrable['ethFees'])
         if 'disputes' in keys:
@@ -174,10 +200,6 @@ class Subgraph():
             dispute['numberOfChoices'] = int(dispute['numberOfChoices'])
         else:
             dispute['numberOfChoices'] = None
-        if 'TokenAndETHShifts' in keys:
-            dispute['TokenAndETHShifts'] = [self._parseTransfer(transfer)
-                                            for transfer in dispute[
-                                                'TokenAndETHShifts']]
         if 'rounds' in keys:
             vote_count = {}
             # initialize a dict with 0 as default value
@@ -233,7 +255,8 @@ class Subgraph():
         profile['ruled_cases'] = 0
         if 'votes' in keys:
             for vote in profile['votes']:
-                vote = self._parseVote(vote, vote['dispute']['numberOfChoices'])
+                vote = self._parseVote(vote,
+                                       vote['dispute']['numberOfChoices'])
                 if vote['dispute']['ruled']:
                     if vote['dispute']['currentRulling'] == vote['choice']:
                         profile['coherent_votes'] = profile['coherent_votes'] \
@@ -259,23 +282,6 @@ class Subgraph():
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
         return profile
 
-    def _parseTransfer(self, transfer):
-        keys = transfer.keys()
-        if 'ETHAmount' in keys:
-            transfer['ETHAmount'] = self._wei2eth(transfer['ETHAmount'])
-        if 'tokenAmount' in keys:
-            transfer['tokenAmount'] = self._wei2eth(transfer['tokenAmount'])            
-        if 'disputeId' in keys:
-            if 'id' in transfer['disputeId'].keys():
-                transfer['disputeId'] = int(transfer['disputeId']['id'])
-            if 'disputeId' in transfer['disputeId'].keys():
-                transfer['disputeId'] = int(transfer['disputeId']['disputeId'])
-        if 'timestamp' in keys:
-            transfer['timestamp'] = int(transfer['timestamp'])
-        if 'blocknumber' in keys:
-            transfer['blocknumber'] = int(transfer['blocknumber'])
-        return transfer
-
     def _parseVote(self, vote, number_of_choices=None):
         keys = vote.keys()
         if 'address' in keys:
@@ -287,7 +293,7 @@ class Subgraph():
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
 
-        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):      
+        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):
             vote['vote_str'] = self._vote_mapping(vote['choice'],
                                                   vote['voted'],
                                                   vote['dispute'],
@@ -426,7 +432,7 @@ class Subgraph():
             query = (
                 '{arbitrables(where:{id_gt:"'+str(initArbitrable)+'"},'
                 'orderBy:id, orderDirection:asc, first:1000){'
-                'id,numberOfDisputes,ethFees'
+                'id,disputesCount,ethFees'
                 '}}'
             )
             result = self._post_query(query)
@@ -536,7 +542,7 @@ class Subgraph():
             query = (
                 '{disputes(where:{disputeID_gt:'+str(initDispute)+'}){'
                 'id,subcourtID{id},currentRulling,ruled,startTime,'
-                'period,lastPeriodChange,arbitrable'
+                'period,lastPeriodChange,arbitrable{id}'
                 '}}'
             )
             result = self._post_query(query)
@@ -554,28 +560,6 @@ class Subgraph():
                                                       courtTimePeriods[
                                                           subcourtID]))
         return parsed_disputes
-
-    def getAllTransfers(self):
-        init_transfer = ""
-        transfers = []
-        while True:
-            query = ('{tokenAndETHShifts(where:{id_gt:"' + str(init_transfer)
-                     + '"}, orderBy:id, orderDirection:asc, first:1000){'
-                     '    ETHAmount,'
-                     '    tokenAmount,'
-                     '    blockNumber,'
-                     '}}')
-            result = self._post_query(query)
-            if result is None:
-                break
-            else:
-                current_transfers = result['tokenAndETHShifts']
-                transfers.extend(current_transfers)
-                if len(current_transfers) < 1000:
-                    break
-                init_transfer = current_transfers[-1]['id']
-        return [self._parseTransfer(transfer)
-                for transfer in transfers]
 
     def getAllVotesFromJuror(self, address):
         query = ('{votes(where:{address:"' +
@@ -616,9 +600,15 @@ class Subgraph():
         query = (
             '{arbitrables(where:{id:"'+str(address).lower()+'"}) {'
             '   id,'
-            '   numberOfDisputes,'
+            '   disputesCount,'
+            '   openDisputes,'
+            '   closedDisputes,'
+            '   evidencePhaseDisputes,'
+            '   commitPhaseDisputes,'
+            '   votingPhaseDisputes,'
+            '   appealPhaseDisputes,'
             '   ethFees,'
-            '   disputes{id, period, startTime, ruled, txid}'
+            '   disputes{id, period, startTime, ruled, currentRulling, txid}'
             '}}'
         )
         result = self._post_query(query)
@@ -626,9 +616,11 @@ class Subgraph():
             return result
         return self._parseArbitrable(result['arbitrables'][0])
 
-    @staticmethod
-    def getArbitrableName(arbitrable):
-        file_path = 'app/lib/dapp_index.json'
+    def getArbitrableName(self, arbitrable):
+        if self.network == 'test2':
+            file_path = 'app/lib/dapp_index_mainnet.json'
+        else:
+            file_path = f'app/lib/dapp_index_{self.network}.json'
         arbitrable = str(arbitrable).lower()
         if os.path.isfile(file_path):
             with open(file_path) as jsonFile:
@@ -944,6 +936,7 @@ class Subgraph():
             votingPhaseDisputes
             evidencePhaseDisputes
             courtsCount
+            numberOfArbitrables
             activeJurors
             inactiveJurors
             drawnJurors
@@ -1209,10 +1202,12 @@ class Subgraph():
         result = self._post_query(query)
         if result is None:
             return result
-        court_disputes = result['courts'][0]
-        for dispute in court_disputes['disputes']:
+        arbitrables_disputes = result['arbitrables'][0]
+        transfers = []
+        for dispute in arbitrables_disputes['disputes']:
             dispute = self._parseDispute(dispute)
-        return court_disputes
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
 
     def getTransfersFromCourt(self, courtID):
         query = ('{courts(where: {id: "'+str(courtID)+'"}) {'
@@ -1231,9 +1226,46 @@ class Subgraph():
         if result is None:
             return result
         court_disputes = result['courts'][0]
-        for dispute in court_disputes['disputes']:
+        transfers = []
+        for dispute in court_disputes['courts']:
             dispute = self._parseDispute(dispute)
-        return court_disputes
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
+
+    def getTransfersFromProfile(self, address):
+        query = ('{jurors(where: {id: "'+str(address)+'"}) {'
+                 + '''
+                    disputes {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        juror_disputes = result['jurors'][0]
+        transfers = []
+        for dispute in juror_disputes['courts']:
+            dispute = self._parseDispute(dispute)
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
+
+    def getUSDThroughArbitrable(self, arbitrable):
+        transfers = self.getTransfersFromArbitrable(arbitrable)
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getUSDThroughCourt(self, courtID):
+        transfers = self.getTransfersFromCourt(courtID)
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getUSDThroughProfile(self, address):
+        transfers = self.getTransfersFromProfile(address)
+        return self._getTotalUSDThroughTransfers(transfers)
 
     def getWhenPeriodEnd(self, dispute, courtID, timesPeriods=None):
         """
