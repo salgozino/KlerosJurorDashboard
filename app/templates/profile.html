@@ -17,12 +17,11 @@
 
     {% block content %}
     <div class="row">
-      <div class="col-lg-3"><!-- centering div --></div>
-      <div class="col-lg-3">
-        {%if profile['ethRewards'] >= 0%}
+      <div class="col-lg-4">
+        {%if profile['ethRewards'] > 0%}
         <div class="panel panel-success">
         {%else %}
-        <div class="panel panel-warning">
+        <div class="panel panel-info">
         {%endif%}
             <div class="panel-heading">
                 <h3 class="panel-title text-center">Fees Rewad</h3>
@@ -36,17 +35,38 @@
             </div>
         </div>
       </div>
-      <div class="col-lg-3">
-        {%if profile['tokenRewards'] >= 0%}
+      <div class="col-lg-4">
+        {%if profile['tokenRewards'] > 0%}
         <div class="panel panel-success">
-        {%else %}
+        {%elif profile['tokenRewards'] < 0%}
         <div class="panel panel-warning">
+        {%else %}
+        <div class="panel panel-info">
         {%endif%}
             <div class="panel-heading">
                 <h3 class="panel-title text-center">Token Reward</h3>
             </div>
             <div class="panel-body text-center">
               <h4>{{ "{:.2f}".format(profile['tokenRewards']) }}</h4>
+            </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        {%if profile['tokenRewards'] > 0%}
+        <div class="panel panel-success">
+        {%else %}
+        <div class="panel panel-info">
+        {%endif%}
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Rewards in USD</h3>
+            </div>
+            <div class="panel-body text-center" id="feesUSD">
+              <h4>Loading data...</h4>
+              <script type="text/javascript">
+                  let address = {{profile['id']}};
+              </script>
+              <script src="{{ url_for('static', filename='js/getProfileUSD.js') }}" type="module"></script>
+              
             </div>
         </div>
       </div>
