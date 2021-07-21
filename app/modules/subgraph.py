@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from collections import defaultdict
+import pandas as pd
 
 from app.modules.oracles import CoinGecko
 from app.modules.web3_node import web3Node
@@ -59,6 +60,36 @@ class Subgraph():
     @staticmethod
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
+
+    def _getTotalUSDThroughTransfers(transfers):
+        df_transfers = pd.DataFrame(transfers)
+        df_transfers['date'] = pd.to_datetime(df_transfers['timestamp'],
+                                              unit='s')
+        oldest_timestamp = df_transfers['timestamp'].min()
+        # group by day with the sum of ETH transfers
+        df_transfers = df_transfers.groupby(
+                        by=df_transfers['date'].dt.date)['ETHAmount'].sum()
+        if len(df_transfers) > 1:
+            now = datetime.now()
+            days_to_oldest = timedelta(seconds=now.timestamp()
+                                       - oldest_timestamp).days + 2
+            historic_price = CoinGecko().getETHhistoricPrice(days_to_oldest)
+            df_price = pd.DataFrame(historic_price,
+                                    columns=['timestamp',
+                                             'eth_price'])
+            df_price['timestamp'] = df_price['timestamp'] / 1000
+            df_price['date'] = pd.to_datetime(
+                df_price['timestamp'], unit='s').dt.date
+            df_price.set_index('date', inplace=True)
+            df_price = df_price[~df_price.index.duplicated(keep='first')]
+            df = pd.concat([df_transfers, df_price], axis=1)
+            df.dropna(axis=0, how='any', inplace=True)
+            df['usd_amount'] = df['ETHAmount'] * df['eth_price']
+            eth_amount = df['usd_amount'].sum()
+        else:
+            eth_price = CoinGecko().getETHoldPrice(oldest_timestamp)
+            eth_amount = df_transfers.values[0] * eth_price
+        return eth_amount
 
     def _parseArbitrable(self, arbitrable):
         if arbitrable is None:
@@ -224,7 +255,8 @@ class Subgraph():
         profile['ruled_cases'] = 0
         if 'votes' in keys:
             for vote in profile['votes']:
-                vote = self._parseVote(vote, vote['dispute']['numberOfChoices'])
+                vote = self._parseVote(vote,
+                                       vote['dispute']['numberOfChoices'])
                 if vote['dispute']['ruled']:
                     if vote['dispute']['currentRulling'] == vote['choice']:
                         profile['coherent_votes'] = profile['coherent_votes'] \
@@ -261,7 +293,7 @@ class Subgraph():
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
 
-        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):      
+        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):
             vote['vote_str'] = self._vote_mapping(vote['choice'],
                                                   vote['voted'],
                                                   vote['dispute'],
