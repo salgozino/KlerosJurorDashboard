@@ -1245,7 +1245,7 @@ class Subgraph():
             return result
         court_disputes = result['courts'][0]
         transfers = []
-        for dispute in court_disputes['courts']:
+        for dispute in court_disputes['disputes']:
             dispute = self._parseDispute(dispute)
             transfers.extend(dispute['TokenAndETHShifts'])
         return transfers
@@ -1269,7 +1269,7 @@ class Subgraph():
             return result
         juror_disputes = result['jurors'][0]
         transfers = []
-        for dispute in juror_disputes['courts']:
+        for dispute in juror_disputes['disputes']:
             dispute = self._parseDispute(dispute)
             transfers.extend(dispute['TokenAndETHShifts'])
         return transfers
