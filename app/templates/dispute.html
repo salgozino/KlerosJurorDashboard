@@ -29,20 +29,28 @@
     <div class="table-responsive">
         <table class="table table-bordered">
           <tr class="info">
-            <td align="center">Court</td>
-            <td align="center">Dispute Status</td>
-            <td align="center">Period</td>
-            <td align="center">Period Ends</td>
-            <td align="center">Time remaining</td>
-            <td align="center">Arbitrable</td>
-            <td align="center">Creator</td>
+            <th class="text-center">Court</th>
+            <th class="text-center">Start Date</th>
+            <th class="text-center">Dispute Status</th>
+            <th class="text-center">Current Period</th>
+            <th class="text-center">Time remaining</th>
+            <th class="text-center">End Date</th>
           </tr>
           <tr class={{'success' if dispute['ruled'] }}>
             <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
+            <td class="text-center">{{dispute['startTime']|timestamp2datetime}}</td>
             <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
             <td class="text-center">{{dispute['period']|capitalize}}</td>
-            <td class="text-center"><span class="datetime-string">{{dispute['periodEnds']}}</span> {%if dispute['periodEnds'] != 'Already Executed'%}UTC{%endif%}</td>
             <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
+            <td class="text-center">{{dispute['lastPeriodChange']|timestamp2datetime if dispute['ruled'] else '-'}}</td>
+          </tr>
+        </table>
+        <table class="table table-bordered">
+          <tr class="info">
+            <th class="text-center">Arbitrable</td>
+            <th class="text-center">Creator</td>
+          </tr>
+          <tr>
             <td class="text-center"><a href={{url_for('arbitrable', address=dispute['arbitrable'], network=network)}}>{{dispute['arbitrable']|arbitrableName(network)}}</a></td>
             <td class="text-center"><a href={{ url_for('profile', address=dispute['creator'], network=network) }}>{{dispute['creator'][0:6] +'...'+ dispute['creator'][-4:]}}</a></td>
           </tr>
@@ -53,10 +61,10 @@
         <h4>Unique Votes in all the rounds</h4>
         <table class="table table-bordered">
           <tr class="text-center info">
-            <td style="width:25% !important">Yes</td>
-            <td style="width:25% !important">No</td>
-            <td style="width:25% !important">Refuse to arbitrate</td>
-            <td style="width:25% !important">Pending</td>
+            <th style="width:25% !important" class="text-center">Yes</td>
+            <th style="width:25% !important" class="text-center">No</td>
+            <th style="width:25% !important" class="text-center">Refuse to arbitrate</td>
+            <th style="width:25% !important" class="text-center">Pending</td>
           </tr>
           <tr class={{"text-center success" if dispute['ruled'] else "text-center"}}>
             <td style="width:25% !important">{{dispute['unique_vote_count']['Yes']}}</td>
@@ -71,10 +79,10 @@
         <h4>Round {{r['round_num']}}</H4>
         <table class="table table-bordered">
           <tr class="text-center info">
-            <td style="width:25% !important">Yes</td>
-            <td style="width:25% !important">No</td>
-            <td style="width:25% !important">Refuse to arbitrate</td>
-            <td style="width:25% !important">Pending</td>
+            <th style="width:25% !important" class="text-center">Yes</td>
+            <th style="width:25% !important" class="text-center">No</td>
+            <th style="width:25% !important" class="text-center">Refuse to arbitrate</td>
+            <th style="width:25% !important" class="text-center">Pending</td>
           </tr>
           <tr class={{"text-center success" if dispute['ruled'] else "text-center"}}>
             <td style="width:25% !important">{{dispute['vote_count'][r['id']]['Yes']}}</td>
@@ -87,17 +95,19 @@
     <div class="table-responsive">
         <table class="table table-bordered table-condensed">
           <tr class="info">
-            <td class="">Round {{r['round_num']}}</td>
-            <td align="center">Vote</td>
+            <th>Round {{r['round_num']}}</td>
+            <th class="text-center">Vote</td>
+            <th class="text-center">Casting Date</td>
           </tr>
           {% for v in r['votes'] %}
             {% if dispute['period']=='execution' %}
-                <tr class={{'success' if dispute['currentRulling'] == v['choice'] else 'danger'}}>
+            <tr class={{'success' if dispute['currentRulling'] == v['choice'] else 'danger'}}>
             {% else %}
-                <tr>
+            <tr>
             {% endif %}
               <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
-              <td align="right">{{ v['vote_str'] }}</td>
+              <td class="text-right">{{ v['vote_str'] }}</td>
+              <td class="text-right">{{v['timestamp']|timestamp2datetime}}</td>
             </tr>
           {% endfor %}
         </table>
