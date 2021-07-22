@@ -98,10 +98,9 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-1"></div>
         <div class="col-lg-3">
             <div class="panel panel-default">
-                <div class="panel-heading">
+                <div class="panel-heading text-center">
                     <h4>Total Disputes</h4>
                 </div>
                 <div class="panel-body text-center">
@@ -111,7 +110,7 @@
         </div>
         <div class="col-lg-3">
             <div class="panel panel-default">
-                <div class="panel-heading">
+                <div class="panel-heading text-center">
                     <h4>Ongoing Cases</h4>
                 </div>
                 <div class="panel-body text-center">
@@ -122,11 +121,27 @@
         
         <div class="col-lg-3">
             <div class="panel panel-default">
-                <div class="panel-heading">
+                <div class="panel-heading text-center">
                     <h4>Ruled Cases</h4>
                 </div>
                 <div class="panel-body text-center">
                     {{ ruled_cases }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Fees Rewards in USD</h4>
+                </div>
+                <div class="panel-body text-center" id="feesUSD">
+                    <h4>Loading data...</h4>
+                    <script type="text/javascript">
+                        let courtID = {{court['subcourtID']}};
+                    </script>
+                    <script src="{{ url_for('static', filename='js/getCourtUSD.js') }}" type="module"></script>
+                    
                 </div>
             </div>
         </div>

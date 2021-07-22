@@ -61,6 +61,7 @@ class Subgraph():
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
 
+    @staticmethod
     def _getTotalUSDThroughTransfers(transfers):
         df_transfers = pd.DataFrame(transfers)
         df_transfers['date'] = pd.to_datetime(df_transfers['timestamp'],
@@ -200,6 +201,9 @@ class Subgraph():
             dispute['numberOfChoices'] = int(dispute['numberOfChoices'])
         else:
             dispute['numberOfChoices'] = None
+        if 'TokenAndETHShifts' in keys:
+            for transfer in dispute['TokenAndETHShifts']:
+                transfer = self._parseTransfer(transfer)
         if 'rounds' in keys:
             vote_count = {}
             # initialize a dict with 0 as default value
@@ -281,6 +285,18 @@ class Subgraph():
         if 'tokenRewards' in keys:
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
         return profile
+
+    def _parseTransfer(self, transfer):
+        keys = transfer.keys()
+        if 'ETHAmount' in keys:
+            transfer['ETHAmount'] = self._wei2eth(transfer['ETHAmount'])
+        if 'tokenAmount' in keys:
+            transfer['tokenAmount'] = self._wei2eth(transfer['tokenAmount'])
+        if 'timestamp' in keys:
+            transfer['timestamp'] = int(transfer['timestamp'])
+        if 'blocknumber' in keys:
+            transfer['blocknumber'] = int(transfer['blocknumber'])
+        return transfer
 
     def _parseVote(self, vote, number_of_choices=None):
         keys = vote.keys()
@@ -560,6 +576,29 @@ class Subgraph():
                                                       courtTimePeriods[
                                                           subcourtID]))
         return parsed_disputes
+
+    def getAllTransfers(self):
+        initTransfer = ""
+        transfers = []
+        while True:
+            query = (
+                '{tokenAndETHShifts(where:{id_gt:"'+str(initTransfer)+'"'
+                ',ETHAmount_gt:0},'
+                'orderBy:id, orderDirection:asc, first:1000){'
+                'id,ETHAmount,tokenAmount,blockNumber,timestamp'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currenttransfers = result['tokenAndETHShifts']
+                transfers.extend(currenttransfers)
+                if len(currenttransfers) < 1000:
+                    break
+                initTransfer = currenttransfers[-1]['id']
+        return [self._parseTransfer(transfer)
+                for transfer in transfers]
 
     def getAllVotesFromJuror(self, address):
         query = ('{votes(where:{address:"' +
@@ -1185,6 +1224,102 @@ class Subgraph():
                     total += self._wei2eth(courtStake['stake'])
                 skip += len(courtStakes)
         return total
+
+    def getTotalUSD(self):
+        transfers = self.getAllTransfers()
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getTransfersFromArbitrable(self, address):
+        query = ('{arbitrables(where: {id: "'+str(address)+'"}) {'
+                 + '''
+                    disputes {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        arbitrables_disputes = result['arbitrables'][0]
+        transfers = []
+        for dispute in arbitrables_disputes['disputes']:
+            dispute = self._parseDispute(dispute)
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
+
+    def getTransfersFromCourt(self, courtID):
+        query = ('{courts(where: {id: "'+str(courtID)+'"}) {'
+                 + '''
+                    disputes {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        court_disputes = result['courts'][0]
+        transfers = []
+        for dispute in court_disputes['disputes']:
+            dispute = self._parseDispute(dispute)
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
+
+    def getTransfersFromProfile(self, address):
+        query = ('{jurors(where: {id: "'+str(address)+'"}) {'
+                 + '''
+                    disputesAsJuror {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        juror_disputes = result['jurors'][0]
+        transfers = []
+        for dispute in juror_disputes['disputesAsJuror']:
+            dispute = self._parseDispute(dispute)
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
+
+    def getUSDThroughArbitrable(self, arbitrable):
+        transfers = self.getTransfersFromArbitrable(arbitrable)
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getUSDThroughCourt(self, courtID):
+        transfers = self.getTransfersFromCourt(courtID)
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getUSDThroughProfile(self, address):
+        transfers = self.getTransfersFromProfile(address)
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
 
     def getWhenPeriodEnd(self, dispute, courtID, timesPeriods=None):
         """
