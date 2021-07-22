@@ -231,7 +231,7 @@ def profile(address):
     subgraph = Subgraph(network)
     profile = subgraph.getProfile(address)
     if profile is None:
-        profile = {'address': address}
+        profile = {'id': address}
     return render_template('profile.html',
                            profile=profile,
                            subgraph_status=subgraph.getStatus(),

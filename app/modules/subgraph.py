@@ -61,10 +61,9 @@ class Subgraph():
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
 
-    @staticmethod
-    def _getTotalUSDThroughTransfers(transfers):
+    def _getTotalUSDThroughTransfers(self, transfers):
         if len(transfers) == 0:
-            return 0
+            return 0.0
         df_transfers = pd.DataFrame(transfers)
         df_transfers['date'] = pd.to_datetime(df_transfers['timestamp'],
                                               unit='s')
@@ -72,6 +71,9 @@ class Subgraph():
         # group by day with the sum of ETH transfers
         df_transfers = df_transfers.groupby(
                         by=df_transfers['date'].dt.date)['ETHAmount'].sum()
+        if self.network == 'xdai':
+            return df_transfers.sum()
+
         if len(df_transfers) > 1:
             now = datetime.now()
             days_to_oldest = timedelta(seconds=now.timestamp()
@@ -256,7 +258,13 @@ class Subgraph():
                 stake = self._parseCourtStake(stake)
         if 'totalStaked' in keys:
             profile['totalStaked'] = self._wei2eth(profile['totalStaked'])
-
+        else:
+            profile['totalStaked'] = 0.0
+        if 'transfers' in keys:
+            for transfer in profile['transfers']:
+                transfer = self._parseTransfer(transfer)
+        else:
+            profile['transfers'] = []
         profile['coherent_votes'] = 0
         profile['ruled_cases'] = 0
         if 'votes' in keys:
@@ -284,8 +292,12 @@ class Subgraph():
 
         if 'ethRewards' in keys:
             profile['ethRewards'] = self._wei2eth(profile['ethRewards'])
+        else:
+            profile['ethRewards'] = 0
         if 'tokenRewards' in keys:
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
+        else:
+            profile['tokenRewards'] = 0
         return profile
 
     def _parseTransfer(self, transfer):
@@ -1284,11 +1296,8 @@ class Subgraph():
         return transfers
 
     def getTransfersFromProfile(self, address):
-        query = ('{jurors(where: {id: "'+str(address)+'"}) {'
-                 + '''
-                    disputesAsJuror {
-                        id,
-                        TokenAndETHShifts(where:{id_not:""}){
+        query = ('{jurors(where: {id: "' + str(address) + '"}) {'
+                 + '''transfers(where:{id_not:""}){
                             ETHAmount,
                             tokenAmount,
                             blockNumber,
@@ -1296,16 +1305,12 @@ class Subgraph():
                         }
                     }
                     }
-                }''')
+                    ''')
         result = self._post_query(query)
         if result is None:
             return result
-        juror_disputes = result['jurors'][0]
-        transfers = []
-        for dispute in juror_disputes['disputesAsJuror']:
-            dispute = self._parseDispute(dispute)
-            transfers.extend(dispute['TokenAndETHShifts'])
-        return transfers
+        juror = self._parseProfile(result['jurors'][0])
+        return juror['transfers']
 
     def getUSDThroughArbitrable(self, arbitrable):
         transfers = self.getTransfersFromArbitrable(arbitrable)
