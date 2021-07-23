@@ -69,7 +69,7 @@
       </div>
       
       <h2>Disputes Created</h2>
-      <div class="mb-5">
+      <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered responsive table-sm table-condensed">
           <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
           {% for dispute in profile['disputesAsCreator']|sort(attribute='timestamp', reverse=True): %}
@@ -101,6 +101,29 @@
             </tr>
           {% endfor %}
         </table>
+
+        <h4>Stake Events</h4>
+        <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+          <table class="table table-bordered table-sm table-condensed">
+            <thead>
+              <tr class="info">
+                <th>Court</td>
+                <th>stake</td>
+                <th>Total in all Courts</td>
+              </tr>
+            </thead>
+            <tbody>
+            {% for stake in profile['allStakes'] %}
+              <tr>
+                <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
+                <td>{{"{:,.2f}".format(stake['stake'])}}</td>
+                <td>{{stake['newTotalStake']}}</td>
+                
+              </tr>
+            {% endfor %}
+          </tbody>
+          </table>
+        </div>
       </div>
 
       <h2>Votes</h2>

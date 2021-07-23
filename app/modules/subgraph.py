@@ -260,11 +260,17 @@ class Subgraph():
             profile['totalStaked'] = self._wei2eth(profile['totalStaked'])
         else:
             profile['totalStaked'] = 0.0
-        if 'transfers' in keys:
-            for transfer in profile['transfers']:
+        if 'tokenAndETHShifts' in keys:
+            for transfer in profile['tokenAndETHShifts']:
                 transfer = self._parseTransfer(transfer)
         else:
             profile['transfers'] = []
+        if 'allStakes' in keys:
+            for stake in profile['allStakes']:
+                stake = self._parseStakeSet(stake)
+        else:
+            profile['allStakes'] = []
+        # vote parsing
         profile['coherent_votes'] = 0
         profile['ruled_cases'] = 0
         if 'votes' in keys:
@@ -299,6 +305,19 @@ class Subgraph():
         else:
             profile['tokenRewards'] = 0
         return profile
+
+    def _parseStakeSet(self, stake_set):
+        keys = stake_set.keys()
+        if 'subcourtID' in keys:
+            stake_set['subcourtID'] = int(stake_set['subcourtID'])
+        if 'stake' in keys:
+            stake_set['stake'] = self._wei2eth(stake_set['stake'])
+        if 'newTotalStake' in keys:
+            stake_set['newTotalStake'] = self._wei2eth(stake_set['newTotalStake'])
+        if 'address' in keys:
+            stake_set['address'] = stake_set['address']['id']
+        return stake_set
+
 
     def _parseTransfer(self, transfer):
         keys = transfer.keys()
@@ -1077,6 +1096,7 @@ class Subgraph():
             '   numberOfDisputesCreated,'
             '   disputesAsCreator{id,currentRulling,startTime,ruled,txid,'
             '   numberOfChoices}'
+            '   allStakes{subcourtID, stake, newTotalStake}'
             '   ethRewards, tokenRewards'
             '}}'
         )
@@ -1297,7 +1317,7 @@ class Subgraph():
 
     def getTransfersFromProfile(self, address):
         query = ('{jurors(where: {id: "' + str(address) + '"}) {'
-                 + '''transfers(where:{id_not:""}){
+                 + '''tokenAndETHShifts(where:{id_not:""}){
                             ETHAmount,
                             tokenAmount,
                             blockNumber,
@@ -1310,7 +1330,7 @@ class Subgraph():
         if result is None:
             return result
         juror = self._parseProfile(result['jurors'][0])
-        return juror['transfers']
+        return juror['tokenAndETHShifts']
 
     def getUSDThroughArbitrable(self, arbitrable):
         transfers = self.getTransfersFromArbitrable(arbitrable)
