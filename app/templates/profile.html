@@ -70,66 +70,70 @@
         </div>
       </div>
       
-      <h2>Disputes Created</h2>
-      <div class="table-responsive" style="max-height:250px; overflow-y:auto">
-        <table class="table table-bordered responsive table-sm table-condensed">
-          <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
-          {% for dispute in profile['disputesAsCreator']|sort(attribute='timestamp', reverse=True): %}
-          <tr>
-            <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
-            <td>{{ dispute['startTime']|timestamp2datetime }}</td>
-            <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
-          </tr>
-          {% endfor %}
-        </table>
-      </div>
-
-      <h2>Stakes by Court</h2>
-      <div class="mb-5">
-        <h4>Total Staked: {{"{:,.2f} PNK".format(profile['totalStaked'])}}</h4>
-        <table class="table table-bordered responsive table-sm table-condensed">
-          <tr class="info">
-            <td>Court</td>
-            <td>Amount</td>
-            <td>Date</td>
-            <td>TxID</td>
-          </tr>
-          {% for stake in profile['currentStakes']|sort(attribute='stake', reverse=True): %}
-            <tr>
-              <td><a href={{url_for('court', id=stake['court'], network=network)}}>{{stake['court']|courtName(network)}}</td>
-              <td>{{"{:,.2f}".format(stake['stake'])}}</td>
-              <td>{{stake['timestamp']|timestamp2datetime}}</td>
-              <td><a href="{{block_explorer}}/tx/{{ stake['txid'] }}">{{stake['txid'][:6]}}...{{stake['txid'][-4:]}}</a></td>
-            </tr>
-          {% endfor %}
-        </table>
-
-        <h4>Stake Events</h4>
+      <div class="row">
+        <h2>Disputes Created</h2>
         <div class="table-responsive" style="max-height:250px; overflow-y:auto">
-          <table class="table table-bordered table-sm table-condensed">
-            <thead>
-              <tr class="info">
-                <th>Court</td>
-                <th>stake</td>
-                <th>Total in all Courts</td>
-              </tr>
-            </thead>
-            <tbody>
-            {% for stake in profile['allStakes'] %}
-              <tr>
-                <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
-                <td>{{"{:,.2f}".format(stake['stake'])}}</td>
-                <td>{{"{:,.2f}".format(stake['newTotalStake'])}}</td>
-              </tr>
+          <table class="table table-bordered responsive table-sm table-condensed">
+            <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
+            {% for dispute in profile['disputesAsCreator']|sort(attribute='timestamp', reverse=True): %}
+            <tr>
+              <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
+              <td>{{ dispute['startTime']|timestamp2datetime }}</td>
+              <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid']}}</a></td>
+            </tr>
             {% endfor %}
-          </tbody>
           </table>
         </div>
       </div>
-
-      <h2>Votes</h2>
-      
       <div class="row">
+        <h2>Stakes by Court</h2>
+        <div class="mb-5">
+          <h4>Total Staked: {{"{:,.2f} PNK".format(profile['totalStaked'])}}</h4>
+          <table class="table table-bordered responsive table-sm table-condensed">
+            <tr class="info">
+              <td>Court</td>
+              <td>Amount</td>
+              <td>Date</td>
+              <td>TxID</td>
+            </tr>
+            {% for stake in profile['currentStakes']|sort(attribute='stake', reverse=True): %}
+              <tr>
+                <td><a href={{url_for('court', id=stake['court'], network=network)}}>{{stake['court']|courtName(network)}}</td>
+                <td>{{"{:,.2f}".format(stake['stake'])}}</td>
+                <td>{{stake['timestamp']|timestamp2datetime}}</td>
+                <td><a href="{{block_explorer}}/tx/{{ stake['txid'] }}">{{stake['txid'][:6]}}...{{stake['txid'][-4:]}}</a></td>
+              </tr>
+            {% endfor %}
+          </table>
+
+          <h4>Stake Events</h4>
+          <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+            <table class="table table-bordered table-sm table-condensed">
+              <thead>
+                <tr class="info">
+                  <th>Court</td>
+                  <th>stake</td>
+                  <th>Total in all Courts</td>
+                </tr>
+              </thead>
+              <tbody>
+              {% for stake in profile['allStakes'] %}
+                <tr>
+                  <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
+                  <td>{{"{:,.2f}".format(stake['stake'])}}</td>
+                  <td>{{"{:,.2f}".format(stake['newTotalStake'])}}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <h2>Votes</h2>
+      
+      
         <div class="mb-5">
           <h4>Number of votes drawn: {{profile['votes']|length}}</h4>
           <h4>Number of disputes as juror: {{profile['numberOfDisputesAsJuror']}}</h4>
