@@ -62,7 +62,9 @@
                     let address = {{profile['id']|tojson}};
                 </script>
                 <script src="{{ url_for('static', filename='js/getProfileUSD.js') }}" type="module"></script>
-                
+              </div>
+              <div class="panel-footer">
+              Rewards considering historic ETH price. Without PNK rewards and gas costs (yet)
               </div>
           </div>
         </div>
@@ -117,8 +119,7 @@
               <tr>
                 <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
                 <td>{{"{:,.2f}".format(stake['stake'])}}</td>
-                <td>{{stake['newTotalStake']}}</td>
-                
+                <td>{{"{:,.2f}".format(stake['newTotalStake'])}}</td>
               </tr>
             {% endfor %}
           </tbody>
