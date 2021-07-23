@@ -266,6 +266,16 @@ def arbitrable(address):
                                )
 
 
+@application.route('/stakes', methods=['GET'])
+def stakes():
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
+    return render_template('allStakes.html',
+                           stakes=subgraph.getAllStakeSets(),
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
+                           )
+
 @application.route('/_getCourtTable')
 def getCourtTable():
     network = request.args.get('network', None, type=str)

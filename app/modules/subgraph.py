@@ -316,8 +316,13 @@ class Subgraph():
             stake_set['newTotalStake'] = self._wei2eth(stake_set['newTotalStake'])
         if 'address' in keys:
             stake_set['address'] = stake_set['address']['id']
+        if 'timestamp' in keys:
+            stake_set['timestamp'] = int(stake_set['timestamp'])
+        if 'blocknumber' in keys:
+            stake_set['blocknumber'] = int(stake_set['blocknumber'])
+        if 'gasCost' in keys:
+            stake_set['gasCost'] = self._wei2eth(stake_set['gasCost'])
         return stake_set
-
 
     def _parseTransfer(self, transfer):
         keys = transfer.keys()
@@ -609,6 +614,28 @@ class Subgraph():
                                                       courtTimePeriods[
                                                           subcourtID]))
         return parsed_disputes
+
+    def getAllStakeSets(self):
+        initStakes = ""
+        stakes = []
+        while True:
+            query = (
+                '{stakeSets(where:{id_gt:"'+str(initStakes)+'"},'
+                'orderBy:id, orderDirection:asc, first:1000){'
+                'address{id},subcourtID,stake,newTotalStake,timestamp'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentStakes = result['stakeSets']
+                stakes.extend(currentStakes)
+                if len(currentStakes) < 1000:
+                    break
+                initStakes = currentStakes[-1]['id']
+        return [self._parseStakeSet(stake)
+                for stake in stakes]
 
     def getAllTransfers(self):
         initTransfer = ""

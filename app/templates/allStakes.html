@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block body%}
+    
+  <div class="row">
+    <div class="table-responsive" style="max-height:65rem; overflow-y:auto" >
+        <table class="table table-bordered table-hover" id="sortTable">
+          <thead>
+          <tr class="info">
+            <th class="text-center">Date</td>
+            <th class="text-center">Juror</td>
+            <th class="text-center">Court</td>
+            <th class="text-center">Stake</td>
+            <th class="text-center">New Total Stake</td>
+          </tr>
+        </thead>
+          {% for stake in stakes|sort(attribute='timestamp', reverse=True): %}
+          <tr>
+            <td class="text-center" data-table-header="Date">{{stake['timestamp']|timestamp2datetime}}</td>
+            <td class="text-center" data-table-header="Juror"><a href={{url_for('profile', address=stake['address'], network=network)}}>{{stake['address']}}</a></td>
+            <td class="text-center" data-table-header="Court"><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</a></td>
+            <td class="text-center" data-table-header="Stake">{{"{:,.2f}".format(stake['stake'])}}</td>
+            <td class="text-center" data-table-header="NewTotalStake">{{"{:,.2f}".format(stake['newTotalStake'])}}</td>
+          </tr>
+          {% endfor %}
+        </table>
+    </div>
+
+    <script>
+      $(document).ready(function() {
+        $("#sortTable").DataTable({
+            columnDefs : [
+          { type : 'float', targets : [3] }
+      ],  
+        });
+      });
+
+    </script>
+
+  </div>
+{% endblock %}
