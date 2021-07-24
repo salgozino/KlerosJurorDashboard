@@ -12,8 +12,12 @@
 
     {% block content %}
     {% if profile.keys()|length > 1 %}
+      <script type="text/javascript">
+        let address = {{profile['id']|tojson}};
+      </script>
       <div class="row">
-        <div class="col-lg-4">
+        <div class="col-lg-1"><!-- Centering div--></div>
+        <div class="col-lg-2">
           {%if profile['ethRewards'] > 0%}
           <div class="panel panel-success">
           {%else %}
@@ -31,7 +35,7 @@
               </div>
           </div>
         </div>
-        <div class="col-lg-4">
+        <div class="col-lg-2">
           {%if profile['tokenRewards'] > 0%}
           <div class="panel panel-success">
           {%elif profile['tokenRewards'] < 0%}
@@ -47,24 +51,49 @@
               </div>
           </div>
         </div>
-        <div class="col-lg-4">
+        <div class="col-lg-2">
           {%if profile['tokenRewards'] > 0%}
           <div class="panel panel-success">
           {%else %}
           <div class="panel panel-info">
           {%endif%}
               <div class="panel-heading">
-                  <h3 class="panel-title text-center">Rewards in USD</h3>
+                  <h3 class="panel-title text-center">Rewards received in USD</h3>
               </div>
               <div class="panel-body text-center" id="feesUSD">
                 <h4>Loading data...</h4>
-                <script type="text/javascript">
-                    let address = {{profile['id']|tojson}};
-                </script>
                 <script src="{{ url_for('static', filename='js/getProfileUSD.js') }}" type="module"></script>
               </div>
               <div class="panel-footer">
               Rewards considering historic ETH price. Without PNK rewards and gas costs (yet)
+              </div>
+          </div>
+        </div>
+        <div class="col-lg-2">
+          <div class="panel panel-info">
+              <div class="panel-heading">
+                  <h3 class="panel-title text-center">Gas Costs for voting in USD</h3>
+              </div>
+              <div class="panel-body text-center" id="gasCost">
+                <h4>Loading data...</h4>
+                <script src="{{ url_for('static', filename='js/getProfileGasCost.js') }}" type="module"></script>
+              </div>
+              <div class="panel-footer">
+              Gas used for voting
+              </div>
+          </div>
+        </div>
+        <div class="col-lg-2">
+          <div class="panel panel-info">
+              <div class="panel-heading">
+                  <h3 class="panel-title text-center">Rewards in USD</h3>
+              </div>
+              <div class="panel-body text-center" id="netUSD">
+                <h4>Loading data...</h4>
+                <script src="{{ url_for('static', filename='js/getProfileNetReward.js') }}" type="module"></script>
+              </div>
+              <div class="panel-footer">
+              Rewards considering historic ETH price less gas costs in votes
               </div>
           </div>
         </div>

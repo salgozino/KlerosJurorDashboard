@@ -27,6 +27,10 @@ class Subgraph():
         # Node definitions
         if self.network == 'xdai':
             self.subgraph_name = 'salgozino/klerosboard-xdai'
+        elif self.network == 'test-xdai':
+            self.subgraph_name = 'salgozino/sarasa'
+        elif self.network == 'test':
+            self.subgraph_name = 'salgozino/sarasa-mainnet'
         else:
             self.subgraph_name = 'salgozino/klerosboard'
 
@@ -61,6 +65,41 @@ class Subgraph():
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
 
+    def _getTotalUSDGasCostInVotes(self, votes):
+        if len(votes) == 0:
+            return 0.0
+        df_votes = pd.DataFrame(votes)
+        df_votes['date'] = pd.to_datetime(df_votes['timestamp'],
+                                          unit='s')
+        oldest_timestamp = df_votes['timestamp'].min()
+        # group by day with the sum of ETH transfers
+        df_votes = df_votes.groupby(
+                        by=df_votes['date'].dt.date)['totalGasCost'].sum()
+        if 'xdai' in self.network:
+            return df_votes.sum()
+
+        if len(df_votes) > 1:
+            now = datetime.now()
+            days_to_oldest = timedelta(seconds=now.timestamp()
+                                       - oldest_timestamp).days + 2
+            historic_price = CoinGecko().getETHhistoricPrice(days_to_oldest)
+            df_price = pd.DataFrame(historic_price,
+                                    columns=['timestamp',
+                                             'eth_price'])
+            df_price['timestamp'] = df_price['timestamp'] / 1000
+            df_price['date'] = pd.to_datetime(
+                df_price['timestamp'], unit='s').dt.date
+            df_price.set_index('date', inplace=True)
+            df_price = df_price[~df_price.index.duplicated(keep='first')]
+            df = pd.concat([df_votes, df_price], axis=1)
+            df.dropna(axis=0, how='any', inplace=True)
+            df['usd_amount'] = df['totalGasCost'] * df['eth_price']
+            eth_amount = df['usd_amount'].sum()
+        else:
+            eth_price = CoinGecko().getETHoldPrice(oldest_timestamp)
+            eth_amount = df_votes.values[0] * eth_price
+        return eth_amount
+
     def _getTotalUSDThroughTransfers(self, transfers):
         if len(transfers) == 0:
             return 0.0
@@ -71,7 +110,7 @@ class Subgraph():
         # group by day with the sum of ETH transfers
         df_transfers = df_transfers.groupby(
                         by=df_transfers['date'].dt.date)['ETHAmount'].sum()
-        if self.network == 'xdai':
+        if 'xdai' in self.network:
             return df_transfers.sum()
 
         if len(df_transfers) > 1:
@@ -351,6 +390,22 @@ class Subgraph():
         if 'dispute' in keys:
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
+        if 'timestamp' in keys:
+            vote['timestamp'] = int(vote['timestamp'])
+        if 'commitGasUsed' in keys:
+            vote['commitGasUsed'] = int(vote['commitGasUsed'])
+        if 'commitGasPrice' in keys:
+            vote['commitGasPrice'] = self._wei2eth(vote['commitGasPrice'])
+        if 'commitGasCost' in keys:
+            vote['commitGasCost'] = self._wei2eth(vote['commitGasCost'])
+        if 'castGasUsed' in keys:
+            vote['castGasUsed'] = int(vote['castGasUsed'])
+        if 'castGasPrice' in keys:
+            vote['ccastasPrice'] = self._wei2eth(vote['castGasPrice'])
+        if 'castGasCost' in keys:
+            vote['castGasCost'] = self._wei2eth(vote['castGasCost'])
+        if 'totalGasCost' in keys:
+            vote['totalGasCost'] = self._wei2eth(vote['totalGasCost'])
 
         if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):
             vote['vote_str'] = self._vote_mapping(vote['choice'],
@@ -1118,6 +1173,26 @@ class Subgraph():
         else:
             return None
 
+    def getNetRewardProfile(self, address):
+        query = ('{jurors(where: {id: "' + str(address) + '"}) {'
+                 + '''tokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }}
+                    '''
+                 )
+        result = self._post_query(query)
+        if result is None:
+            return result
+        juror = self._parseProfile(result['jurors'][0])
+        transfers = juror['tokenAndETHShifts']
+        reward = self._getTotalUSDThroughTransfers(transfers)
+        usd_gas_cost = self.getProfileGasCost(address)
+        return reward - usd_gas_cost
+
     def getProfile(self, address):
         query = (
             '{jurors(where:{id:"'+str(address).lower()+'"}) {'
@@ -1139,6 +1214,21 @@ class Subgraph():
         profile_data = result['jurors'][0]
         profile_data['votes'] = self.getAllVotesFromJuror(profile_data['id'])
         return self._parseProfile(profile_data)
+
+    def getProfileGasCost(self, address):
+        query = ('{votes(where: {address: "' + str(address) + '"}){'
+                 + '''
+                    totalGasCost,
+                    timestamp
+                    }
+                    }
+                    ''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+
+        votes = [self._parseVote(vote) for vote in result['votes']]
+        return self._getTotalUSDGasCostInVotes(votes)
 
     def getRetention(self):
         jurors = self.getAllJurors()

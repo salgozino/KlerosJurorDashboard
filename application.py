@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, timedelta
 
 from flask import render_template, request, jsonify
+from numpy.lib.nanfunctions import _nanpercentile_dispatcher
 
 from app import create_app
 from app.modules.plotters import disputesGraph, disputesbyCourtGraph, \
@@ -327,6 +328,24 @@ def getUSDProfile(address):
     network = request.args.get('network', None, type=str)
     subgraph = Subgraph(network)
     return jsonify(subgraph.getUSDThroughProfile(address))
+
+
+@application.route('/_getProfileGasCost/<string:address>',
+                   methods=['GET'])
+def getProfileGasCost(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getProfileGasCost(address))
+
+
+@application.route('/_getProfileNetReward/<string:address>',
+                   methods=['GET'])
+def getProfileNetReward(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    net_reward = subgraph.getNetRewardProfile(address)
+    print(net_reward)
+    return jsonify(net_reward)
 
 
 @application.route('/_getTotalUSD')
