@@ -33,6 +33,7 @@
     {% endblock %}
 
     {% block content %}
+    
     {% if court['subcourtID'] is not none %}
 
     <h3>Court #{{court['subcourtID']}}: {{court['subcourtID']|courtName(network)}}</h3>
@@ -42,8 +43,8 @@
         {% set reward_currency =  'ETH'  %}
     {%endif%}
     <!-- Court Numbers -->
+    <!-- First Row -->
     <div class="row">
-        
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
@@ -73,17 +74,6 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Court Reward</h4>
-                </div>
-                <div class="panel-body text-center">
-                    {{"{:,.3f}".format(court['feeForJuror'])}} {{reward_currency}}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading text-center">
                     <h4>Juror for court jump</h4>
                 </div>
                 <div class="panel-body text-center">
@@ -95,9 +85,27 @@
             </div>
         </div>
 
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Duration of Periods</h4>
+                </div>
+                    {% if court['timePeriods']|length > 0 %}
+                    <ul class="list-group">
+                    {% set period_names = {0: 'Evidence', 1: 'Commit', 2: 'Voting', 3:' Appeal'} %}
+                    {% for time_period in court['timePeriods']%}
+                        <li class="list-group-item text-center">{{period_names[loop.index-1]}}: {{ time_period|timeperiod_format }}</a></li>
+                    {% endfor %}
+                    </ul>
+                {% else%}
+                    <ul class="list-group"><li class="list-group-item">No Info</li></ul>
+                {% endif %}
+            </div>
+        </div>
     </div>
-
+    <!-- Disputes Counts-->
     <div class="row">
+        <div class="col-lg-1"><!-- centering div--></div>
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
@@ -129,25 +137,11 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading text-center">
-                    <h4>Fees Rewards in USD</h4>
-                </div>
-                <div class="panel-body text-center" id="feesUSD">
-                    <h4>Loading data...</h4>
-                    <script type="text/javascript">
-                        let courtID = {{court['subcourtID']}};
-                    </script>
-                    <script src="{{ url_for('static', filename='js/getCourtUSD.js') }}" type="module"></script>
-                    
-                </div>
-            </div>
-        </div>
     </div>
-        
+
+    <!-- Court Rewards per Vote -->        
     <div class="row">
+        <div class="col-lg-1"><!-- centering div--></div>
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
@@ -155,7 +149,7 @@
                 </div>
                 <div class="panel-body text-center">
                 
-                    {{"{:,.2f} PNK".format(min_stake)}}
+                    <h4>{{"{:,.2f} PNK".format(min_stake)}}</h4>
                 </div>
                 <div class="panel-footer">
                     Minimum amount of PNK required for staking in the court
@@ -169,7 +163,7 @@
                 </div>
                 <div class="panel-body text-center">
                 
-                    {{"{:,.2f} PNK".format(vote_stake)}}
+                    <h4>{{"{:,.2f} PNK".format(vote_stake)}}</h4>
                 </div>
                 <div class="panel-footer">
                     PNK locked per vote. (What you can lose per vote)
@@ -179,13 +173,51 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Fees paid</h4>
+                    <h4>Vote Reward</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{ "%.3f"|format(court['totalETHFees']) }} {{reward_currency}}
+                
+                    <h4>{{"{:,.3f}".format(court['feeForJuror'])}} {{reward_currency}}</h4>
+                </div>
+                <div class="panel-footer">
+                    Reward for each coherent vote
+                </div>
+            </div>
+        </div>
+    </div>  
+
+    <!-- Total Rewards Row -->
+    <div class="row">
+        <div class="col-lg-1"><!-- centering div--></div>
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Total Fees paid</h4>
+                </div>
+                <div class="panel-body text-center">
+                    <h4>{{ "%.3f"|format(court['totalETHFees']) }} {{reward_currency}}</h4>
                 </div>
                 <div class="panel-footer">
                     Fees paid to the coherent jurors of this court
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading text-center">
+                    <h4>Total Fees Rewards in USD</h4>
+                </div>
+                <div class="panel-body text-center" id="feesUSD">
+                    <h4>Loading data...</h4>
+                    <script type="text/javascript">
+                        let courtID = {{court['subcourtID']}};
+                    </script>
+                    <script src="{{ url_for('static', filename='js/getCourtUSD.js') }}" type="module"></script>
+                    
+                </div>
+                <div class="panel-footer">
+                    Rewards in USD considering historic ETH price
                 </div>
             </div>
         </div>
@@ -196,7 +228,7 @@
                     <h4>PNK redistributed</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{"{:,.2f} PNK".format(court['totalTokenRedistributed'])}}
+                    <h4>{{"{:,.2f} PNK".format(court['totalTokenRedistributed'])}}</h4>
                 </div>
                 <div class="panel-footer">
                     PNK transfered from incoherent jurors to coherent jurors
@@ -204,7 +236,8 @@
             </div>
         </div>
     </div>
-        
+
+    <!-- Jurors row -->
     <div class="row">
         <div class="col-lg-3">
             <div class="panel panel-default">
@@ -213,7 +246,7 @@
                 </div>
                 <div class="panel-body text-center">
                 
-                    {{court['activeJurors']}}
+                    <h4>{{court['activeJurors']}}</h4>
                 </div>
                 <div class="panel-footer">
                     Number of Active jurors considering childrens courts
@@ -228,7 +261,7 @@
                 </div>
                 <div class="panel-body text-center">
                 
-                    {{n_jurors}}
+                    <h4>{{n_jurors}}</h4>
                 </div>
                 <div class="panel-footer">
                     Number of active jurors staked in this court, without considering childrens courts
@@ -243,7 +276,7 @@
                 </div>
                 <div class="panel-body text-center">
                 
-                    {{"{:,.2f} PNK".format(court['tokenStaked'])}}
+                    <h4>{{"{:,.2f} PNK".format(court['tokenStaked'])}}</h4>
                 </div>
                 <div class="panel-footer">
                     PNK staked in this court considering childrens courts
@@ -256,7 +289,7 @@
                     <h4>PNK Staked</h4>
                 </div>
                 <div class="panel-body text-center">
-                    {{ "{:,.2f} PNK".format(staked_in_this_court) }}
+                    <h4>{{ "{:,.2f} PNK".format(staked_in_this_court) }}</h4>
                 </div>
                 <div class="panel-footer">
                     PNK Staked just in this court

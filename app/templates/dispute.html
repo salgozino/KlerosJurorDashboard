@@ -41,7 +41,7 @@
             <td class="text-center">{{dispute['startTime']|timestamp2datetime}}</td>
             <td class="text-center">{{'Already Ruled' if dispute['ruled'] else 'Ongoing'}}</td>
             <td class="text-center">{{dispute['period']|capitalize}}</td>
-            <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta}}</span></td>
+            <td class="text-center"><span class="datetime-string">{{'Already Ruled' if dispute['ruled'] else dispute['periodEnds']|timedelta_now}}</span></td>
             <td class="text-center">{{dispute['lastPeriodChange']|timestamp2datetime if dispute['ruled'] else '-'}}</td>
           </tr>
         </table>

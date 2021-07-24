@@ -4,7 +4,7 @@ Flask Application which runs the web server!.
 Here all the website is created.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import render_template, request, jsonify
 
@@ -24,11 +24,16 @@ logger = logging.getLogger(__name__)
 
 
 @application.template_filter()
-def timedelta(date):
+def timedelta_now(date):
     if not isinstance(date, datetime):
         date = datetime.fromtimestamp(date)
     delta = date-datetime.now()
     return str(delta).split(".")[0]
+
+
+@application.template_filter()
+def timeperiod_format(time_period):
+    return timedelta(seconds=time_period)
 
 
 @application.template_filter()

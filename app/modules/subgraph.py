@@ -141,6 +141,11 @@ class Subgraph():
             court['disputesClosed'] = int(court['disputesClosed'])
         if 'subcourtID' in keys:
             court['subcourtID'] = int(court['subcourtID'])
+        if 'timePeriods' in keys:
+            periods = []
+            for period in court['timePeriods']:
+                periods.append(int(period))
+            court['timePeriods'] = periods
         if 'totalETHFees' in keys:
             court['totalETHFees'] = self._wei2eth(court['totalETHFees'])
         if 'totalTokenRedistributed' in keys:
