@@ -181,7 +181,7 @@ def dispute():
                                    subgraph_status=subgraph.getStatus(),
                                    network=subgraph.network
                                    )
-        if network == 'mainnet':
+        if subgraph.network == 'mainnet':
             dispute['evidences'] = get_evidences(id)
         else:
             # there is no evidence provider in other networks
@@ -281,6 +281,7 @@ def stakes():
                            network=subgraph.network
                            )
 
+
 @application.route('/_getCourtTable')
 def getCourtTable():
     network = request.args.get('network', None, type=str)
@@ -299,7 +300,6 @@ def getAllStakes():
     network = request.args.get('network', None, type=str)
     subgraph = Subgraph(network)
     stakes = subgraph.getAllStakeSets()
-    print(stakes)
     return jsonify(stakes)
 
 
