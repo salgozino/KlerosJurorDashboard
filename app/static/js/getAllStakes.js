@@ -1,5 +1,4 @@
 import {getUrlParameter} from './getUrlParameter.js'
-import {getCourtName} from './getCourtName.js'
 
 $(function(){
     var network = getUrlParameter('network')
