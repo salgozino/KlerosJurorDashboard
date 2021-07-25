@@ -1,34 +1,9 @@
-#%%
-from app.modules.kleros import get_all_court_chances
-from app.modules.subgraph import *
-#print(getTimePeriodsAllCourts())
-#print(getMostActiveCourt())
+from app.modules.subgraph import Subgraph
 
-#print(getKlerosCounters())
-print(getTotalStakedInCourts())
-print(_wei2eth(getKlerosCounters()['tokenStaked']))
-print(getCourtTable()[0]['Total Staked'])
+network = 'test'
 
-# print(str(list(getCourtChildrens(2))).replace("'",'"'))
-# print(totalStakedInCourtAndChildrens(3))
+subgraph = Subgraph(network)
 
-#print(getCourtName(3))
-#print(getCourt(0))
-
-#%%
-"""
-from app.modules.kleros import get_all_court_chances
-courtChances = get_all_court_chances(100000)
-print(courtChances[list(courtChances.keys())[0]].keys())
-"""
-#%%
-"""
-from app.modules.subgraph import *
-total, total_by_court =  totalStakedInCourts()
-print(total_by_court)
-print('totalStaked In Courts',total)
-print('totalStaked In Courts',sum([value for value in total_by_court.values()]))
-print('KC tokenStaked', gwei2eth(getKlerosCounters()['tokenStaked']))
-
-print('Court 0 total staked', getCourtTable()[0]['Total Staked'])
-"""
+profile = '0x3590ac9cf1ec55d1fb86993718efabf9f1b9373a'
+netreward = subgraph.getNetRewardProfile(profile)
+print(netreward)

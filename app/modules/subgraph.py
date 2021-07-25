@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from collections import defaultdict
+import pandas as pd
 
 from app.modules.oracles import CoinGecko
 from app.modules.web3_node import web3Node
@@ -26,6 +27,10 @@ class Subgraph():
         # Node definitions
         if self.network == 'xdai':
             self.subgraph_name = 'salgozino/klerosboard-xdai'
+        elif self.network == 'test-xdai':
+            self.subgraph_name = 'salgozino/sarasa'
+        elif self.network == 'test':
+            self.subgraph_name = 'salgozino/sarasa-mainnet'
         else:
             self.subgraph_name = 'salgozino/klerosboard'
 
@@ -57,8 +62,112 @@ class Subgraph():
         return int(currentBlockNumber - days*24*60*60/averageBlockTime)
 
     @staticmethod
+    def _getOldPrice(timestamp, network='mainnet'):
+        pnk_price = CoinGecko().getPNKoldPrice(timestamp)
+        if 'xdai' in network:
+            return {'reward_currency': 1., 'token': pnk_price}
+        else:
+            return {'reward_currency': CoinGecko().getETHoldPrice(timestamp),
+                    'token': pnk_price}
+
+    @staticmethod
+    def _getHistoricPrices(timestamp_from, network='mainnet'):
+        now = datetime.now()
+        days_to_oldest = timedelta(seconds=now.timestamp()
+                                   - timestamp_from).days + 2
+        pnk_historic_price = CoinGecko().getPNKhistoricPrice(
+            days_to_oldest)
+        df_price_pnk = pd.DataFrame(pnk_historic_price,
+                                    columns=['timestamp',
+                                             'pnk_price'])
+        df_price_pnk['timestamp'] /= 1000
+        if 'xdai' not in network:
+            eth_historic_price = CoinGecko().getETHhistoricPrice()
+            df_price_eth = pd.DataFrame(eth_historic_price,
+                                        columns=['timestamp',
+                                                 'eth_price'])
+            df_price_eth['timestamp'] /= 1000
+            df_price = pd.concat([df_price_eth, df_price_pnk])
+        else:
+            df_price = df_price_pnk.copy()
+            df_price['eth_price'] = 1.
+        df_price['date'] = pd.to_datetime(
+            df_price['timestamp'], unit='s').dt.date
+        df_price.set_index('date', inplace=True)
+        df_price.sort_index(inplace=True)
+        # fill nan with forward values
+        df_price.fillna(method='ffill', inplace=True)
+        # fill nan in the first row if exist
+        df_price.fillna(method='backfill', inplace=True)
+        df_price = df_price[~df_price.index.duplicated(keep='last')]
+        return df_price
+
+    @staticmethod
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
+
+    def _getTotalUSDGasCostInVotes(self, votes):
+        if len(votes) == 0:
+            return 0.0
+        df_votes = pd.DataFrame(votes)
+        df_votes['date'] = pd.to_datetime(df_votes['timestamp'],
+                                          unit='s')
+        oldest_timestamp = df_votes['timestamp'].min()
+        # group by day with the sum of ETH transfers
+        df_votes = df_votes.groupby(
+                        by=df_votes['date'].dt.date)['totalGasCost'].sum()
+        if 'xdai' in self.network:
+            return df_votes.sum()
+
+        if len(df_votes) > 1:
+            now = datetime.now()
+            days_to_oldest = timedelta(seconds=now.timestamp()
+                                       - oldest_timestamp).days + 2
+            historic_price = CoinGecko().getETHhistoricPrice(days_to_oldest)
+            df_price = pd.DataFrame(historic_price,
+                                    columns=['timestamp',
+                                             'eth_price'])
+            df_price['timestamp'] = df_price['timestamp'] / 1000
+            df_price['date'] = pd.to_datetime(
+                df_price['timestamp'], unit='s').dt.date
+            df_price.set_index('date', inplace=True)
+            df_price = df_price[~df_price.index.duplicated(keep='first')]
+            df = pd.concat([df_votes, df_price], axis=1)
+            df.dropna(axis=0, how='any', inplace=True)
+            df['usd_amount'] = df['totalGasCost'] * df['eth_price']
+            eth_amount = df['usd_amount'].sum()
+        else:
+            eth_price = CoinGecko().getETHoldPrice(oldest_timestamp)
+            eth_amount = df_votes.values[0] * eth_price
+        return eth_amount
+
+    def _getTotalUSDThroughTransfers(self, transfers):
+        if len(transfers) == 0:
+            return 0.0
+        df_transfers = pd.DataFrame(transfers)
+        df_transfers['date'] = pd.to_datetime(df_transfers['timestamp'],
+                                              unit='s')
+        oldest_timestamp = df_transfers['timestamp'].min()
+        # group by day with the sum of ETH transfers
+        df_transfers = df_transfers.groupby(
+                        by=df_transfers['date'].dt.date)[['ETHAmount',
+                                                          'tokenAmount']].sum()
+
+        if len(df_transfers) > 1:
+            df_price = self._getHistoricPrices(oldest_timestamp,
+                                               network=self.network)
+            df = pd.concat([df_transfers, df_price], axis=1)
+            df.dropna(axis=0, how='any', inplace=True)
+            df['usd_amount'] = df['ETHAmount'] * df['eth_price'] + \
+                df['tokenAmount'] * df['pnk_price']
+            usd_amount = df['usd_amount'].sum()
+        else:
+            prices = self._getOldPrice(oldest_timestamp, self.network)
+            usd_amount = (df_transfers['ETHAmount'] * prices['reward_currency']
+                          + df_transfers['tokenAmount']
+                          * prices['token']
+                          ).to_list()[0]
+        return usd_amount
 
     def _parseArbitrable(self, arbitrable):
         if arbitrable is None:
@@ -105,6 +214,11 @@ class Subgraph():
             court['disputesClosed'] = int(court['disputesClosed'])
         if 'subcourtID' in keys:
             court['subcourtID'] = int(court['subcourtID'])
+        if 'timePeriods' in keys:
+            periods = []
+            for period in court['timePeriods']:
+                periods.append(int(period))
+            court['timePeriods'] = periods
         if 'totalETHFees' in keys:
             court['totalETHFees'] = self._wei2eth(court['totalETHFees'])
         if 'totalTokenRedistributed' in keys:
@@ -169,6 +283,9 @@ class Subgraph():
             dispute['numberOfChoices'] = int(dispute['numberOfChoices'])
         else:
             dispute['numberOfChoices'] = None
+        if 'TokenAndETHShifts' in keys:
+            for transfer in dispute['TokenAndETHShifts']:
+                transfer = self._parseTransfer(transfer)
         if 'rounds' in keys:
             vote_count = {}
             # initialize a dict with 0 as default value
@@ -219,12 +336,25 @@ class Subgraph():
                 stake = self._parseCourtStake(stake)
         if 'totalStaked' in keys:
             profile['totalStaked'] = self._wei2eth(profile['totalStaked'])
-
+        else:
+            profile['totalStaked'] = 0.0
+        if 'tokenAndETHShifts' in keys:
+            for transfer in profile['tokenAndETHShifts']:
+                transfer = self._parseTransfer(transfer)
+        else:
+            profile['transfers'] = []
+        if 'allStakes' in keys:
+            for stake in profile['allStakes']:
+                stake = self._parseStakeSet(stake)
+        else:
+            profile['allStakes'] = []
+        # vote parsing
         profile['coherent_votes'] = 0
         profile['ruled_cases'] = 0
         if 'votes' in keys:
             for vote in profile['votes']:
-                vote = self._parseVote(vote, vote['dispute']['numberOfChoices'])
+                vote = self._parseVote(vote,
+                                       vote['dispute']['numberOfChoices'])
                 if vote['dispute']['ruled']:
                     if vote['dispute']['currentRulling'] == vote['choice']:
                         profile['coherent_votes'] = profile['coherent_votes'] \
@@ -246,9 +376,44 @@ class Subgraph():
 
         if 'ethRewards' in keys:
             profile['ethRewards'] = self._wei2eth(profile['ethRewards'])
+        else:
+            profile['ethRewards'] = 0
         if 'tokenRewards' in keys:
             profile['tokenRewards'] = self._wei2eth(profile['tokenRewards'])
+        else:
+            profile['tokenRewards'] = 0
         return profile
+
+    def _parseStakeSet(self, stake_set):
+        keys = stake_set.keys()
+        if 'subcourtID' in keys:
+            stake_set['subcourtID'] = int(stake_set['subcourtID'])
+        if 'stake' in keys:
+            stake_set['stake'] = self._wei2eth(stake_set['stake'])
+        if 'newTotalStake' in keys:
+            stake_set['newTotalStake'] = self._wei2eth(stake_set[
+                'newTotalStake'])
+        if 'address' in keys:
+            stake_set['address'] = stake_set['address']['id']
+        if 'timestamp' in keys:
+            stake_set['timestamp'] = int(stake_set['timestamp'])
+        if 'blocknumber' in keys:
+            stake_set['blocknumber'] = int(stake_set['blocknumber'])
+        if 'gasCost' in keys:
+            stake_set['gasCost'] = self._wei2eth(stake_set['gasCost'])
+        return stake_set
+
+    def _parseTransfer(self, transfer):
+        keys = transfer.keys()
+        if 'ETHAmount' in keys:
+            transfer['ETHAmount'] = self._wei2eth(transfer['ETHAmount'])
+        if 'tokenAmount' in keys:
+            transfer['tokenAmount'] = self._wei2eth(transfer['tokenAmount'])
+        if 'timestamp' in keys:
+            transfer['timestamp'] = int(transfer['timestamp'])
+        if 'blocknumber' in keys:
+            transfer['blocknumber'] = int(transfer['blocknumber'])
+        return transfer
 
     def _parseVote(self, vote, number_of_choices=None):
         keys = vote.keys()
@@ -260,8 +425,27 @@ class Subgraph():
         if 'dispute' in keys:
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
+        if 'timestamp' in keys:
+            try:
+                vote['timestamp'] = int(vote['timestamp'])
+            except TypeError:
+                vote['timestamp'] = None
+        if 'commitGasUsed' in keys:
+            vote['commitGasUsed'] = int(vote['commitGasUsed'])
+        if 'commitGasPrice' in keys:
+            vote['commitGasPrice'] = self._wei2eth(vote['commitGasPrice'])
+        if 'commitGasCost' in keys:
+            vote['commitGasCost'] = self._wei2eth(vote['commitGasCost'])
+        if 'castGasUsed' in keys:
+            vote['castGasUsed'] = int(vote['castGasUsed'])
+        if 'castGasPrice' in keys:
+            vote['ccastasPrice'] = self._wei2eth(vote['castGasPrice'])
+        if 'castGasCost' in keys:
+            vote['castGasCost'] = self._wei2eth(vote['castGasCost'])
+        if 'totalGasCost' in keys:
+            vote['totalGasCost'] = self._wei2eth(vote['totalGasCost'])
 
-        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):      
+        if ('choice' in keys) and ('voted' in keys) and ('dispute' in keys):
             vote['vote_str'] = self._vote_mapping(vote['choice'],
                                                   vote['voted'],
                                                   vote['dispute'],
@@ -528,6 +712,51 @@ class Subgraph():
                                                       courtTimePeriods[
                                                           subcourtID]))
         return parsed_disputes
+
+    def getAllStakeSets(self):
+        initStakes = ""
+        stakes = []
+        while True:
+            query = (
+                '{stakeSets(where:{id_gt:"'+str(initStakes)+'"},'
+                'orderBy:id, orderDirection:asc, first:1000){'
+                'id,address{id},subcourtID,stake,newTotalStake,timestamp'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentStakes = result['stakeSets']
+                stakes.extend(currentStakes)
+                if len(currentStakes) < 1000:
+                    break
+                initStakes = currentStakes[-1]['id']
+        return [self._parseStakeSet(stake)
+                for stake in stakes]
+
+    def getAllTransfers(self):
+        initTransfer = ""
+        transfers = []
+        while True:
+            query = (
+                '{tokenAndETHShifts(where:{id_gt:"'+str(initTransfer)+'"'
+                ',ETHAmount_gt:0},'
+                'orderBy:id, orderDirection:asc, first:1000){'
+                'id,ETHAmount,tokenAmount,blockNumber,timestamp'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currenttransfers = result['tokenAndETHShifts']
+                transfers.extend(currenttransfers)
+                if len(currenttransfers) < 1000:
+                    break
+                initTransfer = currenttransfers[-1]['id']
+        return [self._parseTransfer(transfer)
+                for transfer in transfers]
 
     def getAllVotesFromJuror(self, address):
         query = ('{votes(where:{address:"' +
@@ -869,6 +1098,7 @@ class Subgraph():
             '    creator{id},'
             '    subcourtID{id},'
             '    currentRulling,'
+            '    startTime,'
             '    lastPeriodChange'
             '    period,'
             '    numberOfChoices,'
@@ -882,6 +1112,7 @@ class Subgraph():
             '            choice,'
             '            voted,'
             '            dispute{id},'
+            '            timestamp,'
             '        }'
             '    }'
             '}}'
@@ -980,6 +1211,26 @@ class Subgraph():
         else:
             return None
 
+    def getNetRewardProfile(self, address):
+        query = ('{jurors(where: {id: "' + str(address) + '"}) {'
+                 + '''tokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }}
+                    '''
+                 )
+        result = self._post_query(query)
+        if result is None:
+            return result
+        juror = self._parseProfile(result['jurors'][0])
+        transfers = juror['tokenAndETHShifts']
+        reward = self._getTotalUSDThroughTransfers(transfers)
+        usd_gas_cost = self.getProfileGasCost(address)
+        return reward - usd_gas_cost
+
     def getProfile(self, address):
         query = (
             '{jurors(where:{id:"'+str(address).lower()+'"}) {'
@@ -990,6 +1241,7 @@ class Subgraph():
             '   numberOfDisputesCreated,'
             '   disputesAsCreator{id,currentRulling,startTime,ruled,txid,'
             '   numberOfChoices}'
+            '   allStakes{subcourtID, stake, newTotalStake}'
             '   ethRewards, tokenRewards'
             '}}'
         )
@@ -1000,6 +1252,21 @@ class Subgraph():
         profile_data = result['jurors'][0]
         profile_data['votes'] = self.getAllVotesFromJuror(profile_data['id'])
         return self._parseProfile(profile_data)
+
+    def getProfileGasCost(self, address):
+        query = ('{votes(where: {address: "' + str(address) + '"}){'
+                 + '''
+                    totalGasCost,
+                    timestamp
+                    }
+                    }
+                    ''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+
+        votes = [self._parseVote(vote) for vote in result['votes']]
+        return self._getTotalUSDGasCostInVotes(votes)
 
     def getRetention(self):
         jurors = self.getAllJurors()
@@ -1153,6 +1420,95 @@ class Subgraph():
                     total += self._wei2eth(courtStake['stake'])
                 skip += len(courtStakes)
         return total
+
+    def getTotalUSD(self):
+        transfers = self.getAllTransfers()
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getTransfersFromArbitrable(self, address):
+        query = ('{arbitrables(where: {id: "'+str(address)+'"}) {'
+                 + '''
+                    disputes {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        arbitrables_disputes = result['arbitrables'][0]
+        transfers = []
+        for dispute in arbitrables_disputes['disputes']:
+            dispute = self._parseDispute(dispute)
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
+
+    def getTransfersFromCourt(self, courtID):
+        query = ('{courts(where: {id: "'+str(courtID)+'"}) {'
+                 + '''
+                    disputes {
+                        id,
+                        TokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }
+                    }
+                }''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        court_disputes = result['courts'][0]
+        transfers = []
+        for dispute in court_disputes['disputes']:
+            dispute = self._parseDispute(dispute)
+            transfers.extend(dispute['TokenAndETHShifts'])
+        return transfers
+
+    def getTransfersFromProfile(self, address):
+        query = ('{jurors(where: {id: "' + str(address) + '"}) {'
+                 + '''tokenAndETHShifts(where:{id_not:""}){
+                            ETHAmount,
+                            tokenAmount,
+                            blockNumber,
+                            timestamp
+                        }
+                    }
+                    }
+                    ''')
+        result = self._post_query(query)
+        if result is None:
+            return result
+        juror = self._parseProfile(result['jurors'][0])
+        return juror['tokenAndETHShifts']
+
+    def getUSDThroughArbitrable(self, arbitrable):
+        transfers = self.getTransfersFromArbitrable(arbitrable)
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getUSDThroughCourt(self, courtID):
+        transfers = self.getTransfersFromCourt(courtID)
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
+
+    def getUSDThroughProfile(self, address):
+        transfers = self.getTransfersFromProfile(address)
+        if transfers is None:
+            return 0
+        return self._getTotalUSDThroughTransfers(transfers)
 
     def getWhenPeriodEnd(self, dispute, courtID, timesPeriods=None):
         """

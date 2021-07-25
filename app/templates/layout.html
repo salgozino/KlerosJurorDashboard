@@ -10,7 +10,9 @@
     <link href="{{ url_for('static', filename='css/sticky-footer.css') }}" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/map.css') }}" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css" rel="stylesheet">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
     
 
     <!-- Plotly JS -->
@@ -18,7 +20,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
     
     <!-- jQuery -->
-    <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     
     <!-- BootstrapJS -->
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
@@ -51,6 +53,7 @@
                 <li class="navbar-item"><a href="/court/?network={{network}}">Court Explorer</a></li>
                 <li class="navbar-item"><a href="/dispute/?network={{network}}">Dispute Scanner</a></li>
                 <li class="navbar-item"><a href="/arbitrable/?network={{network}}">Arbitrables Explorer</a></li>
+                <li class="navbar-item"><a href="/stakes?network={{network}}">Stakes Explorer</a></li>
                 <li class="navbar-item"><a href="/kleros-map/?network={{network}}">Kleros Community Map!</a></li>
             </ul>
 

@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block body%}
+
+<div class="row">
+  <div class="table-responsive" style="max-height:65rem; overflow-y:auto" >
+      <table class="table table-bordered table-hover" id="stakesTable">
+        <thead>
+          <tr class="info">
+            <th class="text-center">Date</td>
+            <th class="text-center">Juror</td>
+            <th class="text-center">Court</td>
+            <th class="text-center">Stake</td>
+            <th class="text-center">Total Stake in all courts</td>
+            <th class="text-center">id</td>
+          </tr>
+      </thead>
+      </table>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/getAllStakes.js') }}" type="module"></script>
+{% endblock %}

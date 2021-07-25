@@ -11,44 +11,97 @@
 
 
     {% block content %}
-    <div class="row">
-      <div class="col-lg-3"><!-- centering div --></div>
-      <div class="col-lg-3">
-        {%if profile['ethRewards'] >= 0%}
-        <div class="panel panel-success">
-        {%else %}
-        <div class="panel panel-warning">
-        {%endif%}
-            <div class="panel-heading">
-                <h3 class="panel-title text-center">Fees Rewad</h3>
-            </div>
-            <div class="panel-body text-center">
-              {%if network == 'xdai'%}
-              <h4>{{ "{:.2f}".format(profile['ethRewards']) }} {{reward_currency}}</h4>
-              {%else%}
-              <h4>{{ "{:.3f}".format(profile['ethRewards']) }} {{reward_currency}}</h4>
-              {%endif%}
-            </div>
-        </div>
-      </div>
-      <div class="col-lg-3">
-        {%if profile['tokenRewards'] >= 0%}
-        <div class="panel panel-success">
-        {%else %}
-        <div class="panel panel-warning">
-        {%endif%}
-            <div class="panel-heading">
-                <h3 class="panel-title text-center">Token Reward</h3>
-            </div>
-            <div class="panel-body text-center">
-              <h4>{{ "{:.2f}".format(profile['tokenRewards']) }}</h4>
-            </div>
-        </div>
-      </div>
-    </div>
     {% if profile.keys()|length > 1 %}
+      <script type="text/javascript">
+        let address = {{profile['id']|tojson}};
+      </script>
+      <div class="row">
+        <div class="col-lg-1"><!-- Centering div--></div>
+        <div class="col-lg-2">
+          {%if profile['ethRewards'] > 0%}
+          <div class="panel panel-success">
+          {%else %}
+          <div class="panel panel-info">
+          {%endif%}
+              <div class="panel-heading">
+                  <h3 class="panel-title text-center">Fees Rewad</h3>
+              </div>
+              <div class="panel-body text-center">
+                {%if network == 'xdai'%}
+                <h4>{{ "{:.2f}".format(profile['ethRewards']) }} {{reward_currency}}</h4>
+                {%else%}
+                <h4>{{ "{:.3f}".format(profile['ethRewards']) }} {{reward_currency}}</h4>
+                {%endif%}
+              </div>
+          </div>
+        </div>
+        <div class="col-lg-2">
+          {%if profile['tokenRewards'] > 0%}
+          <div class="panel panel-success">
+          {%elif profile['tokenRewards'] < 0%}
+          <div class="panel panel-warning">
+          {%else %}
+          <div class="panel panel-info">
+          {%endif%}
+              <div class="panel-heading">
+                  <h3 class="panel-title text-center">Token Reward</h3>
+              </div>
+              <div class="panel-body text-center">
+                <h4>{{ "{:.2f}".format(profile['tokenRewards']) }}</h4>
+              </div>
+          </div>
+        </div>
+        <div class="col-lg-2">
+          {%if profile['tokenRewards'] > 0%}
+          <div class="panel panel-success">
+          {%else %}
+          <div class="panel panel-info">
+          {%endif%}
+              <div class="panel-heading">
+                  <h3 class="panel-title text-center">Rewards received in USD</h3>
+              </div>
+              <div class="panel-body text-center" id="feesUSD">
+                <h4>Loading data...</h4>
+                <script src="{{ url_for('static', filename='js/getProfileUSD.js') }}" type="module"></script>
+              </div>
+              <div class="panel-footer">
+              Rewards considering historic {{reward_currency}} and PNK price.
+              </div>
+          </div>
+        </div>
+        <div class="col-lg-2">
+          <div class="panel panel-info">
+              <div class="panel-heading">
+                  <h3 class="panel-title text-center">Gas Costs for voting in USD</h3>
+              </div>
+              <div class="panel-body text-center" id="gasCost">
+                <h4>Loading data...</h4>
+                <script src="{{ url_for('static', filename='js/getProfileGasCost.js') }}" type="module"></script>
+              </div>
+              <div class="panel-footer">
+              Gas used for voting
+              </div>
+          </div>
+        </div>
+        <div class="col-lg-2">
+          <div class="panel panel-info">
+              <div class="panel-heading">
+                  <h3 class="panel-title text-center">Net Rewards in USD</h3>
+              </div>
+              <div class="panel-body text-center" id="netUSD">
+                <h4>Loading data...</h4>
+                <script src="{{ url_for('static', filename='js/getProfileNetReward.js') }}" type="module"></script>
+              </div>
+              <div class="panel-footer">
+              Net rewards in USD (Rewards - Gas costs)
+              </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
         <h2>Disputes Created</h2>
-        <div class="mb-5">
+        <div class="table-responsive" style="max-height:250px; overflow-y:auto">
           <table class="table table-bordered responsive table-sm table-condensed">
             <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
             {% for dispute in profile['disputesAsCreator']|sort(attribute='timestamp', reverse=True): %}
@@ -60,7 +113,8 @@
             {% endfor %}
           </table>
         </div>
-
+      </div>
+      <div class="row">
         <h2>Stakes by Court</h2>
         <div class="mb-5">
           <h4>Total Staked: {{"{:,.2f} PNK".format(profile['totalStaked'])}}</h4>
@@ -80,40 +134,68 @@
               </tr>
             {% endfor %}
           </table>
-        </div>
 
-        <h2>Votes</h2>
-        
-        <div class="row">
-          <div class="mb-5">
-            <h4>Number of votes drawn: {{profile['votes']|length}}</h4>
-            <h4>Number of disputes as juror: {{profile['numberOfDisputesAsJuror']}}</h4>
-            <h4>Coherency: {%if profile['coherency'] is not none%}{{"{:.2%}".format(profile['coherency'])}}{%else%}-{%endif%}</h4>
-            <div class="table-responsive" style="max-height:250px; overflow-y:auto">
-              <table class="table table-bordered table-condensed table-hover">
-              <tr class="info">
-                <td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td>
-              </tr>
-              {% for v in profile['votes']|sort(attribute='id', reverse=True): %}
-                  {% set winner = v['dispute']['currentRulling'] if v['dispute']['ruled'] else none %}
-                  {%if winner is none %}
-                      <tr class='active'>
-                  {% elif winner == v['choice'] %}
-                      <tr class='success'>
-                  {% else %}
-                      <tr class='danger'>
-                  {% endif %}
-                  <td><a href="{{ url_for('dispute',id=v['dispute']['id'], network=network) }}">Dispute {{ v['dispute']['id']}}</a></td>
-                  <td>{{v['roundNumber']}}</td>
-                  <td>{{ "Ruled" if v['dispute']['ruled'] else "Ongoing"}}</td>
-                  <td>{{ v['vote_str'] }}</td>
+          <h4>Stake Events</h4>
+          <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+            <table class="table table-bordered table-sm table-condensed">
+              <thead>
+                <tr class="info">
+                  <th>Court</td>
+                  <th>stake</td>
+                  <th>Total in all Courts</td>
+                </tr>
+              </thead>
+              <tbody>
+              {% for stake in profile['allStakes'] %}
+                <tr>
+                  <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
+                  <td>{{"{:,.2f}".format(stake['stake'])}}</td>
+                  <td>{{"{:,.2f}".format(stake['newTotalStake'])}}</td>
                 </tr>
               {% endfor %}
-              </table>
-            </div>
+            </tbody>
+            </table>
           </div>
         </div>
-   
+      </div>
+
+      <div class="row">
+        <h2>Votes</h2>
+      
+      
+        <div class="mb-5">
+          <h4>Number of votes drawn: {{profile['votes']|length}}</h4>
+          <h4>Number of disputes as juror: {{profile['numberOfDisputesAsJuror']}}</h4>
+          <h4>Coherency: {%if profile['coherency'] is not none%}{{"{:.2%}".format(profile['coherency'])}}{%else%}-{%endif%}</h4>
+          <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+            <table class="table table-bordered table-condensed table-hover">
+            <tr class="info">
+              <td>Dispute</td><td>Round</td><td>Status</td><td>Choice</td>
+            </tr>
+
+            {% for v in profile['votes']|sort(attribute='dispute.id', reverse=True): %}
+                {% set winner = v['dispute']['currentRulling'] if v['dispute']['ruled'] else none %}
+                {%if winner is none %}
+                    <tr class='active'>
+                {% elif winner == v['choice'] %}
+                    <tr class='success'>
+                {% else %}
+                    <tr class='danger'>
+                {% endif %}
+                <td><a href="{{ url_for('dispute',id=v['dispute']['id'], network=network) }}">Dispute {{ v['dispute']['id']}}</a></td>
+                <td>{{v['roundNumber']}}</td>
+                <td>{{ "Ruled" if v['dispute']['ruled'] else "Ongoing"}}</td>
+                <td>{{ v['vote_str'] }}</td>
+              </tr>
+            {% endfor %}
+            </table>
+          </div>
+        </div>
+      </div>
+    {% else %}
+    <div class="row">
+    Ups, there is no information for this wallet in this network...
+    </div>
     {%endif%}
   {% endblock %}
 {% endblock %}

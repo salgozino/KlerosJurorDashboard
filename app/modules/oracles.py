@@ -2,6 +2,7 @@ import requests
 import urllib
 import os
 import json
+from datetime import datetime
 
 
 class CMC():
@@ -59,6 +60,32 @@ class CoinGecko():
     def __init__(self):
         self.api_url = "https://api.coingecko.com/api/v3/"
 
+    def _getCryptoHistoric(self, id="kleros", vs_currency='usd', days=360):
+        parameters = {'localization': False,
+                      'vs_currency': vs_currency,
+                      'days': days}
+        headers = {
+          'Accepts': 'application/json',
+        }
+        url = self.api_url + 'coins/{}/market_chart?'.format(id) \
+            + urllib.parse.urlencode(parameters)
+        response = requests.get(url, headers=headers)
+        return response.json()
+
+    def _getCryptoOldPrice(self, date, id="kleros", vs_currency='usd'):
+        parameters = {'localization': False,
+                      'vs_currency': vs_currency,
+                      'date': date}
+        headers = {
+          'Accepts': 'application/json',
+        }
+        url = self.api_url + 'coins/{}/history?'.format(id) \
+            + urllib.parse.urlencode(parameters)
+        response = requests.get(url, headers=headers).json()
+        if 'market_data' in response.keys():
+            return response['market_data']['current_price']['usd']
+        return None
+
     def getCryptoInfo(self, id="kleros"):
         parameters = {'localization': False,
                       'tickers': False,
@@ -97,3 +124,22 @@ class CoinGecko():
         ethId = "ethereum"
         response = self.getCryptoInfo(id=ethId)
         return response['market_data']['current_price']['usd']
+
+    def getETHhistoricPrice(self, days_before=360):
+        response = self._getCryptoHistoric(id='ethereum', days=days_before)
+        return response['prices']
+
+    def getPNKhistoricPrice(self, days_before=360):
+        response = self._getCryptoHistoric(id='kleros', days=days_before)
+        return response['prices']
+
+    def getETHoldPrice(self, timestamp):
+        """get the price of ETH at some specific timestamp (unit s)"""
+        date = datetime.fromtimestamp(timestamp)
+        return self._getCryptoOldPrice(date.strftime('%d-%m-%Y'),
+                                       id='ethereum')
+
+    def getPNKoldPrice(self, timestamp):
+        """get the price of PNK at some specific timestamp (unit s)"""
+        date = datetime.fromtimestamp(timestamp)
+        return self._getCryptoOldPrice(date.strftime('%d-%m-%Y'))

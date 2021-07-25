@@ -4,9 +4,10 @@ Flask Application which runs the web server!.
 Here all the website is created.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import render_template, request, jsonify
+from numpy.lib.nanfunctions import _nanpercentile_dispatcher
 
 from app import create_app
 from app.modules.plotters import disputesGraph, disputesbyCourtGraph, \
@@ -24,11 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 @application.template_filter()
-def timedelta(date):
+def timedelta_now(date):
     if not isinstance(date, datetime):
         date = datetime.fromtimestamp(date)
     delta = date-datetime.now()
     return str(delta).split(".")[0]
+
+
+@application.template_filter()
+def timeperiod_format(time_period):
+    return timedelta(seconds=time_period)
 
 
 @application.template_filter()
@@ -231,7 +237,7 @@ def profile(address):
     subgraph = Subgraph(network)
     profile = subgraph.getProfile(address)
     if profile is None:
-        profile = {'address': address}
+        profile = {'id': address}
     return render_template('profile.html',
                            profile=profile,
                            subgraph_status=subgraph.getStatus(),
@@ -266,6 +272,15 @@ def arbitrable(address):
                                )
 
 
+@application.route('/stakes', methods=['GET'])
+def stakes():
+    network = request.args.get('network', type=str)
+    subgraph = Subgraph(network)
+    return render_template('allStakes.html',
+                           subgraph_status=subgraph.getStatus(),
+                           network=subgraph.network
+                           )
+
 @application.route('/_getCourtTable')
 def getCourtTable():
     network = request.args.get('network', None, type=str)
@@ -278,6 +293,16 @@ def getAdoption():
     return jsonify(Subgraph(network).getAdoption())
 
 
+@application.route('/_getAllStakes',
+                   methods=['GET'])
+def getAllStakes():
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    stakes = subgraph.getAllStakeSets()
+    print(stakes)
+    return jsonify(stakes)
+
+
 @application.route('/_getRetention')
 def getRetention():
     network = request.args.get('network', None, type=str)
@@ -288,6 +313,54 @@ def getRetention():
 def getMostActiveCourt():
     network = request.args.get('network', None, type=str)
     return jsonify(Subgraph(network).getMostActiveCourt())
+
+
+@application.route('/_getUSDThroughArbitrable/<string:address>',
+                   methods=['GET'])
+def getUSDArbitrable(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getUSDThroughArbitrable(address))
+
+
+@application.route('/_getUSDThroughCourt/<int:courtId>',
+                   methods=['GET'])
+def getUSDCourt(courtId):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getUSDThroughCourt(courtId))
+
+
+@application.route('/_getUSDThroughProfile/<string:address>',
+                   methods=['GET'])
+def getUSDProfile(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getUSDThroughProfile(address))
+
+
+@application.route('/_getProfileGasCost/<string:address>',
+                   methods=['GET'])
+def getProfileGasCost(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getProfileGasCost(address))
+
+
+@application.route('/_getProfileNetReward/<string:address>',
+                   methods=['GET'])
+def getProfileNetReward(address):
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    net_reward = subgraph.getNetRewardProfile(address)
+    return jsonify(net_reward)
+
+
+@application.route('/_getTotalUSD')
+def getTotalUSD():
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    return jsonify(subgraph.getTotalUSD())
 
 
 @application.errorhandler(404)
