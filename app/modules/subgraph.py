@@ -62,6 +62,47 @@ class Subgraph():
         return int(currentBlockNumber - days*24*60*60/averageBlockTime)
 
     @staticmethod
+    def _getOldPrice(timestamp, network='mainnet'):
+        pnk_price = CoinGecko().getPNKoldPrice(timestamp)
+        if 'xdai' in network:
+            return {'reward_currency': 1., 'token': pnk_price}
+        else:
+            return {'reward_currency': CoinGecko().getETHoldPrice(timestamp),
+                    'token': pnk_price}
+
+    @staticmethod
+    def _getHistoricPrices(timestamp_from, network='mainnet'):
+        now = datetime.now()
+        days_to_oldest = timedelta(seconds=now.timestamp()
+                                   - timestamp_from).days + 2
+        pnk_historic_price = CoinGecko().getPNKhistoricPrice(
+            days_to_oldest)
+        df_price_pnk = pd.DataFrame(pnk_historic_price,
+                                    columns=['timestamp',
+                                             'pnk_price'])
+        df_price_pnk['timestamp'] /= 1000
+        if 'xdai' not in network:
+            eth_historic_price = CoinGecko().getETHhistoricPrice()
+            df_price_eth = pd.DataFrame(eth_historic_price,
+                                        columns=['timestamp',
+                                                 'eth_price'])
+            df_price_eth['timestamp'] /= 1000
+            df_price = pd.concat([df_price_eth, df_price_pnk])
+        else:
+            df_price = df_price_pnk.copy()
+            df_price['eth_price'] = 1.
+        df_price['date'] = pd.to_datetime(
+            df_price['timestamp'], unit='s').dt.date
+        df_price.set_index('date', inplace=True)
+        df_price.sort_index(inplace=True)
+        # fill nan with forward values
+        df_price.fillna(method='ffill', inplace=True)
+        # fill nan in the first row if exist
+        df_price.fillna(method='backfill', inplace=True)
+        df_price = df_price[~df_price.index.duplicated(keep='last')]
+        return df_price
+
+    @staticmethod
     def _getRoundNumFromID(roundID):
         return int(roundID.split('-')[1])
 
@@ -109,31 +150,24 @@ class Subgraph():
         oldest_timestamp = df_transfers['timestamp'].min()
         # group by day with the sum of ETH transfers
         df_transfers = df_transfers.groupby(
-                        by=df_transfers['date'].dt.date)['ETHAmount'].sum()
-        if 'xdai' in self.network:
-            return df_transfers.sum()
+                        by=df_transfers['date'].dt.date)[['ETHAmount',
+                                                          'tokenAmount']].sum()
 
         if len(df_transfers) > 1:
-            now = datetime.now()
-            days_to_oldest = timedelta(seconds=now.timestamp()
-                                       - oldest_timestamp).days + 2
-            historic_price = CoinGecko().getETHhistoricPrice(days_to_oldest)
-            df_price = pd.DataFrame(historic_price,
-                                    columns=['timestamp',
-                                             'eth_price'])
-            df_price['timestamp'] = df_price['timestamp'] / 1000
-            df_price['date'] = pd.to_datetime(
-                df_price['timestamp'], unit='s').dt.date
-            df_price.set_index('date', inplace=True)
-            df_price = df_price[~df_price.index.duplicated(keep='first')]
+            df_price = self._getHistoricPrices(oldest_timestamp,
+                                               network=self.network)
             df = pd.concat([df_transfers, df_price], axis=1)
             df.dropna(axis=0, how='any', inplace=True)
-            df['usd_amount'] = df['ETHAmount'] * df['eth_price']
-            eth_amount = df['usd_amount'].sum()
+            df['usd_amount'] = df['ETHAmount'] * df['eth_price'] + \
+                df['tokenAmount'] * df['pnk_price']
+            usd_amount = df['usd_amount'].sum()
         else:
-            eth_price = CoinGecko().getETHoldPrice(oldest_timestamp)
-            eth_amount = df_transfers.values[0] * eth_price
-        return eth_amount
+            prices = self._getOldPrice(oldest_timestamp, self.network)
+            usd_amount = (df_transfers['ETHAmount'] * prices['reward_currency']
+                          + df_transfers['tokenAmount']
+                          * prices['token']
+                          ).to_list()[0]
+        return usd_amount
 
     def _parseArbitrable(self, arbitrable):
         if arbitrable is None:
@@ -357,7 +391,8 @@ class Subgraph():
         if 'stake' in keys:
             stake_set['stake'] = self._wei2eth(stake_set['stake'])
         if 'newTotalStake' in keys:
-            stake_set['newTotalStake'] = self._wei2eth(stake_set['newTotalStake'])
+            stake_set['newTotalStake'] = self._wei2eth(stake_set[
+                'newTotalStake'])
         if 'address' in keys:
             stake_set['address'] = stake_set['address']['id']
         if 'timestamp' in keys:
@@ -391,7 +426,10 @@ class Subgraph():
             if isinstance(vote['dispute'], dict):
                 vote['dispute'] = self._parseDispute(vote['dispute'])
         if 'timestamp' in keys:
-            vote['timestamp'] = int(vote['timestamp'])
+            try:
+                vote['timestamp'] = int(vote['timestamp'])
+            except TypeError:
+                vote['timestamp'] = None
         if 'commitGasUsed' in keys:
             vote['commitGasUsed'] = int(vote['commitGasUsed'])
         if 'commitGasPrice' in keys:
@@ -682,7 +720,7 @@ class Subgraph():
             query = (
                 '{stakeSets(where:{id_gt:"'+str(initStakes)+'"},'
                 'orderBy:id, orderDirection:asc, first:1000){'
-                'address{id},subcourtID,stake,newTotalStake,timestamp'
+                'id,address{id},subcourtID,stake,newTotalStake,timestamp'
                 '}}'
             )
             result = self._post_query(query)

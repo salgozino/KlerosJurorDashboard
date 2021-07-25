@@ -65,7 +65,7 @@
                 <script src="{{ url_for('static', filename='js/getProfileUSD.js') }}" type="module"></script>
               </div>
               <div class="panel-footer">
-              Rewards considering historic ETH price. Without PNK rewards and gas costs (yet)
+              Rewards considering historic {{reward_currency}} and PNK price.
               </div>
           </div>
         </div>
@@ -86,14 +86,14 @@
         <div class="col-lg-2">
           <div class="panel panel-info">
               <div class="panel-heading">
-                  <h3 class="panel-title text-center">Rewards in USD</h3>
+                  <h3 class="panel-title text-center">Net Rewards in USD</h3>
               </div>
               <div class="panel-body text-center" id="netUSD">
                 <h4>Loading data...</h4>
                 <script src="{{ url_for('static', filename='js/getProfileNetReward.js') }}" type="module"></script>
               </div>
               <div class="panel-footer">
-              Rewards considering historic ETH price less gas costs in votes
+              Net rewards in USD (Rewards - Gas costs)
               </div>
           </div>
         </div>
