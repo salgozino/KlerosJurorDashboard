@@ -277,7 +277,6 @@ def stakes():
     network = request.args.get('network', type=str)
     subgraph = Subgraph(network)
     return render_template('allStakes.html',
-                           stakes=subgraph.getAllStakeSets(),
                            subgraph_status=subgraph.getStatus(),
                            network=subgraph.network
                            )
@@ -292,6 +291,16 @@ def getCourtTable():
 def getAdoption():
     network = request.args.get('network', None, type=str)
     return jsonify(Subgraph(network).getAdoption())
+
+
+@application.route('/_getAllStakes',
+                   methods=['GET'])
+def getAllStakes():
+    network = request.args.get('network', None, type=str)
+    subgraph = Subgraph(network)
+    stakes = subgraph.getAllStakeSets()
+    print(stakes)
+    return jsonify(stakes)
 
 
 @application.route('/_getRetention')
@@ -344,7 +353,6 @@ def getProfileNetReward(address):
     network = request.args.get('network', None, type=str)
     subgraph = Subgraph(network)
     net_reward = subgraph.getNetRewardProfile(address)
-    print(net_reward)
     return jsonify(net_reward)
 
 
