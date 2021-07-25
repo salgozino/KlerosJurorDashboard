@@ -299,7 +299,6 @@ def getAllStakes():
     network = request.args.get('network', None, type=str)
     subgraph = Subgraph(network)
     stakes = subgraph.getAllStakeSets()
-    print(stakes)
     return jsonify(stakes)
 
 
