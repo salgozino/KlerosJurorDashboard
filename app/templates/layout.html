@@ -78,9 +78,14 @@
         </div>
         {% if subgraph_status is not none %}
             {% if subgraph_status['status'] == 'Updating' %}
+                {% if network == 'xdai' %}
+                    {% set subgraph_name = 'klerosboard-xdai' %}
+                {% else %}
+                    {% set subgraph_name = 'klerosboard' %}
+                {%endif%}
             <div class="alert alert-danger" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <p>The <a href="https://thegraph.com/explorer/subgraph/salgozino/klerosboard">subgraph</a> it's updating, the numbers reported in this board aren't updated to the last ethereum block. Please return in a minutes.
+                <p>The <a href="https://thegraph.com/explorer/subgraph/salgozino/'{{subgraph_name}}">subgraph</a> it's updating, the numbers reported in this board aren't updated to the last ethereum block. Please return in a minutes.
                     Last block synced = {{subgraph_status['last_block']}}
                 </p>
             </div>

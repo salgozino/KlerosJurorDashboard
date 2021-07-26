@@ -1241,7 +1241,7 @@ class Subgraph():
             '   numberOfDisputesCreated,'
             '   disputesAsCreator{id,currentRulling,startTime,ruled,txid,'
             '   numberOfChoices}'
-            '   allStakes{subcourtID, stake, newTotalStake}'
+            '   allStakes{subcourtID, stake, newTotalStake, timestamp}'
             '   ethRewards, tokenRewards'
             '}}'
         )
@@ -1324,8 +1324,8 @@ class Subgraph():
                     'last_block': subgraph_block_number,
                     'deployment': subgraph_id}
         last_block_number = web3Node.web3.eth.blockNumber
-        if abs(last_block_number - subgraph_block_number) < 20:
-            # ~ 5 min of delay allowed
+        if abs(last_block_number - subgraph_block_number) < 120:
+            # ~ 30 min of delay allowed
             return {'status': 'Updated',
                     'last_block': subgraph_block_number,
                     'deployment': subgraph_id}

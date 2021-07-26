@@ -143,14 +143,16 @@
                   <th>Court</td>
                   <th>stake</td>
                   <th>Total in all Courts</td>
+                  <th>Date</td>
                 </tr>
               </thead>
               <tbody>
-              {% for stake in profile['allStakes'] %}
+              {% for stake in profile['allStakes']|sort(attribute='timestmap', reverse=True) %}
                 <tr>
                   <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
                   <td>{{"{:,.2f}".format(stake['stake'])}}</td>
                   <td>{{"{:,.2f}".format(stake['newTotalStake'])}}</td>
+                  <td>{{stake['timestamp']|timestamp2datetime}}</td>
                 </tr>
               {% endfor %}
             </tbody>
