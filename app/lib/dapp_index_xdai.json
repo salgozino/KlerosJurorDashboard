@@ -1,1 +1,6 @@
-{"0x1128ed55ab2d796fa92d2f8e1f336d745354a77a":{"Contract name":"BinaryArbitrableProxy","Dapp name":"Dispute Resolver"}}
+{
+    "0x1128ed55ab2d796fa92d2f8e1f336d745354a77a":{
+        "Contract name":"BinaryArbitrableProxy","Dapp name":"Dispute Resolver"},
+    "0x54A92C21c6553a8085066311F2C8D9Db1B5e6610":{
+            "Contract name":"GeneralizedTCR","Dapp name":"Curate: Pythia"}
+}
