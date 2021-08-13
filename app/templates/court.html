@@ -335,16 +335,16 @@
     <!-- Disputes -->
     <h4>Court Disputes</h4>
     <h5>Number of disputes in this courts: {{disputes|length}}</h5>
-    <div class="table-responsive" style="max-height:250px; overflow-y:auto">
-        <table class="table table-bordered table-hover">
-            <thead>
-          <tr class="info">
-            <td align="center">Dispute N°</td>
-            <td align="center">Status</td>
-            <td align="center">Current Rulling</td>
-            <td align="center">Last Period Change</td>
-            <td align="center">Period Ends</td>
-          </tr>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover" id="sortTable">
+          <thead>
+            <tr class="info">
+              <th align="center">Dispute N°</th>
+              <th align="center">Status</th>
+              <th align="center">Current Rulling</th>
+              <th align="center">Last Period Change</th>
+              <th align="center">Period Ends</th>
+            </tr>
           </thead>
           <tbody>
           {% for dispute in disputes|sort(attribute='id', reverse=True): %}
@@ -358,6 +358,15 @@
           {% endfor %}
           </tbody>
         </table>
+
+        <script>
+        $(document).ready(function() {
+          $("#sortTable").DataTable({
+            "order": [[ 0, "desc" ]]
+          });
+        });
+      </script>
+    </div>
     </div>
     {% endif %}
     {% endblock %}
