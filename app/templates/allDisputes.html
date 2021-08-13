@@ -11,11 +11,13 @@
       
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered table-hover">
-          <tr class="info">
-            <td align="center">Court</td>
-            <td align="center">Dispute Number</td>
-            <td align="center">Time remaining in this period</td>
-          </tr>
+          <thead>
+            <tr class="info">
+              <th class="text-center">Court</th>
+              <th class="text-center">Dispute Number</th>
+              <th class="text-center">Time remaining in this period</th>
+            </tr>
+          </thead>
           {% for dispute in disputes|selectattr("period", "equalto", "evidence") |sort(attribute='id', reverse=True): %}
           <tr class='warning'>
             <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
@@ -26,7 +28,7 @@
         </table>
     </div>
 
-    <!-- Voting Phase disputes -->
+    <!-- Commit Phase disputes -->
     <div class="row">
       <div class="col">
         <h4>Disputes in commit phase: {{disputes|selectattr("period", "equalto", "commit")|list|length}}</h4>
@@ -35,11 +37,13 @@
 
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered table-hover">
-          <tr class="info">
-            <td align="center">Court</td>
-            <td align="center">Dispute Number</td>
-            <td align="center">Time remaining in this period</td>
-          </tr>
+          <thead>
+            <tr class="info">
+              <th class="text-center">Court</th>
+              <th class="text-center">Dispute Number</th>
+              <th class="text-center">Time remaining in this period</th>
+            </tr>
+          </thead>
           {% for dispute in disputes|selectattr("period", "equalto", "commit") |sort(attribute='id', reverse=True): %}
           <tr class='warning'>
             <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
@@ -59,11 +63,13 @@
 
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
         <table class="table table-bordered table-hover">
-          <tr class="info">
-            <td align="center">Court</td>
-            <td align="center">Dispute Number</td>
-            <td align="center">Time remaining in this period</td>
-          </tr>
+          <thead>
+            <tr class="info">
+              <th class="text-center">Court</th>
+              <th class="text-center">Dispute Number</th>
+              <th class="text-center">Time remaining in this period</th>
+            </tr>
+          </thead>
           {% for dispute in disputes|selectattr("period", "equalto", "vote") |sort(attribute='id', reverse=True): %}
           <tr class='warning'>
             <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
@@ -84,12 +90,14 @@
       
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
       <table class="table table-bordered table-hover">
+        <thead>
         <tr class="info">
-          <td align="center">Court</td>
-          <td align="center">Dispute Number</td>
-          <td align="center">Current Ruling</td>
-          <td align="center">Time remaining in this period</td>
+          <th class="text-center">Court</th>
+          <th class="text-center">Dispute Number</th>
+          <th class="text-center">Current Ruling</th>
+          <th class="text-center">Time remaining in this period</th>
         </tr>
+      </thead>
         {% for dispute in disputes|selectattr("period", "equalto", "appeal") |sort(attribute='id', reverse=True): %}
         <tr class='warning'>
           <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']|courtName(network)}}</a></td>
@@ -111,12 +119,14 @@
       
     <div class="table-responsive" style="max-height:250px; overflow-y:auto">
       <table class="table table-bordered table-hover">
+        <thead>
         <tr class="info">
-          <td align="center">Court</td>
-          <td align="center">Dispute Number</td>
-            <td align="center">Dispute Ruling</td>
-          <td align="center">Dispute End date</td>
+          <th class="text-center">Court</th>
+          <th class="text-center">Dispute Number</th>
+          <th class="text-center">Dispute Ruling</th>
+          <th class="text-center">Dispute End date</th>
         </tr>
+      </thead>
         {% for dispute in disputes|selectattr("period", "equalto", "execution") |sort(attribute='id', reverse=True): %}
         <tr class='success'>
           <td class="text-center"><a href={{url_for('court', id=dispute['subcourtID'], network=network)}}>{{dispute['subcourtID']}}</a></td>
