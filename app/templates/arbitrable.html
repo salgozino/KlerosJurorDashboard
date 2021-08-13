@@ -119,15 +119,17 @@
     </div>
     <div class="row">
       <h2>Disputes Created</h2>
-      <div class="table-responsive" style="max-height:300px; overflow-y:auto">
-        <table class="table table-bordered table-sm table-condensed table-hover">
+      <div class="table-responsive" overflow-y:auto">
+        <table class="table table-bordered table-sm table-condensed table-hover" id="sortTable">
+          <thead>
           <tr class="info">
-            <td>Dispute</td>
-            <td>Creation Date</td>
-            <td>Current Result</td>
-            <td>Current Period</td>
-            <td>TxID</td>
+            <th>Dispute</th>
+            <th>Creation Date</th>
+            <th>Current Result</th>
+            <th>Current Period</th>
+            <th>TxID</th>
           </tr>
+        </thead>
           {% for dispute in arbitrable['disputes']|sort(attribute='startTime', reverse=True): %}
             {% if dispute['ruled']%}
               <tr class="success">
@@ -143,6 +145,14 @@
           {% endfor %}
         </table>
       </div>
+
+      <script>
+        $(document).ready(function() {
+          $("#sortTable").DataTable({
+            "order": [[ 0, "desc" ]]
+          });
+        });
+      </script>
     </div>
     
   {% endblock %}
