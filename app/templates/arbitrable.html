@@ -125,6 +125,7 @@
             <td>Dispute</td>
             <td>Creation Date</td>
             <td>Current Result</td>
+            <td>Current Period</td>
             <td>TxID</td>
           </tr>
           {% for dispute in arbitrable['disputes']|sort(attribute='startTime', reverse=True): %}
@@ -136,6 +137,7 @@
               <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
               <td>{{ dispute['startTime']|timestamp2datetime }}</td>
               <td>{{dispute['currentRulling']}}</td>
+              <td>{{dispute['period']}}</td>
               <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid'][:6]}}...{{dispute['txid'][-4:]}}</a></td>
             </tr>
           {% endfor %}
