@@ -805,7 +805,7 @@ class Subgraph():
             '   votingPhaseDisputes,'
             '   appealPhaseDisputes,'
             '   ethFees,'
-            '   disputes{id, period, startTime, ruled, currentRulling, txid}'
+            '   disputes(orderBy:id, orderDirection:desc, limit:1000){id, period, startTime, ruled, currentRulling, txid}'
             '}}'
         )
         result = self._post_query(query)
