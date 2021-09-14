@@ -39,12 +39,12 @@ python -m pip install -r requirements.txt
 ```
 
 2) Create the following environment variables:
-# TODO: I HAVE NO CLUE HOW TO DO THIS
-
 ``` 
+export INFURA_NODE=[your_infura_node]
+export FLASK_APP=application
 
- * INFURA_NODE=[your_infura_node]
- * FLASK_APP=application
+# To run in development mode 
+exportFLASK_ENV=development
 ```
 
 3) Launch app by running flask
