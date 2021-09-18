@@ -11,8 +11,11 @@ def get_evidences(disputeID):
     except TypeError:
         logger.error("wrong dispute input")
         return []
-    query_endpoint = _endpoint+'?id={}'.format(disputeID)
-    response = requests.get(query_endpoint)
+    query_endpoint = _endpoint + '?id={}'.format(disputeID)
+    try:
+        response = requests.get(query_endpoint)
+    except Exception:
+        return []
     return _parse_evidences(response.json())
 
 
