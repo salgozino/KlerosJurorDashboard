@@ -13,7 +13,7 @@ def get_evidences(disputeID):
         return []
     query_endpoint = _endpoint + '?id={}'.format(disputeID)
     try:
-        response = requests.get(query_endpoint)
+        response = requests.get(query_endpoint, timeout=0.1)
     except Exception:
         return []
     return _parse_evidences(response.json())
