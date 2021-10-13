@@ -33,7 +33,7 @@
                 <tbody>
                 {% for c, data in courtChances.items() %}
                     <tr>
-                        <th scope="row" style="word-break: break-all"> {{ c }}</th>
+                        <th scope="row" style="word-break: break-word"> {{ c }}</th>
                         {% for col, value in data.items() %}
                             {% if col == 'Odds' %}
                                 <td class="text-right">{{ "{:.2%}".format(value) }}
