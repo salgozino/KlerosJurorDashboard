@@ -499,8 +499,9 @@ class Subgraph():
                 return 'Vote not revealed yet'
             if number_of_choices is None:
                 return str(choice)
-            if int(number_of_choices) > 2:
-                return str(choice)
+            # Disable this option until metadata it's integrated
+            # if int(number_of_choices) > 2:
+            #     return str(choice)
             vote_map = {0: 'Refuse to Arbitrate',
                         1: 'Yes',
                         2: 'No'}
