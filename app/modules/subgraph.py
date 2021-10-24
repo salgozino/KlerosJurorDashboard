@@ -966,11 +966,11 @@ class Subgraph():
             courtsInfo[courtID] = self.court2table(court,
                                                    pnkUSDprice,
                                                    rewardUSDprice)
-            if oldCourts is not None:
-                diff = courtsInfo[courtID]['Total Disputes'] - \
-                        oldcourtsDisputes[courtID]
-            else:
-                diff = courtsInfo[courtID]['Total Disputes']
+            diff = courtsInfo[courtID]['Total Disputes']
+            if oldcourtsDisputes is not None:
+                if courtID in oldcourtsDisputes.keys():
+                    diff = courtsInfo[courtID]['Total Disputes'] \
+                        - oldcourtsDisputes[courtID]
             courtsInfo[courtID]['Disputes in the last 30 days'] = diff
         return courtsInfo
 
