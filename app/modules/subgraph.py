@@ -502,6 +502,8 @@ class Subgraph():
             # Disable this option until metadata it's integrated
             # if int(number_of_choices) > 2:
             #     return str(choice)
+            if choice > 2:
+                return str(choice)
             vote_map = {0: 'Refuse to Arbitrate',
                         1: 'Yes',
                         2: 'No'}
@@ -1523,7 +1525,7 @@ class Subgraph():
                 timesPeriods = self.getTimePeriods(int(courtID))
             lastPeriodChange = datetime.fromtimestamp(
                 int(dispute['lastPeriodChange'])
-                )
+                    )
             periodlength = int(timesPeriods[self._period2number(dispute[
                 'period'])])
             return lastPeriodChange + timedelta(seconds=periodlength)
