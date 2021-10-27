@@ -18,7 +18,7 @@ if __name__ == '__main__':
     if not os.path.isdir('app/lib'):
         os.mkdir('app/lib')
 
-    networks = ['mainnet',  'xdai']
+    networks = ['mainnet', 'xdai']
     for network in networks:
         subgraph = Subgraph(network)
         kc = subgraph.getKlerosCounters()
