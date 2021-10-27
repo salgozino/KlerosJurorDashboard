@@ -31,7 +31,7 @@ $(function(){
                         +'<td class="text-right">'+this.id+'</td>'
                         +'<td class="text-right">'+this['Total Staked'].toLocaleString()+'</td>'
                         +'<td class="text-right">'+this.Jurors+'</td>'
-                        +'<td class="text-right">'+this['Fee For Juror'].toFixed(0)+'</td>'
+                        +'<td class="text-right">'+this['Fee For Juror'].toFixed(3)+'</td>'
                         +'<td class="text-right">'+this['Min Stake'].toFixed(2)+'</td>'
                         +'<td class="text-right">'+formatter.format(this['Min Stake in USD'])+'</td>'
                         +'<td class="text-right">'+this['Vote Stake'].toFixed(0)+'</td>'
