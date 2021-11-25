@@ -695,7 +695,8 @@ class Subgraph():
         disputes = []
         while True:
             query = (
-                '{disputes(where:{disputeID_gt:'+str(initDispute)+'}){'
+                '{disputes(where:{disputeID_gt:' + str(initDispute) + '},'
+                ' orderDirection:asc, orderBy:disputeID){'
                 'id,subcourtID{id},currentRulling,ruled,startTime,'
                 'period,lastPeriodChange,arbitrable{id}'
                 '}}'
@@ -707,6 +708,38 @@ class Subgraph():
                 currentDisputes = result['disputes']
                 disputes.extend(currentDisputes)
                 initDispute = int(currentDisputes[-1]['id'])
+                if len(currentDisputes) < 100:
+                    break
+        courtTimePeriods = self.getTimePeriodsAllCourts()
+        parsed_disputes = []
+        for dispute in disputes:
+            subcourtID = dispute['subcourtID']['id']
+            parsed_disputes.append(self._parseDispute(dispute,
+                                                      courtTimePeriods[
+                                                          subcourtID]))
+        return parsed_disputes
+
+    def getAllOpenDisputes(self):
+        initDispute = -1
+        disputes = []
+        while True:
+            query = (
+                '{disputes(where:{disputeID_gt:' + str(initDispute)
+                + ', ruled:false},'
+                ' orderDirection:asc, orderBy:disputeID){'
+                'id,subcourtID{id},currentRulling,ruled,startTime,'
+                'period,lastPeriodChange,arbitrable{id}'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentDisputes = result['disputes']
+                disputes.extend(currentDisputes)
+                initDispute = int(currentDisputes[-1]['id'])
+                if len(currentDisputes) < 100:
+                    break
         courtTimePeriods = self.getTimePeriodsAllCourts()
         parsed_disputes = []
         for dispute in disputes:

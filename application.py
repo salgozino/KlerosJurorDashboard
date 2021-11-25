@@ -162,7 +162,7 @@ def dispute():
     network = request.args.get('network', type=str)
     subgraph = Subgraph(network)
     if id is None:
-        disputes = subgraph.getAllDisputes()
+        disputes = subgraph.getAllOpenDisputes()
         return render_template('allDisputes.html',
                                error=None,
                                disputes=disputes,
