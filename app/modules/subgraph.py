@@ -668,9 +668,9 @@ class Subgraph():
         disputes = []
         while True:
             query = (
-                '{disputes(where:{subcourtID:"' +
-                str(courtID) +
-                '",disputeID_gt:'+str(initDispute)+'}){'
+                '{disputes(where:{subcourtID:"' + str(courtID)
+                + '", disputeID_gt:' + str(initDispute)
+                + '}, orderBy:disputeID,orderDirection:asc){'
                 'id,subcourtID{id},currentRulling,ruled,startTime,'
                 'period,lastPeriodChange'
                 '}}'
@@ -684,6 +684,8 @@ class Subgraph():
                 currentDisputes = result['disputes']
                 disputes.extend(currentDisputes)
                 initDispute = int(currentDisputes[-1]['id'])
+                if len(currentDisputes) < 100:
+                    break
 
         parsed_disputes = []
         for dispute in disputes:
