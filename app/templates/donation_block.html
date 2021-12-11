@@ -1,0 +1,24 @@
+{% block bodycontent%}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Donations</h3>
+    </div>
+    <div class="panel-body">
+        Donations are needed to reveal features of Klerosboard in the next month!. {{(1 - donations['maintainanceFee'])*100}}% of the donations are used to burn <span class="glyphicon glyphicon-fire" aria-hidden="true"></span> $UBIs through <a href="ubiburner.com">UBIburner</a></a>. <a href="https://twitter.com/kokialgo/status/1446981027629608961">More info</a></br>
+        This month donations: {{donations['totalDonatedInMonth']}} of {{donations['donationPerMonth']}} ETH.
+        <div class="progress">
+            <div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="{{donations['percentage']}}" aria-valuemin="0" aria-valuemax="100" style="width:{{donations['percentage']}}%">
+                {{ "%.2f"|format(donations['percentage']) }}%
+            </div>
+        </div>
+        <div style="display:flex; justify-content:center; align-items: center;">
+            <fieldset>
+            <input type="number" id="donationAmount" min=0 value=0.05 step=0.001 style="max-width:100px">
+            <label for="dibationAmount" style="padding-right: 20px;">ETH</label>
+            <button class="btn btn-lg btn-success align-center" onclick="donate(donationAmount.value);return false;" href="#">Donate!</button>
+            </fieldset>
+        </div>
+        <div><p id="donationResponse"></p></div>
+    </div>
+</div>
+{% endblock %}

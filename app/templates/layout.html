@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
+    
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -13,19 +14,25 @@
     <link href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css" rel="stylesheet">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     
-    
-
-    <!-- Plotly JS -->
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
     
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
+    
     
     <!-- BootstrapJS -->
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
 
-    <title>Klerosboard 2.0!</title>
+    <!-- Web3 -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script data-main="{{url_for('static', filename='js/web3_functions.js')}}" src="{{url_for('static', filename='js/require.js')}}"></script>
+
+    <!-- Custom page imports -->
+    {% block custom_js %}
+    {% endblock %}
+    <title>Klerosboard 2.0 {%block title%}{%endblock%}</title>
   </head>
   
   <header>
@@ -65,27 +72,40 @@
                     <li><a href="?network=xdai">xDai</a></li>
                   </ul>
                 </li>
-                <li><a href="support/?network={{network}}">Support <span class="glyphicon glyphicon-heart"></span></a></li>
-              </ul>
+                <li id="connectionSelection" class="dropdown">
+                {%if current_user.is_authenticated%}
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{current_user.id[:6]}}...{{current_user.id[-4:]}}<span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href={{ url_for('profile', address=current_user.id, network=network) }}>My Profile</a></li>
+                        <li><a href="/logout?next={{request.path}}">Logout</a></li>
+                    </ul>
+                {%else%}
+                    <a href="#" class="btn btn-sm" id=loginButton onclick="login();return false;">Login with Metamask</a>
+                {%endif%}
+                </li>
+                <li><a href="/support/?network={{network}}">Support <span class="glyphicon glyphicon-heart"></span></a></li>
+            </ul>
         </div>
     </nav>
     <div class="container-fluid">
-        <div class="alert alert-info alert-dismissible" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <p>This Dashboard is still under development in beta mode. If you find a bug or values that don't make sense,
-            please open an issue on <a href="https://github.com/salgozino/KlerosJurorDashboard/issues" class="alert-link">github</a>
-            </p>
-        </div>
         {% if subgraph_status is not none %}
             {% if subgraph_status['status'] == 'Updating' %}
+                {% if network == 'xdai' %}
+                    {% set subgraph_name = 'klerosboard-xdai' %}
+                {% else %}
+                    {% set subgraph_name = 'klerosboard' %}
+                {%endif%}
             <div class="alert alert-danger" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <p>The <a href="https://thegraph.com/explorer/subgraph/salgozino/klerosboard">subgraph</a> it's updating, the numbers reported in this board aren't updated to the last ethereum block. Please return in a minutes.
+                <p>The <a href="https://thegraph.com/explorer/subgraph/salgozino/'{{subgraph_name}}">subgraph</a> it's updating, the numbers reported in this board aren't updated to the last ethereum block. Please return in a minutes.
                     Last block synced = {{subgraph_status['last_block']}}
                 </p>
             </div>
             {% endif %}
         {% endif %}
+    </div>
+    <div class="container">
+
     </div>
   </header>
   
@@ -111,9 +131,6 @@
         </div>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/dataTables.bootstrap.min.js"></script>
 
     </body>
 </html>

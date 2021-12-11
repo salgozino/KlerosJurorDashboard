@@ -1,10 +1,10 @@
 {% extends 'layout.html' %}
-
+{% block title%}| Profile {{ profile['id'] }}{% endblock %}
 {% block body%}
     {% block header %}
       <div class="row">
         <div class="col">
-          <h3>{% block title %}Juror {{ profile['id'] }}</h3><h6><a href="{{block_explorer}}/address/{{ profile['id'] }}">view on block explorer</a></h6>{% endblock %}
+          <h3>Juror {{ profile['id'] }}</h3><h6><a href="{{block_explorer}}/address/{{ profile['id'] }}">view on block explorer</a></h6>
         </div>
       </div>
     {% endblock %}
@@ -24,7 +24,7 @@
           <div class="panel panel-info">
           {%endif%}
               <div class="panel-heading">
-                  <h3 class="panel-title text-center">Fees Rewad</h3>
+                  <h3 class="panel-title text-center">Fees Rewards</h3>
               </div>
               <div class="panel-body text-center">
                 {%if network == 'xdai'%}
@@ -143,14 +143,16 @@
                   <th>Court</td>
                   <th>stake</td>
                   <th>Total in all Courts</td>
+                  <th>Date</td>
                 </tr>
               </thead>
               <tbody>
-              {% for stake in profile['allStakes'] %}
+              {% for stake in profile['allStakes']|sort(attribute='timestmap', reverse=True) %}
                 <tr>
                   <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
                   <td>{{"{:,.2f}".format(stake['stake'])}}</td>
                   <td>{{"{:,.2f}".format(stake['newTotalStake'])}}</td>
+                  <td>{{stake['timestamp']|timestamp2datetime}}</td>
                 </tr>
               {% endfor %}
             </tbody>

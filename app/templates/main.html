@@ -1,11 +1,13 @@
 {% extends "layout.html" %}
-
-
-{% block body%}
+{% block custom_js %}
 <script src="{{ url_for('static', filename='js/getCourtTable.js') }}" type="module"></script>
 <script src="{{ url_for('static', filename='js/getAdoption.js') }}" type="module"></script>
 <script src="{{ url_for('static', filename='js/getRetention.js') }}" type="module"></script>
 <script src="{{ url_for('static', filename='js/getMostActive.js') }}" type="module"></script>
+
+{%endblock%}
+
+{% block body%}
 <div class="container">
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -17,14 +19,16 @@
             <p>Kleros is a decentralized dispute platform. For more information, visit <a href="https://kleros.io">kleros.io</a></p>
         </div>
     </div>
+
+    {% include 'donation_block.html' %}
 </div>
 
 <!-- First Line Metrics -->
 <!-- Cases Metrics -->
 {%if network=='xdai'%}
-    {% set jurors_anual_reward = 1000000 * 12 * 0.0 %}
+    {% set jurors_anual_reward = 1000000 * 12 * 0.1 %}
 {%else%}
-    {% set jurors_anual_reward = 1000000 * 12 * 1.0%}
+    {% set jurors_anual_reward = 1000000 * 12 * 0.9%}
 {%endif%}
 
 <div class="container">

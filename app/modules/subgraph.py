@@ -2,7 +2,7 @@ import requests
 import os
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import pandas as pd
 
@@ -20,9 +20,72 @@ class Subgraph():
         self.logger = logging.getLogger(__name__)
         self.network = network.lower() if network is not None else 'mainnet'
         self.network = 'mainnet' if self.network == '' else self.network
-
-        self.subgraph_node = 'https://api.thegraph.com/subgraphs/name/'
         self.index_node = 'https://api.thegraph.com/index-node/graphql'
+        self.subgraph_node = 'https://api.thegraph.com/subgraphs/name/'
+
+    def _post_query(self, query):
+        response = requests.post(self.subgraph_node, json={'query': query})
+        data = response.json()
+        try:
+            data = data['data']
+        except KeyError:
+            self.logger.error(('Error trying to jsonise the response data of '
+                              'this query: %s'),
+                              query)
+            self.logger.error(data['errors'])
+            return None
+        data_length = 0
+        for key in data.keys():
+            if len(data[key]) != 0:
+                data_length += 1
+                break
+        if data_length > 0:
+            return data
+        else:
+            return None
+
+    @staticmethod
+    def _wei2eth(gwei):
+        return float(gwei) * 10**-18
+
+    def getStatus(self):
+        """
+        Return the status of the subgraph. If xdai, return synced
+        """
+        query = """
+        {
+            _meta{
+                block {
+                number
+                }
+                deployment
+            }
+        }
+        """
+        result = self._post_query(query)
+        meta = result['_meta']
+        subgraph_block_number = int(meta['block']['number'])
+        subgraph_id = meta['deployment']
+        if self.network == 'xdai':
+            return {'status': 'Updated',
+                    'last_block': subgraph_block_number,
+                    'deployment': subgraph_id}
+        last_block_number = web3Node(self.network).web3.eth.blockNumber
+        if abs(last_block_number - subgraph_block_number) < 120:
+            # ~ 30 min of delay allowed
+            return {'status': 'Updated',
+                    'last_block': subgraph_block_number,
+                    'deployment': subgraph_id}
+        else:
+            return {'status': 'Updating',
+                    'last_block': subgraph_block_number,
+                    'deployment': subgraph_id}
+
+
+class KlerosBoardSubgraph(Subgraph):
+    def __init__(self, network=None):
+        super(KlerosBoardSubgraph, self).__init__(network)
+        self.logger = logging.getLogger(__name__)
 
         # Node definitions
         if self.network == 'xdai':
@@ -33,12 +96,11 @@ class Subgraph():
             self.subgraph_name = 'salgozino/sarasa-mainnet'
         else:
             self.subgraph_name = 'salgozino/klerosboard'
-
         self.subgraph_node += self.subgraph_name
 
     @staticmethod
     def _calculateVoteStake(minStake, alpha):
-        return float(alpha)*(10**-4)*float(minStake)
+        return float(alpha) * (10 ** -4) * float(minStake)
 
     def _getBlockNumberbefore(self, days=30):
         """
@@ -58,8 +120,8 @@ class Subgraph():
             averageBlockTime = 5  # in seconds
         else:
             averageBlockTime = 15  # in seconds
-            currentBlockNumber = web3Node.web3.eth.blockNumber
-        return int(currentBlockNumber - days*24*60*60/averageBlockTime)
+            currentBlockNumber = web3Node(self.network).web3.eth.blockNumber
+        return int(currentBlockNumber - days * 24 * 60 * 60 / averageBlockTime)
 
     @staticmethod
     def _getOldPrice(timestamp, network='mainnet'):
@@ -115,7 +177,7 @@ class Subgraph():
         oldest_timestamp = df_votes['timestamp'].min()
         # group by day with the sum of ETH transfers
         df_votes = df_votes.groupby(
-                        by=df_votes['date'].dt.date)['totalGasCost'].sum()
+            by=df_votes['date'].dt.date)['totalGasCost'].sum()
         if 'xdai' in self.network:
             return df_votes.sum()
 
@@ -150,8 +212,8 @@ class Subgraph():
         oldest_timestamp = df_transfers['timestamp'].min()
         # group by day with the sum of ETH transfers
         df_transfers = df_transfers.groupby(
-                        by=df_transfers['date'].dt.date)[['ETHAmount',
-                                                          'tokenAmount']].sum()
+            by=df_transfers['date'].dt.date)[['ETHAmount',
+                                              'tokenAmount']].sum()
 
         if len(df_transfers) > 1:
             df_price = self._getHistoricPrices(oldest_timestamp,
@@ -174,8 +236,7 @@ class Subgraph():
             return None
         keys = arbitrable.keys()
         if 'disputesCount' in keys:
-            arbitrable['disputesCount'] = int(
-                                                arbitrable['disputesCount'])
+            arbitrable['disputesCount'] = int(arbitrable['disputesCount'])
         if 'ethFees' in keys:
             arbitrable['ethFees'] = self._wei2eth(arbitrable['ethFees'])
         if 'disputes' in keys:
@@ -244,8 +305,7 @@ class Subgraph():
         if 'timestamp' in keys:
             courtStake['timestamp'] = int(courtStake['timestamp'])
             courtStake['date'] = datetime.fromtimestamp(
-                courtStake['timestamp']
-                )
+                courtStake['timestamp'])
         return courtStake
 
     def _parseDispute(self, dispute, timePeriods=None):
@@ -325,12 +385,10 @@ class Subgraph():
         keys = profile.keys()
         if 'numberOfDisputesAsJuror' in keys:
             profile['numberOfDisputesAsJuror'] = int(profile[
-                'numberOfDisputesAsJuror'
-                ])
+                'numberOfDisputesAsJuror'])
         if 'numberOfDisputesAsCreator' in keys:
             profile['numberOfDisputesAsCreator'] = int(profile[
-                'numberOfDisputesAsCreator'
-                ])
+                'numberOfDisputesAsCreator'])
         if 'currentStakes' in keys:
             for stake in profile['currentStakes']:
                 stake = self._parseCourtStake(stake)
@@ -362,9 +420,8 @@ class Subgraph():
                     profile['ruled_cases'] += 1
 
         if profile['ruled_cases'] > 0:
-            profile['coherency'] = profile['coherent_votes']/profile[
-                'ruled_cases'
-                ]
+            profile['coherency'] = profile['coherent_votes'] / profile[
+                'ruled_cases']
         else:
             profile['coherency'] = None
 
@@ -466,27 +523,6 @@ class Subgraph():
             'evidence': 0}
         return period_map[period]
 
-    def _post_query(self, query):
-        response = requests.post(self.subgraph_node, json={'query': query})
-        data = response.json()
-        try:
-            data = data['data']
-        except KeyError:
-            self.logger.error(('Error trying to jsonise the response data of '
-                              'this query: %s'),
-                              query)
-            self.logger.error(data['errors'])
-            return None
-        data_length = 0
-        for key in data.keys():
-            if len(data[key]) != 0:
-                data_length += 1
-                break
-        if data_length > 0:
-            return data
-        else:
-            return None
-
     @staticmethod
     def _vote_mapping(choice, voted, dispute=None, number_of_choices=2):
         """
@@ -499,7 +535,10 @@ class Subgraph():
                 return 'Vote not revealed yet'
             if number_of_choices is None:
                 return str(choice)
-            if int(number_of_choices) > 2:
+            # Disable this option until metadata it's integrated
+            # if int(number_of_choices) > 2:
+            #     return str(choice)
+            if choice > 2:
                 return str(choice)
             vote_map = {0: 'Refuse to Arbitrate',
                         1: 'Yes',
@@ -507,10 +546,6 @@ class Subgraph():
             return vote_map[choice]
         else:
             return 'Pending'
-
-    @staticmethod
-    def _wei2eth(gwei):
-        return float(gwei)*10**-18
 
     def court2table(self, court, pnkUSDPrice, rewardUSDPrice):
         """
@@ -520,10 +555,10 @@ class Subgraph():
                 'Total Staked': court['tokenStaked'],
                 'Min Stake': court['minStake'],
                 'Fee For Juror': court['feeForJuror'],
-                'Fee For Juror USD': court['feeForJuror']*rewardUSDPrice,
+                'Fee For Juror USD': court['feeForJuror'] * rewardUSDPrice,
                 'Vote Stake': court['voteStake'],
                 'Open Disputes': court['disputesOngoing'],
-                'Min Stake in USD': court['minStake']*pnkUSDPrice,
+                'Min Stake in USD': court['minStake'] * pnkUSDPrice,
                 'Total Disputes': court['disputesNum'],
                 'id': court['subcourtID'],
                 'Name': self.getCourtName(court['subcourtID'])
@@ -532,7 +567,7 @@ class Subgraph():
     def getActiveJurorsFromCourt(self, courtID):
         query = (
             '{'
-            'courtStakes(where:{court:"'+str(courtID)+'",stake_gt:0}, '
+            'courtStakes(where:{court:"' + str(courtID) + '",stake_gt:0}, '
             'first:1000){'
             '    stake,'
             '    juror {id}'
@@ -562,7 +597,7 @@ class Subgraph():
 
         bn = self._getBlockNumberbefore(30)
         query = (
-            '{klerosCounters(block:{number:'+str(bn)+'}){'
+            '{klerosCounters(block:{number:' + str(bn) + '}){'
             '   activeJurors,'
             '   inactiveJurors'
             '}}'
@@ -575,14 +610,14 @@ class Subgraph():
         newTotal = int(result['activeJurors']) + int(result['inactiveJurors'])
         oldTotal = int(old_result['activeJurors']) + int(old_result[
             'inactiveJurors'])
-        return newTotal-oldTotal
+        return newTotal - oldTotal
 
     def getAllArbitrables(self):
         initArbitrable = ""
         arbitrables = []
         while True:
             query = (
-                '{arbitrables(where:{id_gt:"'+str(initArbitrable)+'"},'
+                '{arbitrables(where:{id_gt:"' + str(initArbitrable) + '"},'
                 'orderBy:id, orderDirection:asc, first:1000){'
                 'id,disputesCount,ethFees'
                 '}}'
@@ -633,7 +668,7 @@ class Subgraph():
     def getAllCourtsDaysBefore(self, days=30):
         blockNumber = self._getBlockNumberbefore(days)
         query = (
-            '{courts(block:{number:'+str(blockNumber)+'}){'
+            '{courts(block:{number:' + str(blockNumber) + '}){'
             '   subcourtID,'
             '   disputesOngoing,'
             '   disputesClosed,'
@@ -665,9 +700,9 @@ class Subgraph():
         disputes = []
         while True:
             query = (
-                '{disputes(where:{subcourtID:"' +
-                str(courtID) +
-                '",disputeID_gt:'+str(initDispute)+'}){'
+                '{disputes(where:{subcourtID:"' + str(courtID)
+                + '", disputeID_gt:' + str(initDispute)
+                + '}, orderBy:disputeID,orderDirection:asc){'
                 'id,subcourtID{id},currentRulling,ruled,startTime,'
                 'period,lastPeriodChange'
                 '}}'
@@ -681,6 +716,8 @@ class Subgraph():
                 currentDisputes = result['disputes']
                 disputes.extend(currentDisputes)
                 initDispute = int(currentDisputes[-1]['id'])
+                if len(currentDisputes) < 100:
+                    break
 
         parsed_disputes = []
         for dispute in disputes:
@@ -692,7 +729,8 @@ class Subgraph():
         disputes = []
         while True:
             query = (
-                '{disputes(where:{disputeID_gt:'+str(initDispute)+'}){'
+                '{disputes(where:{disputeID_gt:' + str(initDispute) + '},'
+                ' orderDirection:asc, orderBy:disputeID){'
                 'id,subcourtID{id},currentRulling,ruled,startTime,'
                 'period,lastPeriodChange,arbitrable{id}'
                 '}}'
@@ -704,6 +742,38 @@ class Subgraph():
                 currentDisputes = result['disputes']
                 disputes.extend(currentDisputes)
                 initDispute = int(currentDisputes[-1]['id'])
+                if len(currentDisputes) < 100:
+                    break
+        courtTimePeriods = self.getTimePeriodsAllCourts()
+        parsed_disputes = []
+        for dispute in disputes:
+            subcourtID = dispute['subcourtID']['id']
+            parsed_disputes.append(self._parseDispute(dispute,
+                                                      courtTimePeriods[
+                                                          subcourtID]))
+        return parsed_disputes
+
+    def getAllOpenDisputes(self):
+        initDispute = -1
+        disputes = []
+        while True:
+            query = (
+                '{disputes(where:{disputeID_gt:' + str(initDispute)
+                + ', ruled:false},'
+                ' orderDirection:asc, orderBy:disputeID){'
+                'id,subcourtID{id},currentRulling,ruled,startTime,'
+                'period,lastPeriodChange,arbitrable{id}'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentDisputes = result['disputes']
+                disputes.extend(currentDisputes)
+                initDispute = int(currentDisputes[-1]['id'])
+                if len(currentDisputes) < 100:
+                    break
         courtTimePeriods = self.getTimePeriodsAllCourts()
         parsed_disputes = []
         for dispute in disputes:
@@ -718,7 +788,7 @@ class Subgraph():
         stakes = []
         while True:
             query = (
-                '{stakeSets(where:{id_gt:"'+str(initStakes)+'"},'
+                '{stakeSets(where:{id_gt:"' + str(initStakes) + '"},'
                 'orderBy:id, orderDirection:asc, first:1000){'
                 'id,address{id},subcourtID,stake,newTotalStake,timestamp'
                 '}}'
@@ -740,7 +810,7 @@ class Subgraph():
         transfers = []
         while True:
             query = (
-                '{tokenAndETHShifts(where:{id_gt:"'+str(initTransfer)+'"'
+                '{tokenAndETHShifts(where:{id_gt:"' + str(initTransfer) + '"'
                 ',ETHAmount_gt:0},'
                 'orderBy:id, orderDirection:asc, first:1000){'
                 'id,ETHAmount,tokenAmount,blockNumber,timestamp'
@@ -759,8 +829,8 @@ class Subgraph():
                 for transfer in transfers]
 
     def getAllVotesFromJuror(self, address):
-        query = ('{votes(where:{address:"' +
-                 str(address)+'"},first:1000){' +
+        query = ('{votes(where:{address:"'
+                 + str(address) + '"},first:1000){'
                  'dispute{id,currentRulling,ruled,startTime,numberOfChoices},'
                  'choice,voted,round{id}'
                  '}}'
@@ -778,7 +848,7 @@ class Subgraph():
         profiles = []
         while True:
             query = (
-                '{jurors(skip:'+str(skipJurors)+', first:1000, orderBy:id,'
+                '{jurors(skip:' + str(skipJurors) + ', first:1000, orderBy:id,'
                 'orderDirection:asc){id,totalStaked,numberOfDisputesAsJuror'
                 '}}'
             )
@@ -795,7 +865,7 @@ class Subgraph():
 
     def getArbitrable(self, address):
         query = (
-            '{arbitrables(where:{id:"'+str(address).lower()+'"}) {'
+            '{arbitrables(where:{id:"' + str(address).lower() + '"}) {'
             '   id,'
             '   disputesCount,'
             '   openDisputes,'
@@ -805,7 +875,8 @@ class Subgraph():
             '   votingPhaseDisputes,'
             '   appealPhaseDisputes,'
             '   ethFees,'
-            '   disputes{id, period, startTime, ruled, currentRulling, txid}'
+            '   disputes(orderBy:id, orderDirection:desc, limit:1000){'
+            'id, period, startTime, ruled, currentRulling, txid}'
             '}}'
         )
         result = self._post_query(query)
@@ -831,7 +902,7 @@ class Subgraph():
     def getCourt(self, courtID):
         query = (
             '{'
-            'courts(where:{id:"'+str(courtID)+'"}) {'
+            'courts(where:{id:"' + str(courtID) + '"}) {'
             '   id,'
             '   subcourtID,'
             '   disputesOngoing,'
@@ -865,7 +936,7 @@ class Subgraph():
         search_courts = set([str(courtID)])
         while len(search_courts) > 0:
             query = (
-                '{courts(where:{id:"'+str(search_courts.pop())+'"}){'
+                '{courts(where:{id:"' + str(search_courts.pop()) + '"}){'
                 '   childs{id},'
                 '}}'
             )
@@ -880,10 +951,10 @@ class Subgraph():
     def getCourtDaysBefore(self, courtID, days=30):
         blockNumber = self._getBlockNumberbefore(days)
         query = (
-            '{courts(block:{number:' +
-            str(blockNumber)+'},where:{id:"' +
-            str(courtID) +
-            '"}){'
+            '{courts(block:{number:'
+            + str(blockNumber) + '},where:{id:"'
+            + str(courtID)
+            + '"}){'
             '   subcourtID,'
             '   disputesOngoing,'
             '   disputesClosed,'
@@ -946,7 +1017,7 @@ class Subgraph():
             # prevent errors
             return None
         else:
-            response = requests.get(ipfs_node+policy['policy'])
+            response = requests.get(ipfs_node + policy['policy'])
         return response.json()
 
     def getCourtTable(self):
@@ -965,17 +1036,17 @@ class Subgraph():
             courtsInfo[courtID] = self.court2table(court,
                                                    pnkUSDprice,
                                                    rewardUSDprice)
-            if oldCourts is not None:
-                diff = courtsInfo[courtID]['Total Disputes'] - \
-                        oldcourtsDisputes[courtID]
-            else:
-                diff = courtsInfo[courtID]['Total Disputes']
+            diff = courtsInfo[courtID]['Total Disputes']
+            if oldcourtsDisputes is not None:
+                if courtID in oldcourtsDisputes.keys():
+                    diff = courtsInfo[courtID]['Total Disputes'] \
+                        - oldcourtsDisputes[courtID]
             courtsInfo[courtID]['Disputes in the last 30 days'] = diff
         return courtsInfo
 
     def getCourtTotalStaked(self, courtID):
         query = (
-            '{courts(where:{id:"'+str(courtID)+'"}){'
+            '{courts(where:{id:"' + str(courtID) + '"}){'
             '   tokenStaked,'
             '}}'
         )
@@ -996,7 +1067,7 @@ class Subgraph():
     def getCourtDisputesNumberBefore(self, days=30):
         blockNumber = self._getBlockNumberbefore(days)
         query = (
-            '{courts(block:{number:'+str(blockNumber)+'}){'
+            '{courts(block:{number:' + str(blockNumber) + '}){'
             '   disputesNum'
             '   subcourtID'
             '}}'
@@ -1033,8 +1104,7 @@ class Subgraph():
                 parent{id},
                 activeJurors,
                 tokenStaked,
-            }}'''
-            )
+            }}''')
         result = self._post_query(query)
         if len(result['courts']) == 0:
             return None
@@ -1053,44 +1123,50 @@ class Subgraph():
 
     def getDashboard(self):
         dashboard = self.getKlerosCounters()
-        # dashboard['retention'] = self.getRetention()
-        # dashboard['adoption'] = self.getAdoption()
-        # mostActiveCourt = self.getMostActiveCourt()
-        # if mostActiveCourt is not None:
-        #     mostActiveCourt = self.getCourtName(int(mostActiveCourt))
-        # else:
-        #     mostActiveCourt = "No new cases in the last 7 days"
-        # dashboard['mostActiveCourt'] = mostActiveCourt
         # PNK & ETH Information
         coingecko = CoinGecko()
         pnkInfo = coingecko.getCryptoInfo()
+
+        if pnkInfo is None:
+            dashboard['pnkPrice'] = 0
+            dashboard['tokenSupply'] = 0,
+            dashboard['pnkPctChange'] = 0,
+            dashboard['pnkVol24'] = 0,
+            dashboard['pnkCircSupply'] = 0,
+            dashboard['pnkStakedPercentSupply'] = 0,
+            dashboard['pnkStakedPercent'] = 0,
+        else:
+            dashboard['pnkPrice'] = pnkInfo['market_data']['current_price'][
+                'usd']
+            dashboard['tokenSupply'] = pnkInfo['market_data']['total_supply']
+            dashboard['pnkPctChange'] = pnkInfo['market_data'][
+                'price_change_24h']
+            dashboard['pnkCircSupply'] = pnkInfo['market_data'][
+                'circulating_supply']
+            dashboard['pnkVol24'] = pnkInfo['market_data']['total_volume'][
+                'usd']
+            if dashboard['pnkCircSupply'] > 0:
+                dashboard['pnkStakedPercentSupply'] = dashboard[
+                    'tokenStaked'] / dashboard['pnkCircSupply']
+            else:
+                dashboard['pnkStakedPercentSupply'] = None
+            if dashboard['tokenSupply'] > 0:
+                dashboard['pnkStakedPercent'] = dashboard['tokenStaked'] /\
+                    dashboard['tokenSupply']
+            else:
+                dashboard['pnkStakedPercent'] = None
+            # dashboard['courtTable'] = self.getCourtTable()
+
         if self.network == 'xdai':
             dashboard['ethPrice'] = 1
         else:
             dashboard['ethPrice'] = coingecko.getETHprice()
-        dashboard['pnkPrice'] = pnkInfo['market_data']['current_price']['usd']
-        dashboard['tokenSupply'] = pnkInfo['market_data']['total_supply']
-        dashboard['pnkPctChange'] = pnkInfo['market_data']['price_change_24h']
-        dashboard['pnkCircSupply'] = pnkInfo['market_data'][
-            'circulating_supply']
-        dashboard['pnkVol24'] = pnkInfo['market_data']['total_volume']['usd']
-        if dashboard['pnkCircSupply'] > 0:
-            dashboard['pnkStakedPercentSupply'] = dashboard['tokenStaked'] / \
-                dashboard['pnkCircSupply']
-        else:
-            dashboard['pnkStakedPercentSupply'] = None
-        if dashboard['tokenSupply'] > 0:
-            dashboard['pnkStakedPercent'] = dashboard['tokenStaked'] /\
-                dashboard['tokenSupply']
-        else:
-            dashboard['pnkStakedPercent'] = None
-        # dashboard['courtTable'] = self.getCourtTable()
         return dashboard
 
     def getDispute(self, disputeNumber):
         query = (
             '{'
-            'disputes(where:{id:"'+str(disputeNumber)+'"}) {'
+            'disputes(where:{id:"' + str(disputeNumber) + '"}) {'
             '    id,'
             '    disputeID,'
             '    arbitrable{id},'
@@ -1233,7 +1309,7 @@ class Subgraph():
 
     def getProfile(self, address):
         query = (
-            '{jurors(where:{id:"'+str(address).lower()+'"}) {'
+            '{jurors(where:{id:"' + str(address).lower() + '"}) {'
             '   id,'
             '   currentStakes{court{id},stake,timestamp,txid},'
             '   totalStaked,'
@@ -1241,7 +1317,7 @@ class Subgraph():
             '   numberOfDisputesCreated,'
             '   disputesAsCreator{id,currentRulling,startTime,ruled,txid,'
             '   numberOfChoices}'
-            '   allStakes{subcourtID, stake, newTotalStake}'
+            '   allStakes{subcourtID, stake, newTotalStake, timestamp}'
             '   ethRewards, tokenRewards'
             '}}'
         )
@@ -1263,8 +1339,7 @@ class Subgraph():
                     ''')
         result = self._post_query(query)
         if result is None:
-            return result
-
+            return 0.
         votes = [self._parseVote(vote) for vote in result['votes']]
         return self._getTotalUSDGasCostInVotes(votes)
 
@@ -1278,13 +1353,13 @@ class Subgraph():
                 if juror['totalStaked'] > 0:
                     still_active_juror += 1
 
-        return still_active_juror/len(drawnJurors) if len(drawnJurors) > 0 \
+        return still_active_juror / len(drawnJurors) if len(drawnJurors) > 0 \
             else None
 
     def getStakedByJuror(self, address):
         query = (
             '{'
-            'courtStakes(where:{juror:"'+str(address)+'"}) {'
+            'courtStakes(where:{juror:"' + str(address) + '"}) {'
             '    stake,'
             '    court{id}'
             '}}'
@@ -1301,43 +1376,10 @@ class Subgraph():
                                    'stake': self._wei2eth(stake['stake'])})
             return stakes
 
-    def getStatus(self):
-        """
-        Return the status of the subgraph. If xdai, return synced
-        """
-        query = """
-        {
-            _meta{
-                block {
-                number
-                }
-                deployment
-            }
-        }
-        """
-        result = self._post_query(query)
-        meta = result['_meta']
-        subgraph_block_number = int(meta['block']['number'])
-        subgraph_id = meta['deployment']
-        if self.network == 'xdai':
-            return {'status': 'Updated',
-                    'last_block': subgraph_block_number,
-                    'deployment': subgraph_id}
-        last_block_number = web3Node.web3.eth.blockNumber
-        if abs(last_block_number - subgraph_block_number) < 20:
-            # ~ 5 min of delay allowed
-            return {'status': 'Updated',
-                    'last_block': subgraph_block_number,
-                    'deployment': subgraph_id}
-        else:
-            return {'status': 'Updating',
-                    'last_block': subgraph_block_number,
-                    'deployment': subgraph_id}
-
     def getTimePeriods(self, courtID):
         query = (
             '{'
-            'courts(where:{id:"'+str(courtID)+'"}) {'
+            'courts(where:{id:"' + str(courtID) + '"}) {'
             '   timePeriods,'
             '}}'
         )
@@ -1370,7 +1412,7 @@ class Subgraph():
         total_by_court = defaultdict(int)
         while True:
             query = (
-                '{courtStakes(first:1000, skip:'+str(skip)+'){'
+                '{courtStakes(first:1000, skip:' + str(skip) + '){'
                 '   stake'
                 '   court{id}'
                 '}}'
@@ -1402,11 +1444,10 @@ class Subgraph():
         total = 0
         while True:
             query = (
-                '{courtStakes(first:1000, skip:' +
-                str(skip) +
-                ',where:{court_in:' +
-                str(list(allcourts)).replace("'", '"') +
-                '}){'
+                '{courtStakes(first:1000, skip:'
+                + str(skip) + ',where:{court_in:'
+                + str(list(allcourts)).replace("'", '"')
+                + '}){'
                 '   stake'
                 '   court{id}'
                 '}}'
@@ -1428,7 +1469,7 @@ class Subgraph():
         return self._getTotalUSDThroughTransfers(transfers)
 
     def getTransfersFromArbitrable(self, address):
-        query = ('{arbitrables(where: {id: "'+str(address)+'"}) {'
+        query = ('{arbitrables(where: {id: "' + str(address) + '"}) {'
                  + '''
                     disputes {
                         id,
@@ -1452,7 +1493,7 @@ class Subgraph():
         return transfers
 
     def getTransfersFromCourt(self, courtID):
-        query = ('{courts(where: {id: "'+str(courtID)+'"}) {'
+        query = ('{courts(where: {id: "' + str(courtID) + '"}) {'
                  + '''
                     disputes {
                         id,
@@ -1521,15 +1562,14 @@ class Subgraph():
             if timesPeriods is None:
                 timesPeriods = self.getTimePeriods(int(courtID))
             lastPeriodChange = datetime.fromtimestamp(
-                int(dispute['lastPeriodChange'])
-                )
+                int(dispute['lastPeriodChange']))
             periodlength = int(timesPeriods[self._period2number(dispute[
                 'period'])])
             return lastPeriodChange + timedelta(seconds=periodlength)
 
     def readPolicy(self, courtID):
         query = (
-            '{policyUpdates(where:{id:"'+str(courtID)+'"}) {'
+            '{policyUpdates(where:{id:"' + str(courtID) + '"}) {'
             '    subcourtID,'
             '    policy,'
             '    contractAddress,'
@@ -1540,3 +1580,224 @@ class Subgraph():
             return result
         else:
             return result['policyUpdates'][0]
+
+
+class KBSubscriptionsSubgraph(Subgraph):
+    def __init__(self, network='kovan'):
+        super(KBSubscriptionsSubgraph, self).__init__(network)
+        self.subgraph_name = 'salgozino/klerosboard-subscriptions'
+        self.subgraph_node += self.subgraph_name
+
+    def _parseDonation(self, donation):
+        keys = donation.keys()
+        if 'donor' in keys:
+            donation['donor'] = donation['donor']['id']
+        if 'amount' in keys:
+            donation['amount'] = self._wei2eth(donation['amount'])
+        if 'ethToUBIBurner' in keys:
+            donation['ethToUBIBurner'] = self._wei2eth(
+                donation['ethToUBIBurner'])
+        if 'ethToMaintainance' in keys:
+            donation['ethToMaintainance'] = self._wei2eth(
+                donation['ethToMaintainance'])
+        if 'timestamp' in keys:
+            try:
+                donation['timestamp'] = int(donation['timestamp'])
+            except TypeError:
+                donation['timestamp'] = None
+        return donation
+
+    def _parseDonor(self, donor):
+        keys = donor.keys()
+        if 'totalDonated' in keys:
+            donor['totalDonated'] = self._wei2eth(donor['totalDonated'])
+        if 'lastDonated' in keys:
+            donor['lastDonated'] = self._wei2eth(donor['lastDonated'])
+        if 'lastDonatedTimestamp' in keys:
+            try:
+                donor['lastDonatedTimestamp'] = int(
+                    donor['lastDonatedTimestamp'])
+            except TypeError:
+                donor['lastDonatedTimestamp'] = None
+        if 'totalETHToUBIBurner' in keys:
+            donor['totalETHToUBIBurner'] = self._wei2eth(
+                donor['totalETHToUBIBurner']
+            )
+        if 'donations' in keys:
+            donations = donor['donations']
+            for donation in donations:
+                donation = self._parseDonation(donation)
+        return donor
+
+    def _parseParameters(self, parameters):
+        keys = parameters.keys()
+        if 'totalDonated' in keys:
+            parameters['totalDonated'] = self._wei2eth(parameters[
+                'totalDonated'])
+        if 'totalETHToUBIBurner' in keys:
+            parameters['totalETHToUBIBurner'] = self._wei2eth(
+                parameters['totalETHToUBIBurner'])
+        if 'maintenanceFeeMultiplier' in keys:
+            parameters['maintenanceFeeMultiplier'] = int(
+                parameters['maintenanceFeeMultiplier'])
+        if 'donationPerMonth' in keys:
+            parameters['donationPerMonth'] = self._wei2eth(
+                parameters['donationPerMonth'])
+        return parameters
+
+    def getAllDonors(self):
+        initDonor = ""
+        donors = []
+        while True:
+            query = (
+                '{donors(where:{id_gt:"' + str(initDonor) + '"},'
+                'orderBy:id, orderDirection:asc, first:1000){'
+                'id,totalDonated,lastDonated,lastDonatedTimestamp,'
+                'totalETHToUBIBurner,'
+                'donations{id,amount,timestamp}'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentDonors = result['donors']
+                donors.extend(currentDonors)
+                if len(currentDonors) < 1000:
+                    break
+                initDonor = currentDonors[-1]['id']
+        return [self._parseDonor(donor)
+                for donor in donors]
+
+    def getDonor(self, address):
+        query = (
+            '{donors(where:{id:"' + str(address.lower()) + '"}){'
+            'id,totalDonated,lastDonated,lastDonatedTimestamp,'
+            'totalETHToUBIBurner,'
+            'donations{id,amount,timestamp}'
+            '}}'
+        )
+        result = self._post_query(query)
+        if result is None:
+            return None
+        return self._parseDonor(result['donors'][0])
+
+    def getDonorLastDonations(self, month=datetime.today().month):
+        first_day = datetime.today().replace(
+            month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
+        initDonation = int(first_day.replace(tzinfo=timezone.utc).timestamp())
+        donations = []
+        while True:
+            query = (
+                '{donations(where:{timestamp_gte:"' + str(initDonation) + '"},'
+                'orderBy:timestamp, orderDirection:asc, first:1000, ){'
+                'amount,timestamp,donor{id}'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentDonations = result['donations']
+                donations.extend(currentDonations)
+                if len(currentDonations) < 1000:
+                    break
+                initDonation = currentDonations[-1]['id']
+        donations_parsed = [self._parseDonation(donor)
+                            for donor in donations]
+        totalDonated = 0
+        for donation in donations_parsed:
+            totalDonated += donation['amount']
+        return totalDonated
+
+    def getParameters(self):
+        query = ('''
+                {kbsubscriptions(first:1) {
+                totalDonated,
+                totalETHToUBIBurner,
+                maintenanceFeeMultiplier,
+                owner,
+                maintainer,
+                donationPerMonth,
+                }}
+                '''
+                 )
+        result = self._post_query(query)
+        if result is None:
+            return None
+        return self._parseParameters(result['kbsubscriptions'][0])
+
+    def getMonthDonations(self, month=datetime.today().month):
+        first_day = datetime.today().replace(
+            month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
+        initDonation = int(first_day.replace(tzinfo=timezone.utc).timestamp())
+        donations = []
+        while True:
+            query = (
+                '{donations(where:{timestamp_gte:"' + str(initDonation) + '"},'
+                'orderBy:timestamp, orderDirection:asc, first:1000, ){'
+                'amount,timestamp,donor{id}'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentDonations = result['donations']
+                donations.extend(currentDonations)
+                if len(currentDonations) < 1000:
+                    break
+                initDonation = currentDonations[-1]['id']
+        donations_parsed = [self._parseDonation(donor)
+                            for donor in donations]
+        totalDonated = 0
+        for donation in donations_parsed:
+            totalDonated += donation['amount']
+        return totalDonated
+
+    def getDonationPerMonth(self):
+        query = ('''
+                {kbsubscriptions(first:1) {
+                donationPerMonth,
+                }}
+                '''
+                 )
+        result = self._post_query(query)
+        if result is None:
+            return None
+        params = self._parseParameters(result['kbsubscriptions'][0])
+        return params['donationPerMonth']
+
+    def donationLastMonthStatus(self):
+        donationPerMonth = self.getDonationPerMonth()
+        totalDonatedInMonth = self.getMonthDonations(
+            month=datetime.today().month - 1)
+        return {'donationPerMonth': donationPerMonth,
+                'totalDonatedInMonth': totalDonatedInMonth,
+                'percentage': totalDonatedInMonth / donationPerMonth * 100}
+
+    def donationMonthStatus(self):
+        donationPerMonth = self.getDonationPerMonth()
+        totalDonatedInMonth = self.getMonthDonations()
+        return {'donationPerMonth': donationPerMonth,
+                'totalDonatedInMonth': totalDonatedInMonth,
+                'percentage': totalDonatedInMonth / donationPerMonth * 100}
+
+    def getMaintainanceFee(self):
+        query = ('''
+                {kbsubscriptions(first:1) {
+                maintenanceFeeMultiplier,
+                }}
+                '''
+                 )
+        result = self._post_query(query)
+        if result is None:
+            return None
+        params = self._parseParameters(result['kbsubscriptions'][0])
+        return params['maintenanceFeeMultiplier'] / 10000
+
+    def isDonor(self, address):
+        donor = self.getDonor(address)
+        if donor is None:
+            return False
+        return donor['totalDonated'] > 0

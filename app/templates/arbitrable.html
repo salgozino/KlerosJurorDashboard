@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% block title%}| Arbitrable {{ arbitrable['id'] }} {% endblock %}
 
 {% block body%}
   {% block header %}
@@ -20,6 +21,17 @@
 
       <div class="row">
         <div class="col-lg-4">
+          <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title text-center">Disputes Created</h3>
+            </div>
+            <div class="panel-body text-center">
+              <h4>{{arbitrable['disputesCount']}}</h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
             <div class="panel panel-info">
               <div class="panel-heading">
                   <h3 class="panel-title text-center">Fees Generated</h3>
@@ -33,16 +45,7 @@
             </div>
           </div>
         </div>
-        <div class="col-lg-4">
-          <div class="panel panel-info">
-            <div class="panel-heading">
-                <h3 class="panel-title text-center">Disputes Created</h3>
-            </div>
-            <div class="panel-body text-center">
-              <h4>{{arbitrable['disputesCount']}}</h4>
-            </div>
-          </div>
-        </div>
+        
         <div class="col-lg-4">
           <div class="panel panel-info">
             <div class="panel-heading">
@@ -58,19 +61,12 @@
             </div>
           </div>
         </div>
+
+
       </div>
       <!-- second row -->
       <div class="row">
-        <div class="col-lg-2">
-          <div class="panel panel-info">
-              <div class="panel-heading">
-                  <h3 class="panel-title text-center">Disputes Created</h3>
-              </div>
-              <div class="panel-body text-center">
-                <h4>{{arbitrable['disputesCount']}}</h4>
-              </div>
-          </div>
-        </div>
+        <div class="col-lg-1"></div>
         <div class="col-lg-2">
           <div class="panel panel-info">
             <div class="panel-heading">
@@ -124,14 +120,17 @@
     </div>
     <div class="row">
       <h2>Disputes Created</h2>
-      <div class="table-responsive" style="max-height:300px; overflow-y:auto">
-        <table class="table table-bordered table-sm table-condensed table-hover">
+      <div class="table-responsive" overflow-y:auto">
+        <table class="table table-bordered table-sm table-condensed table-hover" id="sortTable">
+          <thead>
           <tr class="info">
-            <td>Dispute</td>
-            <td>Creation Date</td>
-            <td>Current Result</td>
-            <td>TxID</td>
+            <th>Dispute</th>
+            <th>Creation Date</th>
+            <th>Current Result</th>
+            <th>Current Period</th>
+            <th>TxID</th>
           </tr>
+        </thead>
           {% for dispute in arbitrable['disputes']|sort(attribute='startTime', reverse=True): %}
             {% if dispute['ruled']%}
               <tr class="success">
@@ -141,11 +140,20 @@
               <td><a href={{ url_for('dispute', id= dispute['id'], network=network) }}>Dispute {{dispute['id']}}</a></td>
               <td>{{ dispute['startTime']|timestamp2datetime }}</td>
               <td>{{dispute['currentRulling']}}</td>
+              <td>{{dispute['period']}}</td>
               <td><a href="{{block_explorer}}/tx/{{ dispute['txid'] }}">{{dispute['txid'][:6]}}...{{dispute['txid'][-4:]}}</a></td>
             </tr>
           {% endfor %}
         </table>
       </div>
+
+      <script>
+        $(document).ready(function() {
+          $("#sortTable").DataTable({
+            "order": [[ 0, "desc" ]]
+          });
+        });
+      </script>
     </div>
     
   {% endblock %}

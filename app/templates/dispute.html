@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-
+{% block title%}| Dispute {{dispute['disputeID']}}{% endblock %}
 {% block body%}
     {% block header %}
      <!-- Dispute Selector -->
@@ -23,7 +23,7 @@
 {% if dispute['disputeID'] is not none %}
       <div class="row">
         <div class="col">
-          <h4>{% block title %}Dispute #{{ dispute['disputeID']}}{% endblock %}</h4>
+          <h4>Dispute #{{ dispute['disputeID']}}</h4>
         </div>
       </div>
     <div class="table-responsive">
@@ -105,7 +105,15 @@
             {% else %}
             <tr>
             {% endif %}
-              <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
+              {% if not current_user.is_donor%}
+                {% if showaddress %}
+                  <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
+                {% else %}
+                  <td>Donations per month required not reached past month. <a href="/support">Donate to reveal the addresses</a></td>
+                {% endif %}    
+              {% else %}
+                <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
+              {% endif %}
               <td class="text-right">{{ v['vote_str'] }}</td>
               <td class="text-right">{{v['timestamp']|timestamp2datetime}}</td>
             </tr>
@@ -141,7 +149,7 @@
       {%endfor%}
     {% else %}
     <p>There is no evidence for this dispute.
-    This probably happened because this dispute was not compliant with ERC-1497.</p>
+    This probably happened because Vagarish is down or because this dispute was not compliant with ERC-1497.</p>
     {% endif%}
 
       <div align="center">
