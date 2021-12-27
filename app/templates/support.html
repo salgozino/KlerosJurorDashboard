@@ -12,7 +12,46 @@
     </div>
 
 
-{% include 'donation_block.html' %}
+    {% include 'donation_block.html' %}
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h3 class="panel-title text-center">Donation Information</h3>
+        </div>
+        <div class="panel-body text-justify">
+            <p>Since 2022, klerosboard has Hiden Features. If you have seen the message: {% include 'donation_limitation_message.html'%} it's because the donations per month required wasn't achieved past month.
+            The amount of ethers required to reveal those features it's defined in a <a href="https://etherscan.io/address/0x9313F75F4C49a57D1D0158232C526e24Bb40f281">Smart Contract</a>.
+            This SC it's used to make de donatios. As you can verify, most of the donations it's used to burn $UBI.
+            As <a href="https://twitter.com/vitalikbuterin/status/1433230063189725188">VB has mentioned</a>, we need to build sinks for UBI, and this is the best way I have found to contribute.
+            In order to make it the most descentralized I could imagine, the amount per month required to unlock the hidden features and the maintainance fee could be only modified by the <a href="https://governor.kleros.io/">Kleros Governor</a>.
+            So, if you think the current values are too high or low, just make a proposal in the <a href="https://forum.kleros.io">Kleros Forum</a> and ask to the Kleros Community to modify them.
+            By code, again verify, the maintainance fee could not be greater than 50% of the ETH donated to this SC, to keep the sink always as much as possible.
+            I hope the Kleros community join me to create an UBI sink, and all togheter contribute to burn some UBIs.
+            </p>
+            <p>
+            How to reveal the hidden features:
+            <ul>
+                <li>Between all the donors, achieve the donationPerMonth value in the previous calendar month</li>
+                <li>You as a logged in user, has donated the donationPerMonth in the last 365 days</li>
+            </ul>
+            Current Hidden Features:
+            <ul>
+                <li>Address of the jurors voting in a dispute and the dispute creator. You will be able to check the vote intention, but not who has voted</li>
+                <li>Others Jurors profile. You will be able to see only the global metrics of a juror, but not in which disputes had vote or is voting, neither their stake events.</li>
+                <li>Jurors Leaderboard (soon)</li>
+            </ul>
+        </p>
+        </div>
+    </div>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h3 class="panel-title text-center">Donors Leaderboard</h3>
+        </div>
+        <div class="panel-body text-justify">
+            Soon ...
+        </div>
+    </div>
 </div>
 
 
