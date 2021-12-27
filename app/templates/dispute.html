@@ -52,7 +52,12 @@
           </tr>
           <tr>
             <td class="text-center"><a href={{url_for('arbitrable', address=dispute['arbitrable'], network=network)}}>{{dispute['arbitrable']|arbitrableName(network)}}</a></td>
+            
+            {% if showaddress %}
             <td class="text-center"><a href={{ url_for('profile', address=dispute['creator'], network=network) }}>{{dispute['creator'][0:6] +'...'+ dispute['creator'][-4:]}}</a></td>
+            {% else %}
+            <td class="text-center">{% include 'donation_limitation_message.html' %}</td>
+            {% endif %}    
           </tr>
         </table>
     </div>
@@ -109,7 +114,7 @@
                 {% if showaddress %}
                   <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
                 {% else %}
-                  <td>Donations per month required not reached past month. <a href="/support">Donate to reveal the addresses</a></td>
+                  <td>{% include 'donation_limitation_message.html' %}</td>
                 {% endif %}    
               {% else %}
                 <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>

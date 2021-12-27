@@ -16,7 +16,6 @@
         let address = {{profile['id']|tojson}};
       </script>
       <div class="row">
-        <div class="col-lg-1"><!-- Centering div--></div>
         <div class="col-lg-2">
           {%if profile['ethRewards'] > 0%}
           <div class="panel panel-success">
@@ -97,10 +96,25 @@
               </div>
           </div>
         </div>
+        <div class="col-lg-2">
+          <div class="panel panel-info">
+          <div class="panel-heading">
+                  <h3 class="panel-title text-center"># of votes draws</h3>
+              </div>
+              <div class="panel-body text-center" id="feesUSD">
+                <h4>{{profile['votes']|length}}</h4>
+              </div>
+              <div class="panel-footer">
+              Total number of votes drawns for this juror
+              </div>
+          </div>
+        </div>
       </div>
-      
+
+      <!-- Stakes --> 
       <div class="row">
         <h2>Disputes Created</h2>
+        {% if showfeatures %}
         <div class="table-responsive" style="max-height:250px; overflow-y:auto">
           <table class="table table-bordered responsive table-sm table-condensed">
             <tr class="info"><td>Dispute</td><td>Date</td><td>TxID</td></tr>
@@ -113,9 +127,13 @@
             {% endfor %}
           </table>
         </div>
+        {% else %}
+              {% include 'donation_limitation_message.html' %}
+          {% endif %}
       </div>
       <div class="row">
         <h2>Stakes by Court</h2>
+        {% if showfeatures %}
         <div class="mb-5">
           <h4>Total Staked: {{"{:,.2f} PNK".format(profile['totalStaked'])}}</h4>
           <table class="table table-bordered responsive table-sm table-condensed">
@@ -159,12 +177,14 @@
             </table>
           </div>
         </div>
+        {% else %}
+          {% include 'donation_limitation_message.html' %}
+        {% endif %}
       </div>
 
       <div class="row">
         <h2>Votes</h2>
-      
-      
+        {% if showfeatures %}
         <div class="mb-5">
           <h4>Number of votes drawn: {{profile['votes']|length}}</h4>
           <h4>Number of disputes as juror: {{profile['numberOfDisputesAsJuror']}}</h4>
@@ -192,7 +212,12 @@
             {% endfor %}
             </table>
           </div>
+        
         </div>
+
+        {% else %}
+              {% include 'donation_limitation_message.html' %}
+        {% endif %}
       </div>
     {% else %}
     <div class="row">

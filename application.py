@@ -222,7 +222,7 @@ def dispute():
                                disputes=disputes,
                                subgraph_status=subgraph.getStatus(),
                                network=subgraph.network,
-                               showaddress=donationReachedPastMonth()
+                               showaddress=enableFeatures()
                                )
 
     else:
@@ -245,7 +245,8 @@ def dispute():
                                dispute=dispute,
                                error=None,
                                subgraph_status=subgraph.getStatus(),
-                               network=subgraph.network
+                               network=subgraph.network,
+                               showaddress=enableFeatures()
                                )
 
 
@@ -291,20 +292,21 @@ def court():
 def profile(address):
     network = request.args.get('network', type=str)
     subgraph = KlerosBoardSubgraph(network)
-    if current_user.is_anonymous:
-        if not donationReachedPastMonth():
-            return redirect(url_for('support'))
-    if address.lower() != current_user.id.lower():
-        if not current_user.is_donor:
-            # Just users who has donate can check other profiles
-            return redirect(url_for('support'))
     profile = subgraph.getProfile(address)
     if profile is None:
         profile = {'id': address}
+    if current_user.is_anonymous:
+        enable = enableFeatures()
+    else:
+        if current_user.id == address:
+            enable = True
+        else:
+            enable = enableFeatures()
     return render_template('profile.html',
                            profile=profile,
                            subgraph_status=subgraph.getStatus(),
-                           network=subgraph.network
+                           network=subgraph.network,
+                           showfeatures=enable
                            )
 
 
@@ -337,7 +339,7 @@ def arbitrable(address):
 
 @application.route('/stakes', methods=['GET'])
 def stakes():
-    if donationReachedPastMonth():
+    if enableFeatures():
         network = request.args.get('network', type=str)
         subgraph = KlerosBoardSubgraph(network)
         return render_template('allStakes.html',
@@ -476,10 +478,16 @@ def error_exception(e):
 """
 
 
-def donationReachedPastMonth(network='mainnet'):
+def enableFeatures(network='mainnet'):
+    if datetime.utcnow() > datetime(2022, 1, 31, 23, 59):
+        # Don't activate donations limitation until february
+        return True
     donations = KBSubscriptionsSubgraph(network).donationLastMonthStatus()
-    print('past_month:', donations)
-    return donations['percentage'] >= 100
+    enable = donations['percentage'] >= 100
+    if not enable:
+        if not current_user.is_anonymous:
+            enable = current_user.is_donor
+    return enable
 
 
 if __name__ == "__main__":
