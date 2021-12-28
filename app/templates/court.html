@@ -315,7 +315,11 @@
             <tbody>
                 {% for juror in jurors: %}
                 <tr>
+                    {% if showaddress %}
                     <td class="text-center"><a href={{url_for('profile', address=juror['address'], network=network)}}>{{juror['address']}}</a></td>
+                    {%else%}
+                    <td class="text-center">{% include 'donation_limitation_message.html' %}</td>
+                    {%endif%}
                     <td class="text-center">{{ "{:0,.2f}".format(juror['stake']) }}</td>
                 </tr>
                 {% endfor %}

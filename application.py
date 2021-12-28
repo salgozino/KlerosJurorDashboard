@@ -283,7 +283,8 @@ def court():
                            current_juror_page=0,
                            subgraph_status=subgraph.getStatus(),
                            network=subgraph.network,
-                           court_list=subgraph.getCourtList()
+                           court_list=subgraph.getCourtList(),
+                           showaddress=enableFeatures()
                            )
 
 
