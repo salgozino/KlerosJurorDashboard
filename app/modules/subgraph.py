@@ -1727,8 +1727,11 @@ class KBSubscriptionsSubgraph(Subgraph):
             return None
         return self._parseParameters(result['kbsubscriptions'][0])
 
-    def getMonthDonations(self, month=datetime.today().month):
+    def getMonthDonations(self,
+                          month=datetime.today().month,
+                          year=datetime.today().year):
         first_day = datetime.today().replace(
+            year=year,
             month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
         initDonation = int(first_day.replace(tzinfo=timezone.utc).timestamp())
         donations = []
@@ -1770,8 +1773,14 @@ class KBSubscriptionsSubgraph(Subgraph):
 
     def donationLastMonthStatus(self):
         donationPerMonth = self.getDonationPerMonth()
+        today = datetime.today()
+        year = today.year
+        month = today.month - 1
+        if month == 0:
+            month = 12
+            year -= 1
         totalDonatedInMonth = self.getMonthDonations(
-            month=datetime.today().month - 1)
+            month=month, year=year)
         return {'donationPerMonth': donationPerMonth,
                 'totalDonatedInMonth': totalDonatedInMonth,
                 'percentage': totalDonatedInMonth / donationPerMonth * 100}
