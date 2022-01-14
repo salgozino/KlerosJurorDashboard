@@ -1,3 +1,4 @@
+from urllib.parse import non_hierarchical
 import requests
 import os
 import json
@@ -1587,6 +1588,7 @@ class KBSubscriptionsSubgraph(Subgraph):
         super(KBSubscriptionsSubgraph, self).__init__(network)
         self.subgraph_name = 'salgozino/klerosboard-subscriptions'
         self.subgraph_node += self.subgraph_name
+        self.year_donor_factor = 20  # Dividor of monthly fee to allow a donor for a year
 
     def _parseDonation(self, donation):
         keys = donation.keys()
@@ -1702,7 +1704,35 @@ class KBSubscriptionsSubgraph(Subgraph):
                 donations.extend(currentDonations)
                 if len(currentDonations) < 1000:
                     break
-                initDonation = currentDonations[-1]['id']
+                initDonation = currentDonations[-1]['timestamp']
+        donations_parsed = [self._parseDonation(donor)
+                            for donor in donations]
+        totalDonated = 0
+        for donation in donations_parsed:
+            totalDonated += donation['amount']
+        return totalDonated
+
+    def getDonorLastYearDonorDonations(self, address):
+        year_go = datetime.today() - timedelta(days=365)
+        initDonation = int(year_go.replace(tzinfo=timezone.utc).timestamp())
+        donations = []
+        while True:
+            query = (
+                '{donations(where:{timestamp_gt:"' + str(initDonation)
+                + '", donor:"' + str(address.lower()) + '"},'
+                'orderBy:timestamp, orderDirection:asc, first:1000, ){'
+                'amount,timestamp,donor{id}'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentDonations = result['donations']
+                donations.extend(currentDonations)
+                if len(currentDonations) < 1000:
+                    break
+                initDonation = currentDonations[-1]['timestamp']
         donations_parsed = [self._parseDonation(donor)
                             for donor in donations]
         totalDonated = 0
@@ -1806,7 +1836,9 @@ class KBSubscriptionsSubgraph(Subgraph):
         return params['maintenanceFeeMultiplier'] / 10000
 
     def isDonor(self, address):
-        donor = self.getDonor(address)
-        if donor is None:
+        total_donated = self.getDonorLastYearDonorDonations(address)
+        donation_per_month = self.getDonationPerMonth()
+        if donation_per_month is None:
+            # If there is an error getting the value, return False
             return False
-        return donor['totalDonated'] > 0
+        return total_donated >= donation_per_month / self.year_donor_factor
