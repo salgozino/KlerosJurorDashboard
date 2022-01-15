@@ -1684,6 +1684,33 @@ class KBSubscriptionsSubgraph(Subgraph):
             return None
         return self._parseDonor(result['donors'][0])
 
+    def getDonorTotalDonated(self, address):
+        initSkip = 0
+        donations = []
+        while True:
+            query = (
+                '{donations(where:{donor:"' + str(address.lower()) + '"},'
+                'orderBy:timestamp, orderDirection:asc, first:1000, skip:'
+                + str(initSkip) + '){'
+                'amount,timestamp'
+                '}}'
+            )
+            result = self._post_query(query)
+            if result is None:
+                break
+            else:
+                currentDonations = result['donations']
+                donations.extend(currentDonations)
+                if len(currentDonations) < 1000:
+                    break
+                initSkip = len(donations)
+        donations_parsed = [self._parseDonation(donor)
+                            for donor in donations]
+        totalDonated = 0
+        for donation in donations_parsed:
+            totalDonated += donation['amount']
+        return totalDonated
+
     def getDonorLastDonations(self, month=datetime.today().month):
         first_day = datetime.today().replace(
             month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
