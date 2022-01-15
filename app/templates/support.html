@@ -22,23 +22,24 @@
             <p>Since 2022, klerosboard has Hiden Features. If you have seen the message: {% include 'donation_limitation_message.html'%} it's because the donations per month required wasn't achieved past month.
             The amount of ethers required to reveal those features it's defined in a <a href="https://etherscan.io/address/0x9313F75F4C49a57D1D0158232C526e24Bb40f281">Smart Contract</a>.
             This SC it's used to make de donatios. As you can verify, most of the donations it's used to burn $UBI.
-            As <a href="https://twitter.com/vitalikbuterin/status/1433230063189725188">VB has mentioned</a>, we need to build sinks for UBI, and this is the best way I have found to contribute.
+            As <a href="https://twitter.com/vitalikbuterin/status/1433230063189725188">VB has mentioned</a>, we need to build sinks for $UBI, and this is the best way I have found to contribute. Just my two cents.
             In order to make it the most descentralized I could imagine, the amount per month required to unlock the hidden features and the maintainance fee could be only modified by the <a href="https://governor.kleros.io/">Kleros Governor</a>.
             So, if you think the current values are too high or low, just make a proposal in the <a href="https://forum.kleros.io">Kleros Forum</a> and ask to the Kleros Community to modify them.
-            By code, again verify, the maintainance fee could not be greater than 50% of the ETH donated to this SC, to keep the sink always as much as possible.
+            By code, again verify, the maintainance fee could not be greater than 50% of the ETH donated to this SC, to keep the sink always as much as possible. At the beggining I've set it to 10%. If you think this is to high or low, again, make a proposal in the Kleros Forum.
             I hope the Kleros community join me to create an UBI sink, and all togheter contribute to burn some UBIs.
             </p>
             <p>
-            How to reveal the hidden features:
+            <h4>How to reveal the hidden features:</h4>
             <ul>
-                <li>Between all the donors, achieve the donationPerMonth value in the previous calendar month</li>
-                <li>You as a logged in user, has donated at least donationPerMonth/20 in the last 365 days</li>
+                <li>Between all the donors, achieve the donationPerMonth value in the previous calendar month. Keep in mind that if you contribute now, this is sumed for the next month.</li>
+                <li>You as a logged in user, has donated at least 1/20 of the donationPerMonth in the last 365 days. So if you donate, you reveal for yourself the hidden features but this contribute for the next month to the community.</li>
             </ul>
-            Current Hidden Features:
+            <h4>Current Hidden Features:</h4>
             <ul>
                 <li>Address of the jurors voting in a dispute and the dispute creator. You will be able to check the vote intention, but not who has voted</li>
                 <li>Others Jurors profile. You will be able to see only the global metrics of a juror, but not in which disputes had vote or is voting, neither their stake events.</li>
                 <li>Jurors Leaderboard (soon)</li>
+                <li>Would you like to have another feature?, ask for it in the <a href="https://github.com/salgozino/KlerosJurorDashboard/issues">Github repository</a></li>
             </ul>
         </p>
         </div>
@@ -48,9 +49,32 @@
         <div class="panel-heading">
             <h3 class="panel-title text-center">Donors Leaderboard</h3>
         </div>
-        <div class="panel-body text-justify">
-            Soon ...
-        </div>
+        <table class="table table-bordered table-hover" id="sortTable">
+            <thead>
+                <tr class="info">
+                  <th align="center">Donor</th>
+                  <th align="center">Total Donated</th>
+                  <th align="center">Ranking Donors</th>
+                </tr>
+            </thead>
+            <tbody>
+              {% for donor in donors|sort(attribute='totalDonated', reverse=True): %}
+              <tr>
+                <td class="text-center"><a href={{url_for('profile', address=donor['id'], network=network)}}>{{donor['id']}}</a></td>
+                <td class="text-center">{{donor['totalDonated']}}</td>
+                <td class="text-center">{{loop.index}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+        </table>
+    
+        <script>
+        $(document).ready(function() {
+            $("#sortTable").DataTable({
+            "order": [[ 2, "desc" ]]
+            });
+        });
+        </script>
     </div>
 </div>
 

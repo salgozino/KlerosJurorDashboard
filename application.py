@@ -152,10 +152,12 @@ def support():
     donations = kbs.donationMonthStatus()
     maintainanceFee = kbs.getMaintainanceFee()
     donations['maintainanceFee'] = maintainanceFee
+    donors = kbs.getAllDonors()
     return render_template('support.html',
                            subgraph_status=subgraph.getStatus(),
                            network=subgraph.network,
-                           donations=donations
+                           donations=donations,
+                           donors=donors
                            )
 
 
