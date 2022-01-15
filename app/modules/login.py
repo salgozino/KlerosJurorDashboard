@@ -13,6 +13,8 @@ class User(UserMixin):
         self._is_active = True
         self._is_anonymous = id is None
         self._is_donor = KBSubscriptionsSubgraph().isDonor(id)
+        self._total_donated = \
+            KBSubscriptionsSubgraph().getDonorTotalDonated(id)
 
     @property
     def is_authenticated(self):
@@ -48,3 +50,11 @@ class User(UserMixin):
     @is_donor.setter
     def is_donor(self, val):
         self._is_donor = val
+
+    @property
+    def total_donated(self):
+        return self._total_donated
+
+    @total_donated.setter
+    def total_donated(self, val):
+        self._total_donated = val
