@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block body%}
+
+    <div class="row">
+      <div class="col">
+        <h4>Donors: {{donors|list|length}}</h4>
+      </div>
+    </div>
+      
+    <div class="table-responsive" style="max-height:250px; overflow-y:auto">
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr class="info">
+              <th class="text-center">Donor</th>
+              <th class="text-center">Total Donated</th>
+              <th class="text-center">ETH to UBIBurner</th>
+              <th class="text-center">Last Donation</th>
+            </tr>
+          </thead>
+          {% for donor in donors|sort(attribute='totalDonated', reverse=True): %}
+          <tr class='warning'>
+            <td class="text-center"><a href={{url_for('profile', address=donor['id'], network=network)}}>{{donor['id']}}</a></td>
+            <td class="text-center">{{donor['totalDonated']}} ETH</a></td>
+            <td class="text-center">{{donor['totalETHToUBIBurner']}} ETH</a></td>
+            <td class="text-center"><span class="datetime-string">{{donor['lastDonatedTimestamp']|timestamp2datetime}}</span></td>
+          </tr>
+          {% endfor %}
+        </table>
+    </div>
+
+        
+{% endblock %}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
-from .subgraph import Subgraph
+from .subgraph import KlerosBoardSubgraph
 from .oracles import CoinGecko
 
 
@@ -18,7 +18,7 @@ def period2number(period):
 
 
 def get_all_court_chances(pnkStaked, n_votes=3, network='mainnet'):
-    courts = Subgraph(network).getCourtTable()
+    courts = KlerosBoardSubgraph(network).getCourtTable()
     courtChances = {}
     pnkPrice = CoinGecko().getPNKprice()
     if network == 'xdai':
@@ -81,7 +81,7 @@ def getWhenPeriodEnd(dispute, courtID):
     if dispute['period'] == 'execution':
         return None
     else:
-        timesPeriods = Subgraph.getTimePeriods(courtID)
+        timesPeriods = KlerosBoardSubgraph.getTimePeriods(courtID)
         lastPeriodChange = int(dispute['lastPeriodChange'])
         periodlength = int(timesPeriods[period2number(dispute['period'])])
         return datetime.fromtimestamp(lastPeriodChange) + \

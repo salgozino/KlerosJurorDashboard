@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-
+{% block title%}| Dispute {{dispute['disputeID']}}{% endblock %}
 {% block body%}
     {% block header %}
      <!-- Dispute Selector -->
@@ -23,7 +23,7 @@
 {% if dispute['disputeID'] is not none %}
       <div class="row">
         <div class="col">
-          <h4>{% block title %}Dispute #{{ dispute['disputeID']}}{% endblock %}</h4>
+          <h4>Dispute #{{ dispute['disputeID']}}</h4>
         </div>
       </div>
     <div class="table-responsive">
@@ -52,7 +52,12 @@
           </tr>
           <tr>
             <td class="text-center"><a href={{url_for('arbitrable', address=dispute['arbitrable'], network=network)}}>{{dispute['arbitrable']|arbitrableName(network)}}</a></td>
+            
+            {% if showaddress %}
             <td class="text-center"><a href={{ url_for('profile', address=dispute['creator'], network=network) }}>{{dispute['creator'][0:6] +'...'+ dispute['creator'][-4:]}}</a></td>
+            {% else %}
+            <td class="text-center">{% include 'donation_limitation_message.html' %}</td>
+            {% endif %}    
           </tr>
         </table>
     </div>
@@ -105,7 +110,15 @@
             {% else %}
             <tr>
             {% endif %}
-              <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
+              {% if not current_user.is_donor%}
+                {% if showaddress %}
+                  <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
+                {% else %}
+                  <td>{% include 'donation_limitation_message.html' %}</td>
+                {% endif %}    
+              {% else %}
+                <td><a href={{url_for('profile', address=v['address'], network=network)}}>{{v['address']}}</a></td>
+              {% endif %}
               <td class="text-right">{{ v['vote_str'] }}</td>
               <td class="text-right">{{v['timestamp']|timestamp2datetime}}</td>
             </tr>

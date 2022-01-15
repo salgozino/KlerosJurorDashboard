@@ -1,5 +1,12 @@
-{% extends "layout.html" %}
 
+{% if request.args.get('id') is none%}
+{% set id = 0 %}
+{% else %}
+{% set id = request.args.get('id')|int %}
+{% endif %}
+
+{% extends "layout.html" %}
+{% block title%}| Court {{id}}{% endblock %}
 {% block body%}
     {% block header %}
      <!-- Court Selector -->
@@ -8,11 +15,6 @@
               <div class="form-group">
                 <label for="disputeIDInput">Court </label>
                 {% if court_list|length > 0%}
-                    {% if request.args.get('id') is none%}
-                        {% set id = 0 %}
-                    {% else %}
-                        {% set id = request.args.get('id')|int %}
-                    {% endif %}
                 <select class="form-control"  id="id" name="id" type="int" autocomplete="off">
                     {% for court in court_list|sort(attribute='subcourtID') %}  
                     <option {%if id==court['subcourtID'] %}selected{%endif%} label="{{court['subcourtID']|courtName(network)}}">
@@ -313,7 +315,11 @@
             <tbody>
                 {% for juror in jurors: %}
                 <tr>
+                    {% if showaddress %}
                     <td class="text-center"><a href={{url_for('profile', address=juror['address'], network=network)}}>{{juror['address']}}</a></td>
+                    {%else%}
+                    <td class="text-center">{% include 'donation_limitation_message.html' %}</td>
+                    {%endif%}
                     <td class="text-center">{{ "{:0,.2f}".format(juror['stake']) }}</td>
                 </tr>
                 {% endfor %}

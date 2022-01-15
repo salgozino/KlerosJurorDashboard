@@ -1,0 +1,6 @@
+
+<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">My Account<span class="caret"></span></a>
+<ul class="dropdown-menu">
+    <li><a href={{ url_for('profile', address=current_user.id, network=network) }}>My Profile</a></li>
+    <li><a href="/logout?next={{request.path}}">Logout</a></li>
+</ul>

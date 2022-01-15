@@ -3,7 +3,7 @@ import os
 import logging
 import sys
 
-from app.modules.subgraph import Subgraph
+from app.modules.subgraph import KlerosBoardSubgraph
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     networks = ['mainnet', 'xdai']
     for network in networks:
-        subgraph = Subgraph(network)
+        subgraph = KlerosBoardSubgraph(network)
         kc = subgraph.getKlerosCounters()
         try:
             courtsCount = kc['courtsCount']
