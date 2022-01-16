@@ -77,10 +77,14 @@ def load_user(id):
 def internalLogin():
     id = request.json['signer']
     network = request.args.get('network', type=str)
+    if network is None:
+        network = 'mainnet'
     if id is not None:
         print('Authenticating user {}'.format(id))
         login_user(User(id), remember=True)
-        return redirect("/{}".format(network))
+        url = request.url.replace('http://', 'https://', 1)
+        url += "/?network={}".format(network)
+        return redirect(url)
     else:
         subgraph = KlerosBoardSubgraph(network)
         return render_template('login.html',
