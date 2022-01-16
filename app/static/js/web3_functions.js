@@ -54,7 +54,7 @@ async function login() {
   var ajax=$.ajax({
       type: "POST",
       data: JSON.stringify({'signer':address}),
-      url: "/_internalLogin",
+      url: "https://klerosboard.com/_internalLogin",
       contentType: 'application/json;charset=UTF-8',
 
   }).done(function(){
