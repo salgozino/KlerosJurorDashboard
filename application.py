@@ -484,7 +484,7 @@ def error_exception(e):
 
 
 def enableFeatures(network='mainnet'):
-    if datetime.utcnow() > datetime(2022, 1, 31, 23, 59):
+    if datetime.utcnow() < datetime(2022, 1, 31, 23, 59):
         # Don't activate donations limitation until february
         return True
     donations = KBSubscriptionsSubgraph(network).donationLastMonthStatus()
