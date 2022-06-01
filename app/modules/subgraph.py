@@ -1318,7 +1318,8 @@ class KlerosBoardSubgraph(Subgraph):
             '   numberOfDisputesCreated,'
             '   disputesAsCreator{id,currentRulling,startTime,ruled,txid,'
             '   numberOfChoices}'
-            '   allStakes{subcourtID, stake, newTotalStake, timestamp}'
+            '   allStakes(orderBy:timestamp, orderDirection:desc){'
+            '      subcourtID, stake, newTotalStake, timestamp}'
             '   ethRewards, tokenRewards'
             '}}'
         )

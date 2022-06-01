@@ -165,7 +165,7 @@
                 </tr>
               </thead>
               <tbody>
-              {% for stake in profile['allStakes']|sort(attribute='timestmap', reverse=True) %}
+              {% for stake in profile['allStakes'] %}
                 <tr>
                   <td><a href={{url_for('court', id=stake['subcourtID'], network=network)}}>{{stake['subcourtID']|courtName(network)}}</td>
                   <td>{{"{:,.2f}".format(stake['stake'])}}</td>
