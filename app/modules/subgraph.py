@@ -1184,7 +1184,7 @@ class KlerosBoardSubgraph(Subgraph):
             '        id,'
             '        winningChoice,'
             '        startTime,'
-            '        votes{'
+            '        votes(first:1000){'
             '            address{id},'
             '            choice,'
             '            voted,'
