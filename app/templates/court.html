@@ -59,7 +59,7 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Court "Childrens"</h4>
+                    <h4>Court "Children"</h4>
                 </div>
                 {% if court['childs']|length > 0 %}
                     <ul class="list-group">
@@ -76,13 +76,13 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Juror for court jump</h4>
+                    <h4>Max jury size</h4>
                 </div>
                 <div class="panel-body text-center">
                     {{court['jurorsForCourtJump']}}
                 </div>
                 <div class="panel-footer">
-                    Amount of jurors in a dispute for jump to the parent court
+                    Max amount of votes in a dispute previous a jump to the parent court
                 </div>
             </div>
         </div>
@@ -121,7 +121,7 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Ongoing Cases</h4>
+                    <h4>Ongoing Disputes</h4>
                 </div>
                 <div class="panel-body text-center">
                     {{ open_cases }}
@@ -132,7 +132,7 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Ruled Cases</h4>
+                    <h4>Ruled Disputes</h4>
                 </div>
                 <div class="panel-body text-center">
                     {{ ruled_cases }}
@@ -244,14 +244,14 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Active Jurors</h4>
+                    <h4>Total Active Jurors</h4>
                 </div>
                 <div class="panel-body text-center">
                 
                     <h4>{{court['activeJurors']}}</h4>
                 </div>
                 <div class="panel-footer">
-                    Number of Active jurors considering childrens courts
+                    Number of active jurors considering childrens courts. Any of these could be selected in a dispute
                 </div>
             </div>
         </div>
@@ -259,14 +259,14 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>Active Jurors</h4>
+                    <h4>Jurors staked in this court</h4>
                 </div>
                 <div class="panel-body text-center">
                 
                     <h4>{{n_jurors}}</h4>
                 </div>
                 <div class="panel-footer">
-                    Number of active jurors staked in this court, without considering childrens courts
+                    Number of active jurors staked directly in this court. Without considering childrens courts
                 </div>
             </div>
         </div>
@@ -274,27 +274,27 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>PNK Staked</h4>
+                    <h4>Total PNK Staked</h4>
                 </div>
                 <div class="panel-body text-center">
                 
                     <h4>{{"{:,.2f} PNK".format(court['tokenStaked'])}}</h4>
                 </div>
                 <div class="panel-footer">
-                    PNK staked in this court considering childrens courts
+                    PNK staked in this court considering childrens courts.
                 </div>
             </div>
         </div>
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading text-center">
-                    <h4>PNK Staked</h4>
+                    <h4>PNK staked in this court</h4>
                 </div>
                 <div class="panel-body text-center">
                     <h4>{{ "{:,.2f} PNK".format(staked_in_this_court) }}</h4>
                 </div>
                 <div class="panel-footer">
-                    PNK Staked just in this court
+                    PNK Staked directly in this court. Without considering stakes in children courts
                 </div>
             </div>
         </div>
