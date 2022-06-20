@@ -14,7 +14,7 @@
             <h3 class="panel-title">General Information</h3>
         </div>
         <div class="panel-body">
-            <p>This is the Dashboard of the Kleros Court. Here you can find metrics about the amount of cases, jurors, stakes, etc. In addition, in the Juror Odds section, you can estimate your chances of being drawn in the different courts.</p>
+            <p>This is the Dashboard of the Kleros Court. Here you can find metrics about the amount of disputes, jurors, stakes, etc. In addition, in the Juror Odds section, you can estimate your chances of being drawn in the different courts.</p>
             <p>The source code can be found on <a href="https://github.com/salgozino/KlerosJurorDashboard">github</a>. If you found issues or want some improvement, please open an issue there.</p>
             <p>Kleros is a decentralized dispute platform. For more information, visit <a href="https://kleros.io">kleros.io</a></p>
         </div>
@@ -24,7 +24,7 @@
 </div>
 
 <!-- First Line Metrics -->
-<!-- Cases Metrics -->
+<!-- Disputes Metrics -->
 {%if network=='xdai'%}
     {% set jurors_anual_reward = 1000000 * 12 * 0.1 %}
 {%else%}
@@ -50,13 +50,13 @@
         <div class="col-lg-3">
             <div class="panel panel-success">
                 <div class="panel-heading">
-                    <h3 class="panel-title text-center">Cases already Closed</h3>
+                    <h3 class="panel-title text-center">Disputes already Closed</h3>
                 </div>
                 <div class="panel-body text-center">
                 <h4>{{ dashboard['closedDisputes'] }}</h4>
                 </div>
                 <div class="panel-footer">
-                Number of cases already ruled
+                Number of disputes already ruled
                 </div>
             </div>
         </div>
@@ -64,13 +64,13 @@
         <div class="col-lg-3">
             <div class="panel panel-warning">
                 <div class="panel-heading">
-                    <h3 class="panel-title text-center">Cases under ruling</h3>
+                    <h3 class="panel-title text-center">Disputes under ruling</h3>
                 </div>
                 <div class="panel-body text-center">
                 <h4>{{ dashboard['openDisputes'] }}</h4>
                 </div>
                 <div class="panel-footer">
-                Number of open cases.
+                Number of open disputes.
                 </div>
             </div>
         </div>
@@ -92,7 +92,7 @@
                 <h4> Loading data</h4>
                 </div>
                 <div class="panel-footer">
-                The court with more cases in the last 7 days.
+                The court with more disputes in the last 7 days.
                 </div>
             </div>
         </div>
