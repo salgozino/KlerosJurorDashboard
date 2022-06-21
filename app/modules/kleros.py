@@ -37,23 +37,23 @@ def get_all_court_chances(pnkStaked, n_votes=3, network='mainnet'):
             chances = float('nan')
             share = float('nan')
         else:
-            chances = 1/odds
-            share = pnkStaked/totalStaked
+            chances = 1 / odds
+            share = pnkStaked / totalStaked
         reward_currency = 'xDAI' if network == 'xdai' else 'ETH'
         courtChances[courts[c]['Name']] = {
-                    'Jurors': activeJurors,
-                    'Total Staked': totalStaked,
-                    'Stake share': share,
-                    'Disputes in the last 30 days': courts[c][
-                        'Disputes in the last 30 days'],
-                    'Odds': odds,
-                    'Chances': chances,
-                    f'Reward ({reward_currency})': rewardETH,
-                    'Reward (USD)': rewardUSD,
-                    'Vote Stake (PNK)': voteStakePNK,
-                    'Vote Stake (USD)': voteStakeUSD,
-                    'Reward/Risk': rewardUSD/voteStakeUSD
-                    }
+            'Jurors': activeJurors,
+            'Total Staked': totalStaked,
+            'Stake share': share,
+            'Disputes in the last 30 days': courts[c][
+                'Disputes in the last 30 days'],
+            'Odds': odds,
+            'Chances': chances,
+            f'Reward ({reward_currency})': rewardETH,
+            'Reward (USD)': rewardUSD,
+            'Vote Stake (PNK)': voteStakePNK,
+            'Vote Stake (USD)': voteStakeUSD,
+            'Reward/Risk': float('NaN') if voteStakeUSD == 0 else rewardUSD / voteStakeUSD
+        }
     return courtChances
 
 
