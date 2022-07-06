@@ -5,6 +5,7 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 {% endblock %}
 
+
 {% block body%}
 <p><h5 style="display: inline;">Treemap Graphs</h5>
     <span class="glyphicon glyphicon-question-sign" data-toggle="tooltip" data-placement="top" title="In this graphs, the size of the boxes is proportional to the amount of Jurors or 'Total Staked'. The boxes positioning it's according the parenting of the different courts." aria-hidden="true"></span></p>
@@ -16,7 +17,7 @@
         <div class="col-md-12" id="treemapJurorsGraph-id" style="min-height:150px; max-height:100%">
             <script>
                 var fig = {{treemapJurorsGraph | safe}};
-                Plotly.plot('treemapJurorsGraph-id', fig.data, fig.layout);
+                Plotly.newPlot('treemapJurorsGraph-id', fig.data, fig.layout);
             </script>
         </div>
     </div>
@@ -29,7 +30,7 @@
         <div class="col-md-12" id="treemapStakedGraph-id" style="min-height:150px; max-height:100%">
             <script>
                 var fig = {{treemapStakedGraph | safe}};
-                Plotly.plot('treemapStakedGraph-id', fig.data, fig.layout);
+                Plotly.newPlot('treemapStakedGraph-id', fig.data, fig.layout);
             </script>
         </div>
     </div>
@@ -41,7 +42,7 @@
         <div class="col-md-12 " id="Disputesgraph-id">
             <script>
                 var graph = {{disputesgraph | safe}};
-                Plotly.plot('Disputesgraph-id',graph,{});
+                Plotly.newPlot('Disputesgraph-id',graph,{});
             </script>
         </div>
     </div>
@@ -67,7 +68,7 @@
             <div class="chart" id="disputeCourtsgraph-id" style="min-height:150px; max-height:100%">
                 <script>
                     var fig = {{disputeCourtgraph | safe}};
-                    Plotly.plot('disputeCourtsgraph-id', fig.data, fig.layout);
+                    Plotly.newPlot('disputeCourtsgraph-id', fig.data, fig.layout);
                 </script>
             </div>
         </div>
@@ -76,7 +77,7 @@
             <div class="chart" id="disputeCreatorgraph-id" style="min-height:150px; max-height:100%">
                 <script>
                     var fig = {{disputeCreatorgraph | safe}};
-                    Plotly.plot('disputeCreatorgraph-id', fig.data, fig.layout);
+                    Plotly.newPlot('disputeCreatorgraph-id', fig.data, fig.layout);
                 </script>
             </div>
         </div>

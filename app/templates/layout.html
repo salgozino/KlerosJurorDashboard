@@ -16,6 +16,10 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
     
+    <!-- Custom page imports -->
+    {% block custom_js %}
+    {% endblock %}
+
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/js/jquery.dataTables.min.js"></script>
@@ -29,9 +33,6 @@
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
     <script data-main="{{url_for('static', filename='js/web3_functions.js')}}" src="{{url_for('static', filename='js/require.js')}}"></script>
 
-    <!-- Custom page imports -->
-    {% block custom_js %}
-    {% endblock %}
     <title>Klerosboard 2.0 {%block title%}{%endblock%}</title>
   </head>
   
