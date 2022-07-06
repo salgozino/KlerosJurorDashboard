@@ -6,6 +6,10 @@
 {% endif %}
 
 {% extends "layout.html" %}
+{% block custom_js %}
+<!-- Plotly JS -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
 {% block title%}| Court {{id}}{% endblock %}
 {% block body%}
     {% block header %}
